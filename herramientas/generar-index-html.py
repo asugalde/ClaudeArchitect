@@ -23,6 +23,7 @@ EXAM_GUIDE_TXT = ROOT / "fuentes" / "exam-guide-oficial-v1.0.txt"
 FUENTES_YAML = ROOT / "fuentes" / "fuentes.yaml"
 MARK_START = "// __INDEX_DATA_START__"
 MARK_END = "// __INDEX_DATA_END__"
+INDEX_TITLE = "CCAR-F · Índice del curso"
 
 RE_DOMAIN_LINE = re.compile(r"^(\d)\s+(.+?)\s+(\d+)%\s*$", re.MULTILINE)
 RE_BLOCK_YAML = re.compile(
@@ -31,6 +32,7 @@ RE_BLOCK_YAML = re.compile(
 RE_TITLE = re.compile(r'^#\s*Bloque\s+\d+\s*[—-]\s*(.+?)(?:\s*\{#[^}]+\})?\s*$', re.MULTILINE)
 RE_LECCION = re.compile(r'^##\s*Lecci[oó]n\b', re.MULTILINE)
 RE_INTRO = re.compile(r'^##\s*Qué evalúa el examen en este bloque\s*\n+(.*?)\n##', re.DOTALL | re.MULTILINE)
+RE_PASSING = re.compile(r"cut score is (\d+)")
 
 
 def _clean_md(text):
@@ -93,6 +95,20 @@ def parse_blueprint():
     return domains
 
 
+def parse_passing_score():
+    """Official passing scaled score (100-1000), read-only from the exam
+    guide text (same source already used for the blueprint weights and for
+    the client-side QUIZ_PASS_SCALED in index.template.html): "the cut score
+    is 720"."""
+    if not EXAM_GUIDE_TXT.exists():
+        fail(f"exam guide not found: {EXAM_GUIDE_TXT}")
+    txt = EXAM_GUIDE_TXT.read_text(encoding="utf-8")
+    m = RE_PASSING.search(txt)
+    if not m:
+        fail("could not find the official passing/cut score in the exam guide text")
+    return int(m.group(1))
+
+
 def parse_block_domains():
     """Block number (1-5) -> domain number (from fuentes.yaml 'dominio: ... (Dn, ...)'); block 0 -> None."""
     if not FUENTES_YAML.exists():
@@ -140,6 +156,51 @@ def load_json(path_str):
     if not abs_path.exists():
         return None
     return json.loads(abs_path.read_text(encoding="utf-8"))
+
+
+def build_simulacro(versiones, domains):
+    """recursos.simulacro (versiones.json) -> DATA.simulacro, or None if the
+    project has no simulacro entry at all yet. html is validated against disk
+    like every other resource (rel_from_recursos); if missing, the index
+    still returns preguntas/duracion/composicion when the JSON is readable,
+    but the front end must treat html=null as "Próximamente", same pattern
+    as the per-block cards."""
+    sim = versiones.get("recursos", {}).get("simulacro")
+    if not sim:
+        return None
+    html = rel_from_recursos(sim.get("html"))
+    bank = load_json(sim["json"]) if sim.get("json") else None
+    passing = parse_passing_score()
+    if bank is None:
+        return {"version": sim.get("version"), "html": html, "preguntas": None,
+                "duracionMin": None, "passing": passing, "composicion": []}
+    cfg = bank.get("config", {})
+    preguntas = bank.get("preguntas", [])
+    domain_num_by_name = {d["nombre"]: n for n, d in domains.items()}
+    counts, transversal = {}, 0
+    for q in preguntas:
+        dn = q.get("dominio")
+        if dn is None:
+            transversal += 1
+            continue
+        num = domain_num_by_name.get(dn)
+        if num is None:
+            fail(f"simulacro: question domain {dn!r} not found in the parsed blueprint")
+        counts[num] = counts.get(num, 0) + 1
+    composicion = [
+        {"dominioNum": n, "nombre": domains[n]["nombre"], "count": counts.get(n, 0)}
+        for n in sorted(domains)
+    ]
+    if transversal:
+        composicion.append({"dominioNum": None, "nombre": "Transversal (Bloque 0)", "count": transversal})
+    return {
+        "version": sim.get("version"),
+        "html": html,
+        "preguntas": len(preguntas),
+        "duracionMin": cfg.get("duracion_examen_min"),
+        "passing": passing,
+        "composicion": composicion,
+    }
 
 
 def build_data(versiones):
@@ -218,6 +279,7 @@ def build_data(versiones):
         "examenVersion": versiones.get("guia_oficial_examen", {}).get("version", ""),
         "dominios": dominios,
         "bloques": bloques,
+        "simulacro": build_simulacro(versiones, domains),
     }
 
 
@@ -229,6 +291,7 @@ def main():
     data = build_data(versiones)
 
     template = TEMPLATE.read_text(encoding="utf-8")
+    template = template.replace("<title>{{TITULO}}</title>", f"<title>{INDEX_TITLE}</title>")
     # rindex: robust even though this file's own comments never mention the
     # marker text verbatim — kept consistent with the other injectors anyway.
     start = template.rindex(MARK_START) + len(MARK_START)

@@ -11,6 +11,7 @@ Usage:
 Fails loudly (exit 1) on any validation error: the JSON is the single source
 of truth and a broken deck must never produce an HTML silently.
 """
+import html as html_lib
 import json
 import re
 import sys
@@ -87,6 +88,16 @@ def validate(deck):
     return errors
 
 
+def compute_title(cfg):
+    """<title> composed from the deck's own config: 'Flashcards CCAR-F ·
+    Bloque N — <nombre>'."""
+    bloque = cfg.get("bloque")
+    nombre = cfg.get("nombre", "").strip()
+    if bloque is None or not nombre:
+        return "Flashcards CCAR-F"
+    return f"Flashcards CCAR-F · Bloque {bloque} — {nombre}"
+
+
 def validate_anchors(deck):
     """Every refSeccion must exist as an anchor in the block's corpus file."""
     bloque = deck["config"]["bloque"]
@@ -115,6 +126,8 @@ def main():
         fail(errors)
 
     template = TEMPLATE.read_text(encoding="utf-8")
+    title = html_lib.escape(compute_title(deck["config"]), quote=False)
+    template = template.replace("<title>{{TITULO}}</title>", f"<title>{title}</title>")
     # rindex: robust even if a comment mentions the markers literally —
     # the real block is the last occurrence.
     start = template.rindex(MARK_START) + len(MARK_START)

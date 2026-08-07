@@ -11,6 +11,7 @@ Usage:
 
 Fails loudly (exit 1) on any validation error.
 """
+import html as html_lib
 import json
 import re
 import sys
@@ -94,18 +95,37 @@ def validate(bank):
 
 
 def validate_anchors(bank):
-    """Per-block banks: every refSeccion must exist in the block corpus."""
-    bloques = {q["bloque"] for q in bank["preguntas"]}
-    anchors = set()
-    for b in bloques:
-        matches = list((ROOT / "corpus").glob(f"bloque-{b}-*.md"))
-        if not matches:
-            return [f"corpus file for block {b} not found under corpus/"]
-        anchors |= set(re.findall(r"\{(#[a-z0-9-]+)\}", matches[0].read_text(encoding="utf-8")))
-    return [
-        f"{q['id']}: refSeccion {q['refSeccion']} not found in corpus"
-        for q in bank["preguntas"] if q["refSeccion"] not in anchors
-    ]
+    """Every refSeccion must exist in the corpus of the QUESTION'S OWN origin
+    block (its `bloque` field, not the bank's), so a multi-block bank (e.g.
+    the exam simulation, banco compuesto con preguntas de los 6 corpus vía
+    id bN-qXX/sim-qXX) can never validate a question's anchor against a
+    different block's corpus. Anchors are cached per block since a bank may
+    repeat the same block many times."""
+    errors = []
+    anchors_by_block = {}
+    for q in bank["preguntas"]:
+        b = q["bloque"]
+        if b not in anchors_by_block:
+            matches = list((ROOT / "corpus").glob(f"bloque-{b}-*.md"))
+            if not matches:
+                errors.append(f"corpus file for block {b} not found under corpus/")
+                anchors_by_block[b] = set()
+                continue
+            text = matches[0].read_text(encoding="utf-8")
+            anchors_by_block[b] = set(re.findall(r"\{(#[a-z0-9-]+)\}", text))
+        if q["refSeccion"] not in anchors_by_block[b]:
+            errors.append(f"{q['id']}: refSeccion {q['refSeccion']} not found in corpus for block {b}")
+    return errors
+
+
+def compute_title(cfg):
+    """<title> from the bank's own config: the exam simulation (solo_examen
+    true) gets a fixed title; regular per-block banks compose it from
+    config.titulo (already 'Bloque N — <título>')."""
+    if cfg.get("solo_examen"):
+        return "Simulacro de examen CCAR-F"
+    titulo = cfg.get("titulo", "").strip()
+    return f"Quiz CCAR-F · {titulo}" if titulo else "Quiz CCAR-F"
 
 
 def main():
@@ -122,6 +142,8 @@ def main():
         fail(errors)
 
     template = TEMPLATE.read_text(encoding="utf-8")
+    title = html_lib.escape(compute_title(bank["config"]), quote=False)
+    template = template.replace("<title>{{TITULO}}</title>", f"<title>{title}</title>")
     # rindex: the template's instruction comment mentions the markers literally,
     # so the real block is the LAST occurrence, inside the <script> section.
     start = template.rindex(MARK_START) + len(MARK_START)

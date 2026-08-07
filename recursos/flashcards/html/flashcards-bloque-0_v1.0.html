@@ -13,7 +13,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flashcards — CCAR-F</title>
+<title>Flashcards CCAR-F · Bloque 0 — Fundamentos: API de Claude, tool use y bucle agéntico</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   /* =====================================================================
@@ -320,7 +321,7 @@ aplicarTema(localStorage.getItem(KEY_TEMA) || (matchMedia("(prefers-color-scheme
 $("btnTema").onclick = () => aplicarTema(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");
 
 // ---------- cabecera ----------
-document.title = `Flashcards B${CFG.bloque} — CCAR-F`;
+document.title = `Flashcards CCAR-F · Bloque ${CFG.bloque} — ${CFG.nombre}`;
 $("eyebrowBloque").textContent = `CCAR-F · Bloque ${CFG.bloque}`;
 $("titulo").textContent = `Flashcards: ${CFG.nombre}`;
 $("pieMeta").textContent = `Generado desde ${CFG.generadoDesdeCorpus} · el progreso vive en este navegador (localStorage)`;

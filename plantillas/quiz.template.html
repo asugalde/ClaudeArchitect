@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quiz CCAR-F</title>
+<title>{{TITULO}}</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
 <!--
   PLANTILLA DE QUIZ CCAR-F (autocontenida, sin dependencias).
   INSTRUCCIONES DE GENERACIÓN (fase2-bloque):
@@ -209,7 +210,7 @@ const DATA = {
   const app = document.getElementById("app");
   document.getElementById("q-title").textContent = cfg.titulo;
   document.getElementById("q-eyebrow").textContent = "CCAR-F · BLOQUE " + String(cfg.bloque).toUpperCase();
-  document.title = cfg.titulo;
+  document.title = cfg.solo_examen ? "Simulacro de examen CCAR-F" : "Quiz CCAR-F · " + cfg.titulo;
 
   let S = null; // state: {mode, order[], optOrder{}, answers{}, flags[], idx, remaining, finished, revealed{}}
 

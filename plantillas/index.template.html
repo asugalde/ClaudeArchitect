@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{TITULO}}</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
 <!--
   PLANTILLA DEL ÍNDICE DEL CURSO — sistema de diseño Volt (plantillas/volt-style-guide.html).
   El generador (herramientas/generar-index-html.py) construye INDEX_DATA a partir de
@@ -99,6 +100,7 @@
   .badge { font-size:var(--fs-caption); font-weight:var(--fw-medium); padding:3px 10px; border-radius:var(--r-pill); white-space:nowrap; }
   .badge.accent { background:var(--accent-weak); color:var(--accent); }
   .badge.success { background:var(--success-weak); color:var(--success); }
+  .badge.danger { background:var(--danger-weak); color:var(--danger); }
   .badge.neutral { background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); }
 
   /* Botones — small en toda la ficha; el CTA no existe aquí como acción única de portada */
@@ -197,14 +199,6 @@
     <h2>Dominios y pesos</h2>
     <p class="note">Cinco dominios evaluables suman el 100% de la puntuación; el Bloque 0 de este curso es transversal y no tiene peso propio en el blueprint, pero sustenta la mecánica de base (API, tool use, bucle agéntico) que aparece como distractor en preguntas de los cinco dominios.</p>
     <div class="blueprint-grid" id="blueprint-grid"></div>
-    <div class="doc-links" id="doc-links">
-      <a class="doc-link" target="_blank" rel="noopener" href="https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2F6nizmqk8tpzpfjvt6qmmav7rh%2Fpublic%2F1783542750%2FClaude+Certified+Architect+%E2%80%93+Foundations+Exam+Guide.pdf">Guía oficial del examen (PDF) <span class="ext">↗</span></a>
-      <a class="doc-link" target="_blank" rel="noopener" href="https://platform.claude.com/docs">Docs oficiales — Claude API <span class="ext">↗</span></a>
-      <a class="doc-link" target="_blank" rel="noopener" href="https://code.claude.com/docs">Docs oficiales — Claude Code <span class="ext">↗</span></a>
-      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/">Anthropic Partner Academy <span class="ext">↗</span></a>
-      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/page/faq-certifications">FAQ de certificaciones <span class="ext">↗</span></a>
-      <a class="doc-link" target="_blank" rel="noopener" href="https://www.pearsonvue.com/us/en/anthropic.html">Pearson VUE — programación del examen <span class="ext">↗</span></a>
-    </div>
   </section>
 
   <section class="block" id="progreso">
@@ -216,7 +210,7 @@
         <div class="bar-track"><div class="bar-fill" id="global-bar"></div></div>
         <div class="bar-pct" id="global-pct">0%</div>
       </div>
-      <p class="note" style="margin-top:var(--sp-3)">Cada bloque aporta la media de sus dos barras (guía leída + aciertos del quiz; 0% sin datos, 100% si está marcado <strong>completado</strong>, a mano o automáticamente al leer el 100% de la guía y superar el corte de aprobado del quiz); la barra global es la media de esos 6 porcentajes sobre el curso completo, aunque los bloques 1–5 sigan «Próximamente». Las barras de cada ficha solo tienen datos si abres esos recursos desde este mismo origen (mismo sitio o carpeta) en este navegador; si no hay datos, se muestran como «—».</p>
+      <p class="note" style="margin-top:var(--sp-3)">Cada bloque aporta la media de sus dos barras (guía leída + aciertos del quiz; 0% sin datos, 100% si está marcado <strong>completado</strong>, a mano o automáticamente); el simulacro aporta 100% en cuanto tiene un intento terminado (sin exigir aprobar el corte) o 0% mientras no lo tenga; la barra global es la media de esos 7 componentes — 6 bloques + simulacro — sobre el curso completo, aunque los bloques 1–5 sigan «Próximamente». Las barras de cada ficha solo tienen datos si abres esos recursos desde este mismo origen (mismo sitio o carpeta) en este navegador; si no hay datos, se muestran como «—».</p>
       <div class="progress-actions"><button type="button" class="btn-reset" id="reset-all">Reiniciar todo el progreso del curso</button></div>
     </div>
   </section>
@@ -225,6 +219,25 @@
     <div class="eyebrow">Contenido</div>
     <h2>Bloques del curso</h2>
     <div class="blocks-grid" id="blocks-grid"></div>
+  </section>
+
+  <section class="block" id="simulacro">
+    <div class="eyebrow">04 — Evaluación</div>
+    <h2>Simulacro de examen</h2>
+    <div class="blocks-grid" id="simulacro-grid"></div>
+  </section>
+
+  <section class="block" id="referencias">
+    <div class="eyebrow">05 — Documentación</div>
+    <h2>Referencias oficiales</h2>
+    <div class="doc-links" id="doc-links">
+      <a class="doc-link" target="_blank" rel="noopener" href="https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2F6nizmqk8tpzpfjvt6qmmav7rh%2Fpublic%2F1783542750%2FClaude+Certified+Architect+%E2%80%93+Foundations+Exam+Guide.pdf">Guía oficial del examen (PDF) <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://platform.claude.com/docs">Docs oficiales — Claude API <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://code.claude.com/docs">Docs oficiales — Claude Code <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/">Anthropic Partner Academy <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/page/faq-certifications">FAQ de certificaciones <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://www.pearsonvue.com/us/en/anthropic.html">Pearson VUE — programación del examen <span class="ext">↗</span></a>
+    </div>
   </section>
 
 </div>
@@ -236,7 +249,7 @@
 // contra los ficheros que existen de verdad en corpus/ y recursos/.
 const INDEX_DATA =
 // __INDEX_DATA_START__
-{"generado":"2026-01-01","examenVersion":"1.0","dominios":[{"n":1,"nombre":"DEMO domain","peso":27,"bloqueCurso":4}],"bloques":[{"n":0,"titulo":"DEMO — sustituir por los datos reales","dominioNum":null,"peso":null,"dominioNombre":null,"corpusVersion":"1.0","descripcion":"DEMO — 1-2 frases extraídas de la guía.","guia":{"version":"1.0","lecciones":0,"html":null},"quiz":null,"flashcards":null,"resumen":null}]}
+{"generado":"2026-01-01","examenVersion":"1.0","dominios":[{"n":1,"nombre":"DEMO domain","peso":27,"bloqueCurso":4}],"bloques":[{"n":0,"titulo":"DEMO — sustituir por los datos reales","dominioNum":null,"peso":null,"dominioNombre":null,"corpusVersion":"1.0","descripcion":"DEMO — 1-2 frases extraídas de la guía.","guia":{"version":"1.0","lecciones":0,"html":null},"quiz":null,"flashcards":null,"resumen":null}],"simulacro":{"version":"1.0","html":null,"preguntas":null,"duracionMin":null,"passing":720,"composicion":[]}}
 // __INDEX_DATA_END__
 ;
 
@@ -350,10 +363,17 @@ const INDEX_DATA =
   // "Próximamente" y por tanto pesen 0 hasta que tengan recursos o se
   // marquen completados a mano. Redondeo al entero más cercano, igual que
   // el resto de porcentajes de la página (Math.round + clamp).
+  // El simulacro entra como un componente más de la media global (aporte
+  // binario: 100 si hay al menos un intento TERMINADO -- existe "best" en
+  // "ccarf-sum-quiz-simulacro", no exige aprobar el corte -- 0 si no; un
+  // intento a medias no cuenta). Denominador 7 = 6 bloques + simulacro.
+  // simulacroBestRaw() está definida más abajo (hoisting: misma función
+  // envolvente, así que es segura de llamar aquí).
   function updateGlobalBar() {
     const bloques = INDEX_DATA.bloques;
-    const sum = bloques.reduce(function (acc, b) { return acc + blockPct(b); }, 0);
-    const pct = clamp(Math.round(sum / bloques.length));
+    const simDone = simulacroBestRaw() != null;
+    const sum = bloques.reduce(function (acc, b) { return acc + blockPct(b); }, 0) + (simDone ? 100 : 0);
+    const pct = clamp(Math.round(sum / (bloques.length + 1)));
     document.getElementById("global-bar").style.width = pct + "%";
     document.getElementById("global-pct").textContent = pct + "%";
   }
@@ -402,6 +422,61 @@ const INDEX_DATA =
   }
 
   // ===================================================================
+  // SIMULACRO — examen completo (60 preguntas, todo el blueprint). Es
+  // material de EVALUACIÓN, no de avance: a propósito no participa en
+  // blockPct()/updateGlobalBar() (ambas solo recorren INDEX_DATA.bloques,
+  // nunca INDEX_DATA.simulacro) ni en latestContinue()/el botón "Continuar"
+  // por el mismo motivo; siempre enlaza a su portada normal, sin
+  // "?continue=1" (quiz.template.html ya ofrece "Reanudar intento" en la
+  // portada incluso con solo_examen:true, así que no hace falta forzarlo).
+  // Mejor resultado leído de "ccarf-sum-quiz-simulacro".best (mismo campo y
+  // misma fórmula de conversión que en el resto del índice); aprobado/
+  // suspendido con el mismo corte oficial QUIZ_PASS_SCALED.
+  // ===================================================================
+  function simulacroBestRaw() {
+    try {
+      const st = JSON.parse(localStorage.getItem("ccarf-sum-quiz-simulacro"));
+      return (st && st.best) ? st.best : null;
+    } catch (e) { return null; }
+  }
+  function renderSimulacro() {
+    const slot = document.getElementById("simulacro-grid");
+    const s = INDEX_DATA.simulacro;
+    if (!s) { slot.innerHTML = ""; return; }
+    const disponible = !!s.html;
+    const desc = (s.preguntas != null && s.duracionMin != null && s.passing != null)
+      ? s.preguntas + " preguntas · " + s.duracionMin + " min · corte de aprobado " + s.passing + "/1000 · composición por pesos del blueprint."
+      : "Examen completo de práctica sobre los 6 bloques del curso.";
+    const compBadges = (s.composicion || []).map(function (c) {
+      const tag = c.dominioNum == null ? "Transversal" : "D" + c.dominioNum;
+      return '<span class="badge neutral">' + tag + " " + c.count + '</span>';
+    }).join("");
+    const best = simulacroBestRaw();
+    let resultBadges;
+    if (best == null) {
+      resultBadges = '<span class="badge neutral">Mejor resultado: —</span>';
+    } else {
+      const pct = clamp(Math.round((best - 100) / 900 * 100));
+      const passed = best >= QUIZ_PASS_SCALED;
+      resultBadges = '<span class="badge neutral">Mejor resultado: ' + pct + '% aciertos</span>' +
+        '<span class="badge ' + (passed ? "success" : "danger") + '">' + (passed ? "Aprobado" : "Suspendido") + '</span>';
+    }
+    const action = disponible
+      ? '<a class="btn secondary" href="' + esc(s.html) + '">Simulacro</a>'
+      : '<span class="badge neutral">Próximamente</span>';
+    const card = document.createElement("div");
+    card.className = "block-card";
+    card.innerHTML =
+      '<div class="bc-top"><div><div class="eyebrow">Examen completo</div><h3>Simulacro de examen</h3></div><span class="badge accent">Modo examen</span></div>' +
+      '<p class="bc-desc">' + esc(desc) + '</p>' +
+      '<div class="meta-row">' + compBadges + '</div>' +
+      '<div class="meta-row">' + resultBadges + '</div>' +
+      '<div class="actions-row">' + action + '</div>';
+    slot.innerHTML = "";
+    slot.appendChild(card);
+  }
+
+  // ===================================================================
   // REINICIO DE PROGRESO — inventario de claves localStorage por bloque
   // (obtenido con grep sobre las 3 plantillas de recursos, 2026-08-07):
   //   - "ccarf-sum-guia-<N>"             guia-interactiva.template.html:
@@ -429,11 +504,33 @@ const INDEX_DATA =
     const b = INDEX_DATA.bloques.find(function (x) { return x.n === n; });
     const out = ["ccarf-sum-guia-" + n, "ccarf-sum-quiz-" + n, doneKey(n)];
     const quizSuffix = (b && b.quiz && b.quiz.version) ? "-v" + b.quiz.version : null;
+    // El título de un bloque siempre empieza por "Bloque <n> "; se exige ese
+    // prefijo (no solo "ccarf-quiz-") para no colisionar con la clave cruda
+    // del simulacro ("ccarf-quiz-Simulacro de examen CCAR-F-v1.0"), que
+    // puede compartir la misma versión "-v<versión>" que un bloque.
+    const quizPrefix = "ccarf-quiz-Bloque " + n + " ";
     const fcPrefix = "ccarf-fc-b" + n + "-v";
     Object.keys(localStorage).forEach(function (k) {
       if (k.indexOf(fcPrefix) === 0) out.push(k);
-      if (quizSuffix && k.indexOf("ccarf-quiz-") === 0 && k.slice(-quizSuffix.length) === quizSuffix) out.push(k);
+      if (quizSuffix && k.indexOf(quizPrefix) === 0 && k.slice(-quizSuffix.length) === quizSuffix) out.push(k);
     });
+    return out;
+  }
+  // Claves del simulacro (recursos/simulacro/): "ccarf-sum-quiz-simulacro"
+  // (resumen; cfg.bloque="simulacro" en quiz.template.html) + su intento
+  // crudo "ccarf-quiz-Simulacro de examen CCAR-F-v<versión>" (mismo patrón
+  // de prefijo específico + sufijo de versión que blockStorageKeys, para no
+  // colisionar en sentido inverso con las claves de un bloque). El simulacro
+  // no tiene checkbox "completado" propio.
+  function simulacroStorageKeys() {
+    const sim = INDEX_DATA.simulacro;
+    const out = ["ccarf-sum-quiz-simulacro"];
+    const suffix = (sim && sim.version) ? "-v" + sim.version : null;
+    if (suffix) {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf("ccarf-quiz-Simulacro") === 0 && k.slice(-suffix.length) === suffix) out.push(k);
+      });
+    }
     return out;
   }
   function removeKeys(keys) {
@@ -448,15 +545,17 @@ const INDEX_DATA =
     renderContinueButton();
   }
   function resetAll() {
-    const ok = window.confirm("¿Reiniciar el progreso de todo el curso? Se borrará la lectura de las guías, los resultados de los quiz y las marcas de completado de los 6 bloques.");
+    const ok = window.confirm("¿Reiniciar el progreso de todo el curso? Se borrará la lectura de las guías, los resultados de los quiz y las marcas de completado de los 6 bloques, y el mejor resultado del simulacro.");
     if (!ok) return;
     INDEX_DATA.bloques.forEach(function (b) { removeKeys(blockStorageKeys(b.n)); });
+    removeKeys(simulacroStorageKeys());
     Object.keys(localStorage).filter(function (k) { return k.indexOf("ccarf-index-") === 0; }).forEach(function (k) {
       try { localStorage.removeItem(k); } catch (e) {}
     });
     renderBlocks();
     updateGlobalBar();
     renderContinueButton();
+    renderSimulacro();
   }
 
   // ===================================================================
@@ -537,6 +636,7 @@ const INDEX_DATA =
   renderBlocks();
   updateGlobalBar();
   renderContinueButton();
+  renderSimulacro();
   document.getElementById("reset-all").addEventListener("click", resetAll);
 })();
 </script>
