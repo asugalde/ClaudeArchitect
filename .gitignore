@@ -18,3 +18,7 @@ node_modules/
 # OS noise
 Thumbs.db
 Desktop.ini
+
+# Editor/IDE local config
+.vscode/
+.idea/
