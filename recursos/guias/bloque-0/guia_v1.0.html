@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloque 0 — Fundamentos: API de Claude, tool use y bucle agéntico</title>
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{var l=localStorage.getItem("ccarf-lang");document.documentElement.dataset.lang=(l==="python")?"python":"typescript"}catch(e){document.documentElement.dataset.lang="typescript"}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* Design tokens · Volt (copiados de plantillas/volt-style-guide.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  /* Topbar sticky — marca a la izquierda, controles (tema/idioma/pantalla completa) a la derecha. */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
+  .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-5); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
+  .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+    border-right:1px solid var(--border); padding-right:var(--sp-5); }
+  .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
+  .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
+    white-space:normal; transition:color var(--ease),border-color var(--ease); }
+  .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
+  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
+
+  @media (max-width:900px) {
+    .layout { flex-direction:column; gap:var(--sp-4); }
+    .sidebar { position:static; width:100%; flex:0 0 auto; max-height:none; overflow:visible;
+      border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:var(--sp-4); }
+    .content-wrap { max-width:100%; }
+  }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin-top:var(--sp-8); border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin-top:var(--sp-7); }
+  /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
+     (consolidation/namespacing/renaming/splitting) son una sola palabra sin
+     punto de corte y se salian de la caja en movil. Solo parte si desborda. */
+  p, li { max-width:72ch; overflow-wrap:break-word; }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  strong { font-weight:var(--fw-semibold); }
+
+  /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
+     (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
+     de corte que desbordaba el ancho en movil. */
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
+  pre code { background:none; border:none; color:inherit; padding:0; }
+  pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
+  /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
+  pre[data-lang] { position:relative; padding-top:30px; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  /* Referencias oficiales al cierre de cada lección. */
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
+  /* Foco visible (regla de accesibilidad Volt). */
+  :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  tbody tr:hover { background:var(--surface-2); }
+
+  blockquote { border-left:3px solid var(--accent); margin:1.2em 0; padding:8px 18px; color:var(--text-muted); }
+  blockquote p { margin:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:var(--sp-6) 0; }
+
+  .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
+  .minicheck .mc-q { margin-top:0; }
+  .minicheck label { display:block; padding:5px 0; cursor:pointer; }
+  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover { background:var(--accent-hover); }
+  .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
+  .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
+  .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
+  body.print-mode .mc-answer, .mc-answer { font-weight:var(--fw-semibold); color:var(--success); }
+
+  .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .print-only { display:none; }
+  @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; }
+  }
+  @media print {
+    .topbar, .sidebar, .minicheck button { display:none !important; }
+    .wrap, .layout, main { max-width:100%; padding:0; margin:0; border:none; }
+    h2 { break-before:page; }
+    h2:first-of-type { break-before:auto; }
+    pre { white-space:pre-wrap; }
+    a { color:inherit; text-decoration:none; }
+    .print-only { display:block; }
+  }
+  body.print-mode .sidebar, body.print-mode .minicheck button { display:none; }
+  .theme-toggle, .fs-toggle { width:40px; padding-left:0; padding-right:0; text-align:center; }
+  html[data-lang="typescript"] .lang-variant[data-lang="python"],
+  html[data-lang="python"] .lang-variant[data-lang="typescript"] { display:none; }
+  .lang-variant > pre { margin-top:0; }
+  .lang-variant .lang-note { max-width:72ch; margin:8px 0 0; font-size:var(--fs-caption); line-height:1.45; color:var(--text-muted); border-left:3px solid var(--warning); padding-left:10px; }
+  .lang-variant .lang-note code { font-size:.92em; }
+  /* El PDF de estudio no tiene JS ni toggle: imprime siempre TypeScript. */
+  @media print {
+    .lang-variant[data-lang="python"] { display:none !important; }
+    .lang-variant[data-lang="typescript"] { display:block !important; }
+  }
+
+  /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
+  #contenido { counter-reset:sec; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    letter-spacing:.08em; margin-bottom:6px; }
+
+  /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
+  .minicheck button { color:var(--on-accent); }
+
+  /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
+  @media print {
+    .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
+    .eyebrow { color:#0E82FF; }
+    .hero h1 { color:#0E1B2C; }
+    .hero .lead { color:#45536C; }
+    #contenido > h2::before { color:#0E82FF; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="topbar-controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · Guía de estudio</div>
+    <h1>Bloque 0 — Fundamentos: API de Claude, tool use y bucle agéntico</h1>
+    <p class="lead">Peso en el examen: transversal (sin dominio propio; sustenta los Task Statements 1.1, 2.1, 2.3 y 4.3) · Escenarios donde cae: distractores de mecánica de la API incrustados en preguntas de los cinco dominios examinables</p>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <nav id="toc"><div class="eyebrow">Contenido</div><div id="toc-links"></div></nav>
+    </aside>
+    <main class="content-wrap">
+    <div id="contenido">
+      <h2 id="que-evalua-el-examen">Qué evalúa el examen en este bloque</h2>
+      <p>Este bloque no tiene preguntas propias en el blueprint oficial —no aparece como dominio ni lleva peso asignado—, pero el examen da por sentado su dominio como base mecánica de los cinco dominios evaluables y lo explota como fuente de distractores en preguntas de nivel superior. Cuando una pregunta de arquitectura multi-agente (dominio 1) menciona <code>stop_reason</code>, o cuando una pregunta de diseño de tools (dominio 2) contrasta dos descripciones parecidas, lo que realmente se mide es si dominas esta mecánica de base, no solo el concepto de nivel superior que la envuelve. Un ejemplo típico de enunciado: se muestra un fragmento de código con el orden de content blocks invertido (<code>text</code> antes que <code>tool_result</code>) y se pregunta qué ocurre al enviar ese request, o se presenta un <code>stop_reason: "pause_turn"</code> y se pide identificar el siguiente paso correcto del cliente. Los seis ejes de este bloque (0.1 a 0.6) recorren, en orden, la anatomía del request/response, la definición de tools, el ciclo <code>tool_use</code>/<code>tool_result</code>, el control por <code>stop_reason</code>, las opciones de <code>tool_choice</code>, y la frontera entre decisión dirigida por el modelo y flujo determinista.</p>
+
+      <h2 id="antes-de-empezar">Antes de empezar</h2>
+      <p>Este es el primer bloque del curso: no exige haber completado ningún otro antes. Sí conviene llegar con familiaridad general en el uso de una API REST y en JSON Schema, porque el bloque no se detiene a explicar esos fundamentos genéricos, solo su aplicación específica en la Messages API de Claude. Al terminarlo deberías poder leer cualquier fragmento de código de un bucle agéntico —correcto o defectuoso— y saber de inmediato en qué campo mirar primero: antes de razonar sobre arquitectura multi-agente, diseño de tools o gestión de contexto (bloques siguientes), hay que dominar esta mecánica de base.</p>
+
+      <hr>
+
+      <h2 id="leccion-0-1">Lección 1 — Anatomía de la Messages API: request, response y la trampa del estado</h2>
+
+      <p>La Messages API (<code>POST /v1/messages</code>) es el único punto de entrada a Claude, y entenderla bien es el primer filtro que separa a quien sabe construir un bucle agéntico de quien lo intenta a base de prueba y error. La razón de que exista como endpoint único, sin variantes por caso de uso, es que todo —desde una pregunta suelta hasta un agente que encadena veinte llamadas a tools— se reduce a la misma forma de request. Y esa forma esconde la asunción que más bugs de arranque provoca: la API es completamente <strong>stateless</strong> (sin estado). El servidor no recuerda nada entre dos requests; cada iteración de un bucle agéntico es, literalmente, un request nuevo que reenvía el historial completo acumulado hasta ese punto. Si el cliente no reconstruye y envía ese historial, el modelo simplemente no lo tiene.</p>
+
+      <p>Un request lleva <code>model</code>, <code>max_tokens</code> (obligatorio) y el array <code>messages</code>; opcionalmente, <code>system</code> como parámetro <strong>top-level</strong>, nunca como un mensaje con <code>role: "system"</code> dentro del array (la única excepción documentada son <em>system messages</em> a mitad de conversación en Claude Opus 5, Opus 4.8, Fable 5 y Mythos 5, y siempre después de un turno de usuario). Cada elemento de <code>messages</code> tiene <code>role</code> (<code>user</code> o <code>assistant</code>) y <code>content</code> (string o array de content blocks). <code>max_tokens</code> acota únicamente el presupuesto de tokens de <strong>salida</strong>: si la generación lo agota a media respuesta, <code>stop_reason</code> pasa a <code>"max_tokens"</code>, y no tiene nada que ver con el tamaño de la ventana de contexto. La response devuelve <code>id</code>, <code>type: "message"</code>, <code>role: "assistant"</code>, <code>content</code> (array de blocks generados por el modelo: <code>text</code> y <code>tool_use</code> — los blocks <code>tool_result</code> pertenecen siempre a mensajes <code>role: "user"</code> que construye el cliente, nunca a la respuesta del asistente), <code>model</code>, <code>stop_reason</code>, <code>stop_sequence</code> (<code>null</code> si no aplica) y <code>usage</code> (<code>input_tokens</code>, <code>output_tokens</code>).</p>
+
+      <pre data-lang="json"><code>// Request básico
+{
+  "model": "claude-opus-5",
+  "max_tokens": 1024,
+  "system": "You are a helpful assistant.",
+  "messages": [
+    {"role": "user", "content": "Hello, Claude"},
+    {"role": "assistant", "content": "Hello!"},
+    {"role": "user", "content": "Can you describe LLMs?"}
+  ]
+}</code></pre>
+
+      <pre data-lang="json"><code>// Response de éxito
+{
+  "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
+  "type": "message",
+  "role": "assistant",
+  "content": [{"type": "text", "text": "LLMs are..."}],
+  "model": "claude-opus-5",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {"input_tokens": 12, "output_tokens": 6}
+}</code></pre>
+
+      <p>El patrón correcto para multi-turno es simple: hacer <em>append</em> de cada turno (mensaje de usuario, respuesta del asistente) al array <code>messages</code> local del cliente, y reenviar ese array completo en el siguiente request. Es literalmente el mecanismo que sostiene la conversación progresiva y, extendido con <code>tool_result</code>, el bucle agéntico completo. Un detalle que suele sorprender: los turnos previos no tienen por qué provenir de respuestas reales del modelo — la documentación oficial permite mensajes <code>assistant</code> <strong>sintéticos</strong> construidos por el propio cliente (few-shot conversacional, contexto preconfigurado), un patrón válido y frecuente en producción.</p>
+
+      <p>En producción, el síntoma de no haber interiorizado esto es reconocible al instante: un agente que "olvida" lo que el usuario dijo hace tres turnos, o que responde con normalidad a la primera pregunta y luego empieza a repetir información ya dada. La causa casi siempre es la misma: alguien, buscando "ahorrar tokens", empezó a enviar solo el último turno en vez del historial completo, sin darse cuenta de que sin ese historial el modelo literalmente no tiene memoria de nada anterior — no es que "se le olvide", es que nunca lo recibió.</p>
+
+      <p>El anti-patrón gemelo, más sutil, es colocar <code>system</code> como un mensaje dentro del array (<code>{"role": "system", "content": "..."}</code>). Alguien razonable podría pensar que, si <code>messages</code> acepta roles, <code>system</code> debería ser uno más — pero eso produce error o comportamiento indefinido, porque <code>system</code> está reservado como parámetro top-level, fuera del array. El examen explota exactamente esta confusión como distractor: presenta un ejemplo con <code>system</code> dentro de <code>messages</code> y pregunta si es válido.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> <code>system</code> siempre es top-level, nunca un rol dentro de <code>messages</code> (salvo la excepción de mid-conversation system messages en los cuatro modelos citados); <code>max_tokens</code> limita solo la salida, nunca el contexto total.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 1.</strong> ¿Dónde debe ir el parámetro <code>system</code> en un request a la Messages API?</p>
+        <label><input type="radio" name="mc1" value="A"> A. Como un mensaje <code>{"role": "system", ...}</code> dentro del array <code>messages</code>.</label>
+        <label><input type="radio" name="mc1" value="B"> B. Como parámetro top-level del request, fuera del array <code>messages</code>.</label>
+        <label><input type="radio" name="mc1" value="C"> C. Dentro de <code>tools</code>, junto a la definición de cada tool.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="salvo la excepción de mid-conversation system messages en modelos concretos (Opus 5, Opus 4.8, Fable 5, Mythos 5), system siempre es un parámetro top-level, nunca un mensaje con role system dentro del array."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/working-with-messages" target="_blank" rel="noopener">Working with the Messages API</a></p>
+
+      <hr>
+
+      <h2 id="leccion-0-2">Lección 2 — Definición de tools con JSON Schema: description, input_schema y strict tool use</h2>
+
+      <p>Una tool se define con <code>name</code> (regex <code>^[a-zA-Z0-9_-]{1,64}$</code>), <code>description</code> (texto plano) e <code>input_schema</code> (JSON Schema con <code>type: "object"</code>, <code>properties</code> y <code>required</code>); opcionalmente <code>input_examples</code>, un array de instancias válidas del schema. La razón de que esto merezca una lección propia dentro de "fundamentos" es que la <code>description</code> es el <strong>único</strong> mecanismo que tiene el modelo para decidir cuándo y cómo invocar una tool: no existe un canal adicional de "intención" fuera de ese texto, así que su calidad determina de forma directa la fiabilidad de la selección de tools en producción.</p>
+
+      <p>Una descripción efectiva cubre qué hace la tool, cuándo usarla (y cuándo NO), qué significa cada parámetro y cómo afecta al comportamiento, caveats o limitaciones explícitas, y ejemplos de entrada si el input es complejo. Compárense estas dos definiciones para la misma tool:</p>
+
+      <pre data-lang="json"><code>// Descripción POBRE (distractor típico)
+{
+  "name": "get_stock_price",
+  "description": "Gets the stock price for a ticker.",
+  "input_schema": {
+    "type": "object",
+    "properties": {"ticker": {"type": "string"}},
+    "required": ["ticker"]
+  }
+}</code></pre>
+
+      <pre data-lang="json"><code>// Descripción BUENA: qué hace, cuándo usarla, límites explícitos
+{
+  "name": "get_stock_price",
+  "description": "Retrieves the current stock price for a given ticker symbol. The ticker symbol must be a valid symbol for a publicly traded company on a major US stock exchange like NYSE or NASDAQ. The tool will return the latest trade price in USD. It should be used when the user asks about the current or most recent price of a specific stock. It will not provide any other information about the stock or company.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "ticker": {"type": "string", "description": "The stock ticker symbol, e.g. AAPL for Apple Inc."}
+    },
+    "required": ["ticker"]
+  }
+}</code></pre>
+
+      <p>La primera versión no dice nada sobre mercado admitido, formato de salida ni límites — el modelo tiene que adivinar. El campo <code>input_examples</code> refuerza esto para parámetros opcionales o complejos, a un coste aproximado de 20-50 tokens por ejemplo simple (100-200 para ejemplos complejos), aunque <strong>no está soportado en server-side tools</strong>:</p>
+
+      <pre data-lang="json"><code>// input_examples para parámetros opcionales/complejos
+{
+  "name": "get_weather",
+  "description": "Get the current weather in a given location",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "location": {"type": "string", "description": "The city and state, e.g. San Francisco, CA"},
+      "unit": {"type": "string", "enum": ["celsius", "fahrenheit"], "description": "The unit of temperature"}
+    },
+    "required": ["location"]
+  },
+  "input_examples": [
+    {"location": "San Francisco, CA", "unit": "fahrenheit"},
+    {"location": "Tokyo, Japan", "unit": "celsius"},
+    {"location": "New York, NY"}
+  ]
+}</code></pre>
+
+      <p><code>strict: true</code> añade una garantía distinta: mediante <em>grammar-constrained sampling</em> (muestreo restringido por gramática) sobre el <code>input</code>, asegura que toda llamada a la tool matchea el schema exactamente —sin parámetros requeridos ausentes ni type mismatches— y funciona <strong>con cualquier valor de <code>tool_choice</code></strong>, incluida <code>"auto"</code>: la garantía aplica siempre que Claude decida llamar a esa tool. Combinarlo con <code>tool_choice: "any"</code> añade una segunda garantía, independiente — que la llamada se produzca —, logrando la garantía compuesta llamada + conformidad de schema:</p>
+
+      <pre data-lang="json"><code>// "any" + strict: true — garantía combinada de llamada Y schema compliance
+{
+  "tools": [
+    {"name": "extract_data", "description": "...", "strict": true, "input_schema": {}}
+  ],
+  "tool_choice": {"type": "any"}
+}</code></pre>
+
+      <p>Cuando el catálogo de tools crece, conviene consolidar: 4-5 tools con un parámetro <code>action</code> reducen la ambigüedad de selección frente a 20 tools hiperespecíficas; y cuando las tools abarcan varios servicios, el <em>namespacing</em> con prefijo (<code>github_list_prs</code>, <code>slack_send_message</code>) evita confusión entre integraciones parecidas.</p>
+
+      <p>En producción, el síntoma más habitual de una <code>description</code> pobre es el <em>misrouting</em>: dos tools parecidas (<code>analyze_content</code> vs <code>analyze_document</code>) y el modelo eligiendo la equivocada porque nada en el texto marcaba la frontera entre ambas. La solución no es tocar el schema, es reescribir la prosa de <code>description</code> para que explique explícitamente cuándo elegir una u otra.</p>
+
+      <p>El anti-patrón gemelo, más peligroso, ocurre en el schema: marcar como <code>required</code> un campo que el documento origen no siempre trae (por ejemplo <code>customer_phone</code> en un formulario donde ese dato es opcional). Alguien razonable piensa "si es obligatorio en el output, márcalo required" — pero el modelo no fabricará valores de la nada para satisfacer un campo requerido; el resultado es un dato inventado (alucinado) para rellenar el hueco. La solución aquí tampoco es la <code>description</code>: es marcar el campo como opcional/nullable en el schema, y si se necesita categorización extensible, usar el patrón <code>enum</code> + campo <code>"other"</code> con detalle en string.</p>
+
+      <p><strong>Tabla de decisión — dos fallos distintos, dos soluciones distintas:</strong></p>
+
+      <table>
+        <thead><tr><th>Síntoma observado</th><th>Causa</th><th>Solución</th></tr></thead>
+        <tbody>
+          <tr><td>Claude llama a la tool equivocada entre dos parecidas</td><td><code>description</code> insuficiente (no marca la frontera de uso)</td><td>Reescribir <code>description</code>: cuándo sí, cuándo no, con ejemplos</td></tr>
+          <tr><td>Claude inventa un valor para un campo que el origen no siempre tiene</td><td><code>input_schema</code> insuficiente (campo marcado <code>required</code> sin serlo realmente)</td><td>Marcar el campo opcional/nullable, o usar <code>enum</code> + <code>"other"</code></td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Trampa de examen:</strong> el distractor típico afirma que <code>strict: true</code> "solo funciona con <code>tool_choice: 'any'</code> o tool forzada" — es falso: <code>strict</code> garantiza conformidad de schema con cualquier <code>tool_choice</code>; lo que aporta <code>"any"</code> es la garantía adicional de que la llamada se produzca.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 2.</strong> Si defines una tool con <code>strict: true</code> y dejas <code>tool_choice: "auto"</code> (el valor por defecto), ¿qué garantiza la API?</p>
+        <label><input type="radio" name="mc2" value="A"> A. Nada: <code>strict</code> solo funciona combinado con <code>tool_choice: "any"</code> o una tool forzada.</label>
+        <label><input type="radio" name="mc2" value="B"> B. Que, si Claude decide llamar a esa tool, el <code>input</code> cumplirá exactamente el <code>input_schema</code>.</label>
+        <label><input type="radio" name="mc2" value="C"> C. Que Claude llamará obligatoriamente a esa tool en algún momento de la conversación.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="strict garantiza conformidad de schema con cualquier valor de tool_choice, incluido &quot;auto&quot;; lo que aporta &quot;any&quot; es una garantía independiente y adicional: que la llamada se produzca."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Define tools</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" target="_blank" rel="noopener">Strict tool use</a></p>
+
+      <hr>
+
+      <h2 id="leccion-0-3">Lección 3 — El ciclo tool_use/tool_result: el mecanismo real del bucle agéntico</h2>
+
+      <p>Si el bloque anterior explicaba cómo describir una tool, este explica qué pasa cuando el modelo decide usarla — y es, en la práctica, el mecanismo concreto en el que se reduce todo "agentic loop" del examen: Claude emite una petición de llamada a tool, el cliente la ejecuta fuera del modelo, y el resultado vuelve a entrar en el historial para que el modelo razone sobre el siguiente paso.</p>
+
+      <pre class="mermaid">sequenceDiagram
+    participant C as Cliente
+    participant A as Messages API
+    C->>A: request (messages + tools)
+    A-->>C: response stop_reason="tool_use"
+    Note over C: extrae id, name, input del tool_use
+    C->>C: ejecuta el tool localmente
+    C->>A: request (historial completo + tool_result)
+    A-->>C: response stop_reason="end_turn"</pre>
+
+      <p>El diagrama muestra que la API es stateless: cada iteración del bucle agéntico reenvía el historial completo acumulado por el cliente, y es el cliente quien decide cuándo terminar el ciclo según el valor de <code>stop_reason</code>.</p>
+
+      <p>La secuencia para <strong>client tools</strong> es: (1) request con array <code>tools</code> y mensaje de usuario; (2) response con <code>stop_reason: "tool_use"</code> y uno o más blocks <code>tool_use</code>; (3) el cliente extrae <code>id</code>, <code>name</code> e <code>input</code> de cada block; (4) el cliente ejecuta el tool real en su propio código; (5) el cliente envía un nuevo request con el historial completo más un mensaje <code>user</code> que contiene el/los block(s) <code>tool_result</code>; (6) el bucle continúa mientras <code>stop_reason == "tool_use"</code>. El block <code>tool_use</code> lleva <code>type: "tool_use"</code>, <code>id</code>, <code>name</code> e <code>input</code>. El block <code>tool_result</code> lleva <code>type: "tool_result"</code>, <code>tool_use_id</code> (debe matchear exactamente el <code>id</code> del <code>tool_use</code> que responde), <code>content</code> opcional (string; array de blocks de texto/imagen/documento/<code>search_result</code>; o vacío) e <code>is_error</code> opcional.</p>
+
+      <p>Hay dos reglas de ordenamiento estrictas que conviene memorizar literalmente: los <code>tool_result</code> deben venir inmediatamente después de los <code>tool_use</code> del asistente en el historial (nada se interpola entre medias), y dentro del content array del mensaje que los contiene, los blocks <code>tool_result</code> van <strong>primero</strong> y cualquier texto adicional va después. Invertir ese orden produce un error 400.</p>
+
+      <pre data-lang="json"><code>// Response con tool_use
+{
+  "id": "msg_01Aq9w938a90dw8q",
+  "type": "message",
+  "role": "assistant",
+  "stop_reason": "tool_use",
+  "content": [
+    {"type": "text", "text": "I'll check the current weather in San Francisco for you."},
+    {"type": "tool_use", "id": "toolu_01A09q90qw90lq917835lq9", "name": "get_weather", "input": {"location": "San Francisco, CA"}}
+  ]
+}</code></pre>
+
+      <pre data-lang="json"><code>// Siguiente request con tool_result (content va primero si hay texto)
+{
+  "role": "user",
+  "content": [
+    {"type": "tool_result", "tool_use_id": "toolu_01A09q90qw90lq917835lq9", "content": "15 degrees Celsius, partly cloudy"}
+  ]
+}</code></pre>
+
+      <pre data-lang="json"><code>// tool_result con error: mensaje instructivo, no genérico
+{
+  "role": "user",
+  "content": [
+    {
+      "type": "tool_result",
+      "tool_use_id": "toolu_01A09q90qw90lq917835lq9",
+      "content": "ConnectionError: the weather service API is not available (HTTP 500)",
+      "is_error": true
+    }
+  ]
+}</code></pre>
+
+      <p>Dentro de los client tools conviven las tools <strong>user-defined</strong> (schema propio) y las de <strong>schema definido por Anthropic</strong> pero ejecución en cliente (<code>bash</code>, <code>text_editor</code>, <code>memory</code>, <code>computer</code>). Los <strong>server tools</strong> (<code>web_search</code>, <code>web_fetch</code>, <code>code_execution</code>, <code>tool_search</code>) los ejecuta Anthropic internamente: si coexisten en el mismo turno con client tools, el cliente solo responde con <code>tool_result</code> para los client tools, mientras el servidor resuelve y devuelve resultado para los suyos. Claude puede emitir varios blocks <code>tool_use</code> en una sola respuesta (llamadas en paralelo); el cliente debe ejecutarlos todos y devolver todos sus <code>tool_result</code> en el siguiente request.</p>
+
+      <p>En producción, el incidente más frecuente ligado a este ciclo es un error 400 esporádico que nadie sabe explicar a la primera: alguien añadió un mensaje de "pensando en voz alta" del cliente antes del <code>tool_result</code> en el mismo content array, sin saber que el orden es estricto. El otro incidente típico, más silencioso, es un <code>tool_result</code> con <code>"is_error": true</code> pero mensaje genérico ("failed") — Claude recibe el fallo pero no tiene información suficiente para decidir entre reintentar o escalar, y el comportamiento resultante parece errático sin que el log ayude a diagnosticar por qué.</p>
+
+      <p>El anti-patrón más grave y menos intuitivo es enviar manualmente un <code>tool_result</code> para un <strong>server tool</strong>: parece razonable "cerrar el ciclo" igual que con un client tool, pero produce comportamiento indefinido porque Anthropic ya lo ejecutó y resolvió internamente — el cliente no tiene nada que resolver ahí.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> <code>tool_result</code> siempre primero en el content array; cada <code>tool_use</code> exige su <code>tool_result</code>, sin excepción, salvo que sea un server tool (que no lleva <code>tool_result</code> manual); mensajes de error siempre instructivos, nunca genéricos.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 3.</strong> En un mensaje <code>user</code> que contiene un block <code>tool_result</code> y también texto adicional, ¿qué orden exige la API en el array <code>content</code>?</p>
+        <label><input type="radio" name="mc3" value="A"> A. Es indiferente; la API reordena los blocks internamente.</label>
+        <label><input type="radio" name="mc3" value="B"> B. El <code>tool_result</code> va primero; el texto adicional después.</label>
+        <label><input type="radio" name="mc3" value="C"> C. El texto va siempre primero, como contexto previo al resultado.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="invertir el orden (texto antes que tool_result) produce un error 400."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works" target="_blank" rel="noopener">How tool use works</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">Tool use overview</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls" target="_blank" rel="noopener">Handle tool calls</a></p>
+
+      <hr>
+
+      <h2 id="leccion-0-4">Lección 4 — stop_reason como control del bucle: el único campo que debe decidir cuándo parar</h2>
+
+      <p><code>stop_reason</code> es el único campo que debe determinar si el bucle agéntico continúa o termina, y con qué acción. Verificarlo antes de procesar el <code>content</code> de la respuesta es crítico: no hacerlo lleva a tratar una respuesta truncada, un rechazo o una pausa de server tools como si fuera una respuesta completa y final.</p>
+
+      <table>
+        <thead><tr><th><code>stop_reason</code></th><th>Qué significa</th><th>Qué hacer</th></tr></thead>
+        <tbody>
+          <tr><td><code>"end_turn"</code></td><td>Respuesta completada con normalidad</td><td>Usar el resultado tal cual</td></tr>
+          <tr><td><code>"tool_use"</code></td><td>Claude quiere llamar a una tool</td><td>Ejecutar, devolver <code>tool_result</code>, continuar el bucle</td></tr>
+          <tr><td><code>"max_tokens"</code></td><td>Se agotó el límite de tokens de salida; respuesta truncada, posiblemente a media palabra</td><td>Subir <code>max_tokens</code> y reintentar, o aceptar la respuesta parcial</td></tr>
+          <tr><td><code>"stop_sequence"</code></td><td>Se emitió una secuencia personalizada (<code>stop_sequences</code>)</td><td>Leer el campo <code>stop_sequence</code> de la response</td></tr>
+          <tr><td><code>"pause_turn"</code></td><td>Con server tools, se alcanzó el límite de iteraciones internas (10 por defecto) sin terminar</td><td>Reenviar el mensaje del asistente tal cual, incluyendo los resultados de <code>server_tool_use</code> ya recibidos</td></tr>
+          <tr><td><code>"refusal"</code></td><td>Claude rechazó responder por política</td><td>Revisar <code>stop_details</code> (categoría, p. ej. "violence") para logging o fallback</td></tr>
+          <tr><td><code>"model_context_window_exceeded"</code></td><td>La ventana de contexto se llenó (raro en modelos recientes, más común con historiales muy largos)</td><td>Tratar como respuesta truncada</td></tr>
+        </tbody>
+      </table>
+
+      <p>La lógica canónica de control es un bucle que reenvía requests mientras <code>stop_reason == "tool_use"</code> y sale explícitamente en cualquier otro valor:</p>
+
+      <div class="lang-variant" data-lang="typescript"><pre data-lang="typescript"><code>let messages: MessageParam[] = [
+  { role: "user", content: "What's the weather in San Francisco?" },
+];
+
+while (true) {
+  const response = await client.messages.create({
+    model: "claude-opus-5",
+    max_tokens: 1024,
+    tools,
+    messages,
+  });
+
+  if (response.stop_reason === "tool_use") {
+    messages.push({ role: "assistant", content: response.content });
+    const toolResults = [];
+    for (const block of response.content) {
+      if (block.type === "tool_use") {
+        const result = await executeTool(block.name, block.input);
+        toolResults.push({
+          type: "tool_result",
+          tool_use_id: block.id,
+          content: result,
+          is_error: false,
+        });
+      }
+    }
+    messages.push({ role: "user", content: toolResults });
+  } else if (response.stop_reason === "end_turn") {
+    return response;
+  } else if (response.stop_reason === "max_tokens") {
+    break; // truncada: subir max_tokens y reintentar, o aceptar parcial
+  } else if (response.stop_reason === "refusal") {
+    console.log(`Refusal: ${JSON.stringify(response.stop_details)}`);
+    break;
+  } else if (response.stop_reason === "pause_turn") {
+    messages.push({ role: "assistant", content: response.content });
+    // reenviar sin tool_result: el servidor continúa iterando
+  }
+}</code></pre></div>
+      <div class="lang-variant" data-lang="python"><pre data-lang="python"><code>messages = [{"role": "user", "content": "What's the weather in San Francisco?"}]
+
+while True:
+    response = client.messages.create(
+        model="claude-opus-5", max_tokens=1024, tools=tools, messages=messages
+    )
+
+    if response.stop_reason == "tool_use":
+        messages.append({"role": "assistant", "content": response.content})
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                result = execute_tool(block.name, block.input)
+                tool_results.append({
+                    "type": "tool_result", "tool_use_id": block.id,
+                    "content": result, "is_error": False
+                })
+        messages.append({"role": "user", "content": tool_results})
+
+    elif response.stop_reason == "end_turn":
+        return response
+
+    elif response.stop_reason == "max_tokens":
+        break  # truncada: subir max_tokens y reintentar, o aceptar parcial
+
+    elif response.stop_reason == "refusal":
+        print(f"Refusal: {response.stop_details}")
+        break
+
+    elif response.stop_reason == "pause_turn":
+        messages.append({"role": "assistant", "content": response.content})
+        # reenviar sin tool_result: el servidor continúa iterando</code></pre></div>
+
+      <pre class="mermaid">flowchart TD
+    R[Response de Claude] --> S{stop_reason}
+    S -->|tool_use| T[Ejecutar tools y enviar tool_result]
+    T --> R
+    S -->|end_turn| E[Usar respuesta final]
+    S -->|max_tokens| M[Truncada: subir max_tokens o aceptar parcial]
+    S -->|pause_turn| P[Reenviar mensaje del asistente sin tool_result]
+    P --> R
+    S -->|refusal| F[Revisar stop_details y aplicar fallback]
+    S -->|stop_sequence| Q[Leer stop_sequence emitida]</pre>
+
+      <p>El diagrama muestra que solo <code>tool_use</code> y <code>pause_turn</code> realimentan el bucle; el resto de valores son estados terminales que exigen una decisión explícita de la aplicación (aceptar, truncar, reintentar o escalar).</p>
+
+      <p>En producción, el incidente más grave ligado a este eje no es un error visible, sino uno silencioso: un servicio con server tools que devuelve al usuario una respuesta con <code>stop_reason: "pause_turn"</code> como si fuera definitiva, porque el código solo comprobaba <code>if response.content</code> sin mirar <code>stop_reason</code>. El usuario recibe una respuesta a medias —el trabajo de los server tools quedó incompleto— y nadie detecta el patrón hasta que se acumulan quejas de "respuestas cortadas" sin ningún error en los logs.</p>
+
+      <p>El anti-patrón de fondo es no verificar <code>stop_reason</code> en absoluto, o sustituirlo por heurísticas de texto ("si la respuesta termina en punto, ha terminado") o un contador arbitrario de iteraciones como mecanismo principal de parada. Ambos enfoques son frágiles: el primero falla ante cualquier respuesta que termine con puntos suspensivos o cite código; el segundo corta bucles legítimos que necesitaban una iteración más, o deja correr bucles que ya deberían haber parado.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> de los siete valores, solo <code>tool_use</code> y <code>pause_turn</code> continúan el bucle; los otros cinco son terminales y exigen una acción explícita distinta de "seguir iterando".</p>
+
+      <div class="minicheck" data-correct="C">
+        <p class="mc-q"><strong>Mini-check 4.</strong> Un response llega con <code>stop_reason: "pause_turn"</code>. ¿Qué debe hacer el cliente?</p>
+        <label><input type="radio" name="mc4" value="A"> A. Tratarlo como una respuesta final y mostrarla al usuario.</label>
+        <label><input type="radio" name="mc4" value="B"> B. Terminar el bucle: <code>pause_turn</code> es un error irrecuperable.</label>
+        <label><input type="radio" name="mc4" value="C"> C. Reenviar el mensaje del asistente tal cual, sin <code>tool_result</code>, para que el servidor continúe iterando los server tools.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="pause_turn indica que se alcanzó el límite de iteraciones internas de server tools (10 por defecto) sin terminar; no es un estado terminal como end_turn."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons" target="_blank" rel="noopener">Handling stop reasons</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works" target="_blank" rel="noopener">How tool use works</a></p>
+
+      <hr>
+
+      <h2 id="leccion-0-5">Lección 5 — Opciones de tool_choice: de la libertad total a la garantía estructural</h2>
+
+      <p><code>tool_choice</code> controla si Claude puede, debe, o no puede llamar a una tool, y en su caso a cuál. Es la palanca que convierte tool use en una garantía estructural (salida siempre validada por schema) o en una decisión libre del modelo, y elegir bien depende de si el caso de uso necesita determinismo o flexibilidad.</p>
+
+      <p>Hay cuatro valores: <code>"auto"</code> (por defecto: Claude decide si llama a una tool o responde directamente, llamando solo cuando el request encaja con una capacidad descrita y la respuesta no está ya en su conocimiento); <code>"any"</code> (Claude debe llamar a alguna tool disponible —no puede responder solo con texto— pero elige cuál); <code>{"type": "tool", "name": "..."}</code> (tool forzada: Claude debe llamar exactamente a esa tool); y <code>"none"</code> (Claude no puede usar ninguna tool, solo texto; es el comportamiento por defecto cuando no hay tools definidas).</p>
+
+      <pre data-lang="json"><code>// "any": fuerza una tool, cualquiera, cuando el tipo de documento es desconocido
+{
+  "model": "claude-opus-5",
+  "max_tokens": 1024,
+  "tools": [
+    {"name": "extract_json", "description": "...", "input_schema": {}},
+    {"name": "extract_xml", "description": "...", "input_schema": {}}
+  ],
+  "tool_choice": {"type": "any"},
+  "messages": [{"role": "user", "content": "Extract this document. (type unknown)"}]
+}</code></pre>
+
+      <pre data-lang="json"><code>// tool forzada: siempre la misma, para el primer paso de un pipeline crítico
+{
+  "tool_choice": {"type": "tool", "name": "extract_metadata"}
+}</code></pre>
+
+      <p>Un detalle poco intuitivo pero recurrente en el examen: cuando <code>tool_choice</code> es <code>"any"</code> o tool forzada, la API <strong>prefilla automáticamente</strong> el mensaje del asistente, así que Claude no emitirá ninguna explicación en texto antes del block <code>tool_use</code>, aunque el prompt se lo pida explícitamente — el prefill lo impide por diseño, no por elección del modelo. Otro efecto colateral real: cambiar el valor de <code>tool_choice</code> entre requests invalida los bloques de mensaje cacheados por prompt caching, aunque las definiciones de tools y el <code>system</code> prompt permanezcan cacheados. Y con <em>extended thinking</em> manual (<code>thinking: {type: "enabled"}</code>), solo son compatibles <code>"auto"</code> o <code>"none"</code>: <code>"any"</code> y la tool forzada NO están soportados con thinking manual, aunque sí lo están con el <em>adaptive thinking</em> (activado por defecto en modelos como Opus 5).</p>
+
+      <p>En producción, <code>"any"</code> es la elección natural cuando el tipo de documento de entrada es desconocido pero hay varios extraction schemas disponibles: deja que el modelo elija cuál encaja, en vez de forzar una tool concreta que podría no ser la adecuada para ese documento. Un patrón habitual en agentes de soporte con varios sub-agentes distribuidos por dominio (facturación, envíos, cuenta) es dejar <code>"auto"</code> para la mayoría de la conversación y reservar la tool forzada exclusivamente para el primer paso de un flujo crítico —"siempre verificar al cliente antes de procesar un refund"—, preservando flexibilidad donde no hay riesgo real.</p>
+
+      <p>El anti-patrón más costoso es forzar una tool en cada turno del bucle: parece más seguro, pero elimina la flexibilidad del modelo por completo — en ese punto ya no es un agente, es un workflow disfrazado (ver Lección 6). Otro anti-patrón, más una trampa de configuración que un error de diseño, es fijar <code>tool_choice: "none"</code> mientras el prompt pide explícitamente que se llame a una tool: la API rechazará la llamada, porque la configuración explícita siempre prevalece sobre lo que pide el texto.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Salida estructurada garantizada por schema</td><td><code>tool_choice: "any"</code> + <code>strict: true</code> en la tool</td><td>El prefill fuerza la llamada; <code>strict</code> garantiza que el input cumple el schema</td></tr>
+          <tr><td>Orden crítico de pasos</td><td>Tool forzada en el primer paso, <code>"auto"</code> en el resto</td><td>Garantiza la secuencia sin sacrificar flexibilidad en lo no crítico</td></tr>
+          <tr><td>Conversación general, tool opcional</td><td><code>"auto"</code> (por defecto)</td><td>Deja que el modelo decida si una tool aporta valor</td></tr>
+          <tr><td>Modo QA puro, sin efectos secundarios</td><td><code>"none"</code></td><td>Impide cualquier llamada a tool</td></tr>
+          <tr><td>Extended thinking manual activado</td><td>Solo <code>"auto"</code> o <code>"none"</code></td><td><code>"any"</code> y la tool forzada no son compatibles con thinking manual</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 5.</strong> Con <em>extended thinking</em> manual activado (<code>thinking: {type: "enabled"}</code>), ¿qué valores de <code>tool_choice</code> son compatibles?</p>
+        <label><input type="radio" name="mc5" value="A"> A. Cualquiera, incluido <code>"any"</code> y la tool forzada.</label>
+        <label><input type="radio" name="mc5" value="B"> B. Solo <code>"auto"</code> o <code>"none"</code>.</label>
+        <label><input type="radio" name="mc5" value="C"> C. Solo la tool forzada (<code>{"type": "tool", "name": "..."}</code>).</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="&quot;any&quot; y la tool forzada no están soportados con thinking manual; sí lo están con adaptive thinking (activado por defecto en modelos como Opus 5)."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Define tools</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview" target="_blank" rel="noopener">Tool use overview</a></p>
+
+      <hr>
+
+      <h2 id="leccion-0-6">Lección 6 — Decisión dirigida por el modelo vs flujo determinista: cuándo un agente, cuándo un workflow</h2>
+
+      <p>La elección entre dejar que Claude decida en cada turno qué tool llamar y en qué orden (decisión dirigida por el modelo, propia de un agente) o fijar de antemano una secuencia de pasos sin margen de decisión (flujo determinista, propio de un workflow programado) es la bisagra conceptual que separa flexibilidad de garantía. No es una elección binaria de "todo agente" o "todo workflow": la pregunta que decide es si el sistema necesita ser 100% determinístico porque una falla es crítica, o si puede permitirse adaptación a contexto variable.</p>
+
+      <p>Un agente (por ejemplo, un customer support agent) analiza el request entrante y decide, con <code>tool_choice: "auto"</code>, si resolver directamente o escalar, basándose en el contenido y no en una ruta fija:</p>
+
+      <pre data-lang="typescript"><code>// AGENTE: tool_choice "auto", el modelo decide qué tool llamar y cuándo
+const response = await client.messages.create({
+  model: "claude-opus-5",
+  max_tokens: 4096,
+  tools: [getCustomer, lookupOrder, processRefund, escalateToHuman],
+  tool_choice: { type: "auto" },
+  system: "You are a support agent. Analyze customer requests and decide whether to resolve or escalate.",
+  messages,
+});</code></pre>
+
+      <p>Un workflow determinista fija la secuencia sin decisión del modelo —"siempre: 1. verificar cliente, 2. buscar pedido, 3. procesar refund"— y si cualquier paso falla, se detiene sin margen de adaptación; se reserva para operaciones críticas donde el cumplimiento no es negociable:</p>
+
+      <pre data-lang="typescript"><code>// WORKFLOW: secuencia fija, sin decisión del modelo
+function processRefundWorkflow(customerId: string, orderId: string) {
+  const customer = getCustomer(customerId);
+  if (!customer.verified) {
+    return error("Customer not verified");
+  }
+  const order = lookupOrder(orderId);
+  if (order.status !== "shipped") {
+    return error("Order not eligible");
+  }
+  return processRefund(orderId, order.total);
+}</code></pre>
+
+      <p>Un tercer patrón, intermedio, combina ambos: mantener el agente flexible en su decisión general mientras se aplica una garantía dura como restricción no negociable, separada del prompt, mediante un hook de enforcement:</p>
+
+      <pre data-lang="typescript"><code>// HOOK de enforcement dentro de un agente: determinismo puntual sin perder flexibilidad
+if (response.stop_reason === "tool_use") {
+  for (const block of response.content) {
+    if (block.type === "tool_use" &amp;&amp; block.name === "process_refund") {
+      const amount = block.input.amount ?? 0;
+      if (amount &gt; 500) {
+        block.name = "escalate_to_human"; // bloquea y redirige
+      }
+    }
+  }
+}</code></pre>
+
+      <p>Relacionado con esta distinción están el <em>prompt chaining</em> (secuencia fija de llamadas, pipeline determinista) y la <em>dynamic decomposition</em> (el modelo genera subtareas a partir de hallazgos intermedios, dirigido por el modelo). El patrón coordinador-subagente es en sí mismo dirigido por modelo —el coordinador decide qué subagentes invocar y en qué orden según la complejidad de la query— aunque cada subagente individual pueda internamente ejecutar un workflow determinista de tarea acotada.</p>
+
+      <p>En producción, el escenario que más se repite en los enunciados del examen es este: un equipo confía únicamente en una instrucción de prompt ("verify customer first") para garantizar un orden crítico, y esa aproximación falla en la práctica en un <strong>12%</strong> de los casos —cifra que el propio exam guide documenta explícitamente—. La solución correcta no es "escribir mejor el prompt", es sustituir esa instrucción por un hook o un gate de prerrequisito programático que bloquee la tool hasta que su dependencia se cumpla, porque un gate programático no depende del razonamiento del modelo en cada turno.</p>
+
+      <p>El anti-patrón narrado más revelador, sin embargo, es el opuesto: forzar todas las tools de un agente en cada paso del bucle (<code>tool_choice</code> forzado siempre) elimina cualquier rasgo de agente real. Alguien razonable podría pensar que forzar cada paso da más control y por tanto más seguridad — pero en ese punto ya no hay agente, es un workflow disfrazado de agente, con el coste añadido (más iteraciones, más tokens) de un sistema que aparenta flexibilidad sin ejercerla. Reconocerlo como lo que es —y simplificarlo a un workflow programado explícito— suele ser más barato y más mantenible que mantener la ficción de "agente" sin decisión real del modelo.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> usa un agente para las fases de descubrimiento y decisión donde la variabilidad del caso real exige razonamiento, y reserva el workflow determinista —o un hook de enforcement dentro del propio agente— para los pasos que no admiten fallo (refund, delete, escalación). El prompt-only guidance nunca es, por sí solo, una garantía estructural.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 6.</strong> Un equipo garantiza "verificar siempre al cliente antes de procesar un refund" únicamente mediante una instrucción en el <code>system</code> prompt. Según el exam guide, ¿qué riesgo documentado tiene ese enfoque?</p>
+        <label><input type="radio" name="mc6" value="A"> A. Ninguno: las instrucciones de prompt son tan fiables como un gate programático.</label>
+        <label><input type="radio" name="mc6" value="B"> B. Falla en la práctica en un porcentaje significativo de casos (12% documentado); se necesita un hook o gate programático.</label>
+        <label><input type="radio" name="mc6" value="C"> C. Solo falla si <code>tool_choice</code> está en <code>"none"</code>.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el prompt-only guidance no es una garantía estructural; el exam guide documenta explícitamente esa tasa de fallo frente a mecanismos programáticos."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works" target="_blank" rel="noopener">How tool use works</a></p>
+
+      <hr>
+
+      <h2 id="checklist-de-salida">Checklist de salida</h2>
+
+      <p>Dominas este bloque si puedes, sin mirar la guía:</p>
+
+      <ul>
+        <li>Explicar por qué la Messages API es stateless y qué implica reenviar el historial completo en cada request, sin confundir <code>max_tokens</code> con el límite de contexto total.</li>
+        <li>Distinguir cuándo un fallo de tool use se debe a una <code>description</code> insuficiente (misrouting) frente a un <code>input_schema</code> insuficiente (alucinación de valores), y saber cuándo aplicar <code>strict: true</code>.</li>
+        <li>Reconstruir de memoria el ciclo completo <code>tool_use</code>/<code>tool_result</code>: orden de content blocks, <code>tool_use_id</code>, y la diferencia entre client tools y server tools.</li>
+        <li>Ante cualquier valor de <code>stop_reason</code> (<code>end_turn</code>, <code>tool_use</code>, <code>max_tokens</code>, <code>pause_turn</code>, <code>refusal</code>, <code>stop_sequence</code>, <code>model_context_window_exceeded</code>), saber qué acción tomar sin depender de heurísticas de texto o contadores arbitrarios.</li>
+        <li>Elegir el valor correcto de <code>tool_choice</code> (<code>auto</code>, <code>any</code>, tool forzada, <code>none</code>) según si el caso exige determinismo, flexibilidad o una garantía compuesta de salida estructurada.</li>
+        <li>Decidir con criterio cuándo un caso de uso necesita un agente (decisión dirigida por el modelo) y cuándo un workflow determinista o un hook de enforcement, sin caer en "todo prompt" como garantía de comportamiento crítico.</li>
+      </ul>
+
+      <h2 id="para-ir-mas-alla">Para ir más allá — referencias anotadas</h2>
+
+      <ul>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/working-with-messages">Working with the Messages API</a> — anatomía completa del request/response, roles y patrón multi-turno; lectura base de la Lección 1.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works">How tool use works</a> — el ciclo completo <code>tool_use</code>/<code>tool_result</code> y el patrón de bucle agéntico; base de las Lecciones 3, 4 y 6.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools">Define tools</a> — cómo escribir <code>description</code> e <code>input_schema</code> efectivos, <code>input_examples</code> y consolidación de tools; base de las Lecciones 2 y 5.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls">Handle tool calls</a> — detalle de ejecución client-side y construcción del <code>tool_result</code>; complementa la Lección 3.</li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons">Handling stop reasons</a> — los siete valores de <code>stop_reason</code> y su tratamiento recomendado; base de la Lección 4.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use overview</a> — panorama general de tool use, client vs server tools y <code>tool_choice</code>; complementa las Lecciones 3 y 5.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use">Strict tool use</a> — mecánica de <code>strict: true</code> y grammar-constrained sampling; base de la Lección 2.</li>
+      </ul>
+
+      <p><em>Historial de versiones del curso: <a href="../../changelog.html">changelog</a> — único para todo el material; esta guía no lleva el suyo propio.</em></p>
+    </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var printMode = /[?&]print=1/.test(location.search);
+  if (printMode) {
+    document.body.classList.add("print-mode");
+    document.documentElement.dataset.lang = "typescript";
+  }
+
+  var darkTheme = document.documentElement.dataset.theme === "dark";
+  if (window.mermaid) mermaid.initialize({
+    startOnLoad: true, securityLevel: "loose", theme: "base",
+    themeVariables: darkTheme ? {
+      primaryColor: "#172230", primaryTextColor: "#E4EDF6", primaryBorderColor: "#3FA9FF",
+      secondaryColor: "#101927", tertiaryColor: "#33260F", lineColor: "#3FA9FF",
+      fontFamily: "Plus Jakarta Sans"
+    } : {
+      primaryColor: "#E2F1FF", primaryTextColor: "#0E1B2C", primaryBorderColor: "#0E82FF",
+      secondaryColor: "#F1F5FA", tertiaryColor: "#FBEFD9", lineColor: "#0E82FF",
+      fontFamily: "Plus Jakarta Sans"
+    }
+  });
+
+  // Build the sidebar TOC from h2/h3 headings.
+  var links = document.getElementById("toc-links");
+  var heads = document.querySelectorAll("#contenido h2, #contenido h3");
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = "sec-" + i;
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    // TOC compacto: "Lección N — Título: subtítulo" -> "LN · Título".
+    var t = h.textContent;
+    var m = t.match(/^Lección\s+(\d+)\s+—\s+(.+)$/);
+    if (m) t = "L" + m[1] + " · " + m[2].split(":")[0].trim();
+    a.textContent = t;
+    a.title = h.textContent;
+    if (h.tagName === "H3") a.className = "l3";
+    links.appendChild(a);
+  });
+  var tocAnchors = links.querySelectorAll("a");
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+    // At the bottom of the page the last headings never cross the 120px line,
+    // so highlight the final one instead of the last one that did. Measure the
+    // viewport with clientHeight as well: mobile browsers report innerHeight as
+    // the *visible* height, shrunk by the retractable URL bar, while the maximum
+    // scroll offset is computed against the layout viewport -- comparing with
+    // innerHeight alone left the bottom unreachable there by the bar's height.
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    if (window.scrollY + viewportH >= docHeight - 24 && heads.length) {
+      cur = heads[heads.length - 1].id;
+    }
+    tocAnchors.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + cur); });
+  }, { passive: true });
+
+  // Wire up mini-checks.
+  document.querySelectorAll(".minicheck").forEach(function (mc) {
+    var correct = (mc.dataset.correct || "").split(",").map(function (s) { return s.trim(); }).sort().join(",");
+    var fb = mc.querySelector(".mc-feedback");
+    var btn = mc.querySelector(".mc-check");
+    if (printMode) { // reveal answers for the PDF export
+      mc.querySelectorAll("label").forEach(function (l) {
+        var v = l.querySelector("input").value;
+        if (correct.split(",").indexOf(v) !== -1) l.classList.add("mc-answer"), l.append(" ✔");
+      });
+      fb.className = "mc-feedback ok";
+      fb.style.opacity = "1";
+      fb.textContent = "Respuesta: " + correct + ". " + (fb.dataset.explica || "");
+      return;
+    }
+    if (btn) btn.addEventListener("click", function () {
+      var sel = Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+      if (!sel) { fb.className = "mc-feedback ko"; fb.textContent = "Selecciona una opción."; return; }
+      var ok = sel === correct;
+      fb.className = "mc-feedback " + (ok ? "ok" : "ko");
+      fb.textContent = (ok ? "✔ Correcto. " : "✘ No exactamente — la respuesta es " + correct + ". ") + (fb.dataset.explica || "");
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var m = location.pathname.match(/bloque-(\d)/);
+  if (!m || !window.localStorage) return;
+  var PKEY = "ccarf-sum-guia-" + m[1];
+  var heads = Array.prototype.slice.call(document.querySelectorAll("#contenido h2"));
+  var mcs = document.querySelectorAll(".minicheck");
+  var st;
+  try { st = JSON.parse(localStorage.getItem(PKEY)) || {}; } catch (e) { st = {}; }
+  st.bloque = m[1];
+  st.visited = st.visited || {};
+  st.mc = st.mc || {};
+  st.mcTry = st.mcTry || {};   // intento por mini-check: {sel, ok}
+  st.totalSections = heads.length;
+  st.mcTotal = mcs.length;
+  // Funcionalidad "Continuar": st.updated hace de timestamp de "último
+  // acceso" a esta guía -- reutiliza el campo ya existente (antes solo se
+  // actualizaba al detectar scroll/mini-check) forzando un guardado aquí, en
+  // cada carga de página, aunque no cambie nada más. El índice del curso
+  // (plantillas/index.template.html) compara este mismo campo con el de
+  // "ccarf-sum-quiz-<bloque>.updated" para decidir a qué recurso apunta el
+  // botón global "Continuar".
+  save();
+  function save() {
+    st.nVisited = Object.keys(st.visited).length;
+    st.mcDone = Object.keys(st.mc).length;
+    st.mcTried = Object.keys(st.mcTry).length;
+    st.updated = Date.now();
+    try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
+  }
+  var t = null;
+  function atBottom() {
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // innerHeight is the *visible* height: mobile browsers shrink it by the
+    // retractable URL bar, but the maximum scroll offset is computed against the
+    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
+    // the document by the bar's height and the bottom was never detected on a
+    // phone or tablet -- which left the closing sections unread for good.
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + viewportH >= docHeight - 24;
+  }
+  // A section counts as read once its heading has scrolled above the middle of
+  // the viewport, and every heading above that line is marked on each sample --
+  // marking only the current one loses the sections the reader scrolled past
+  // between two samples. At the very bottom the trailing headings can never
+  // reach the middle (everything below the fold is already on screen), so they
+  // are marked there; otherwise 100% would be unreachable.
+  function track() {
+    if (t) return;
+    t = setTimeout(function () {
+      t = null;
+      var bottom = atBottom();
+      var middle = window.innerHeight / 2;
+      var was = Object.keys(st.visited).length + "|" + st.lastSection;
+      var cur = null;
+      heads.forEach(function (h) {
+        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+        else if (bottom) { st.visited[h.id] = 1; }
+      });
+      if (bottom && heads.length) cur = heads[heads.length - 1];
+      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+    }, 800);
+  }
+  window.addEventListener("scroll", track, { passive: true });
+  track();
+  function nombreDe(mc) {
+    var inp = mc.querySelector("input");
+    return inp ? inp.name : null;
+  }
+  function seleccion(mc) {
+    return Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+  }
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target;
+    if (!btn.classList || !btn.classList.contains("mc-check")) return;
+    var mc = btn.closest(".minicheck");
+    setTimeout(function () {
+      var fb = mc.querySelector(".mc-feedback");
+      var nombre = nombreDe(mc);
+      if (!fb || !nombre) return;
+      var sel = seleccion(mc);
+      if (!sel) return;                       // "selecciona una opcion" no es un intento
+      st.mcTry[nombre] = { sel: sel, ok: fb.classList.contains("ok") };
+      if (fb.classList.contains("ok")) st.mc[nombre] = 1; else delete st.mc[nombre];
+      save();
+    }, 50);
+  });
+
+  // Al volver a la guia se restaura lo ya respondido: antes se perdia si habias
+  // acertado o fallado, y cada visita empezaba de cero.
+  if (!/[?&]print=1/.test(location.search)) {
+    mcs.forEach(function (mc) {
+      var nombre = nombreDe(mc);
+      var prev = nombre && st.mcTry[nombre];
+      if (!prev || !prev.sel) return;
+      var sel = prev.sel.split(",");
+      Array.prototype.forEach.call(mc.querySelectorAll("input"), function (i) {
+        if (sel.indexOf(i.value) !== -1) i.checked = true;
+      });
+      var btn = mc.querySelector(".mc-check");
+      if (btn) btn.click();                   // reutiliza el mismo render de feedback
+    });
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): salta a la primera
+  // sección (h2) aún no marcada como visitada en st.visited, o a la última
+  // si ya estaban todas leídas. No se activa en modo impresión (el PDF no
+  // tiene JS de scroll con sentido) ni rompe el TOC: se espera a que la
+  // página termine de cargar (mermaid renderiza sus SVGs de forma asíncrona
+  // y puede desplazar alturas justo después del primer pintado).
+  if (/[?&]continue=1/.test(location.search) && !/[?&]print=1/.test(location.search) && heads.length) {
+    var contTarget = null;
+    for (var ci = 0; ci < heads.length; ci++) {
+      if (!st.visited[heads[ci].id]) { contTarget = heads[ci]; break; }
+    }
+    if (!contTarget) contTarget = heads[heads.length - 1];
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        try { history.replaceState(null, "", "#" + contTarget.id); } catch (e) {}
+        contTarget.scrollIntoView();
+      }, 200);
+    });
+  }
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "☀" : "🌙";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  // Solo las guias que traen ambas variantes reciben el switch.
+  if (!document.querySelector(".lang-variant")) return;
+  var NAMES = { python: "Python", typescript: "TypeScript" };
+  var btn = document.createElement("button");
+  btn.className = "lang-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.lang === "python" ? "python" : "typescript"; }
+  function paint() {
+    var other = cur() === "python" ? "typescript" : "python";
+    btn.textContent = NAMES[cur()];
+    btn.title = "Ver los ejemplos de codigo en " + NAMES[other];
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "python" ? "typescript" : "python";
+    document.documentElement.dataset.lang = next;
+    try { localStorage.setItem("ccarf-lang", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "⤡" : "⤢";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+</body>
+</html>

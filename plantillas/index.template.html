@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITULO}}</title>
+<!--
+  PLANTILLA DEL ÍNDICE DEL CURSO — sistema de diseño Volt (plantillas/volt-style-guide.html).
+  El generador (herramientas/generar-index-html.py) construye INDEX_DATA a partir de
+  versiones.json + los ficheros reales de corpus/ y recursos/, y sustituye el objeto
+  de ejemplo del <script> por los datos reales, comprobando antes que cada ruta enlazada
+  existe en disco. No editar aquí los bloques ni sus recursos a mano: se regeneran siempre
+  desde el script.
+-->
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Design tokens · Volt (idénticos a guia-interactiva.template.html / quiz.template.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  .wrap { max-width:1160px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-6); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin:0 0 var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin:0 0 6px; }
+  p { margin:0 0 var(--sp-3); }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  :is(a, button, input, select, label):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  section.block { padding-top:var(--sp-7); border-top:1px solid var(--border); margin-top:var(--sp-7); }
+  section.block:first-of-type { margin-top:0; padding-top:0; border-top:none; }
+  .note { font-size:var(--fs-sm); color:var(--text-muted); max-width:78ch; }
+
+  /* Badges — peso medium (nunca semibold/bold) */
+  .badge { font-size:var(--fs-caption); font-weight:var(--fw-medium); padding:3px 10px; border-radius:var(--r-pill); white-space:nowrap; }
+  .badge.accent { background:var(--accent-weak); color:var(--accent); }
+  .badge.success { background:var(--success-weak); color:var(--success); }
+  .badge.neutral { background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border); }
+
+  /* Botones — small en toda la ficha; el CTA no existe aquí como acción única de portada */
+  .btn { font-family:inherit; font-size:var(--fs-sm); font-weight:var(--fw-semibold); border-radius:var(--r-md);
+    padding:7px 13px; border:1px solid transparent; cursor:pointer; text-align:center; display:inline-block;
+    transition:background var(--ease), border-color var(--ease), color var(--ease); }
+  .btn.primary { background:var(--accent); color:var(--on-accent); }
+  .btn.primary:hover { background:var(--accent-hover); }
+  .btn.secondary { background:transparent; color:var(--text); border-color:var(--border-strong); }
+  .btn.secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn.disabled, .btn[aria-disabled="true"] { opacity:.45; cursor:not-allowed; pointer-events:none; }
+
+  /* ============ BLUEPRINT ============ */
+  .blueprint-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:var(--sp-3); margin:var(--sp-4) 0 var(--sp-5); }
+  .domain-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-4); box-shadow:var(--shadow-sm); }
+  .domain-card .dn { font-family:var(--font-mono); font-size:var(--fs-caption); color:var(--text-subtle); }
+  .domain-card .dp { font-size:1.5rem; font-weight:var(--fw-extra); color:var(--accent); line-height:1.2; margin:2px 0 6px; }
+  .domain-card .dname { font-size:var(--fs-sm); color:var(--text); font-weight:var(--fw-medium); }
+  .domain-card .dblock { font-size:var(--fs-caption); color:var(--text-muted); margin-top:6px; }
+  .doc-links { display:flex; flex-wrap:wrap; gap:var(--sp-3); margin-top:var(--sp-3); }
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:9px 14px; font-size:var(--fs-sm);
+    color:var(--text); background:var(--surface); display:flex; align-items:center; gap:8px; }
+  .doc-link:hover { border-color:var(--accent); }
+  .doc-link .ext { color:var(--text-subtle); font-size:var(--fs-caption); }
+
+  /* ============ PROGRESO GLOBAL ============ */
+  .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5); box-shadow:var(--shadow-sm); }
+  .bar-row { display:flex; align-items:center; gap:var(--sp-4); }
+  .bar-track { flex:1 1 auto; height:10px; border-radius:var(--r-pill); background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
+  .bar-fill { height:100%; background:var(--accent); width:0%; transition:width var(--ease); }
+  .bar-pct { font-family:var(--font-mono); font-weight:var(--fw-bold); font-size:var(--fs-h3); min-width:56px; text-align:right; color:var(--text); }
+  .progress-actions { margin-top:var(--sp-3); }
+
+  /* "Continuar" — la única acción primaria de la vista (regla Volt: un
+     primario por pantalla); el resto de botones de la ficha son secondary. */
+  .continue-slot { margin-bottom:var(--sp-4); }
+  .continue-slot .note { margin:0; }
+  .continue-slot .btn.primary { padding:9px 16px; }
+
+  /* Botones "Reiniciar progreso" — discretos a propósito: texto muted subrayado,
+     sin fondo ni borde, con hover en rojo (danger) solo para indicar que la
+     acción es destructiva sin que compitan visualmente con el resto de la UI. */
+  .btn-reset { font-family:inherit; font-size:var(--fs-caption); font-weight:var(--fw-medium); background:none;
+    border:none; padding:0; color:var(--text-subtle); text-decoration:underline; cursor:pointer; }
+  .btn-reset:hover { color:var(--danger); }
+
+  /* ============ FICHAS DE BLOQUE ============ */
+  .blocks-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:var(--sp-4); margin-top:var(--sp-4); }
+  .block-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5);
+    box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:var(--sp-3); transition:border-color var(--ease); }
+  .block-card.done { border-left:3px solid var(--success); }
+  .block-card.proximamente { opacity:.75; }
+  .block-card .bc-top { display:flex; justify-content:space-between; align-items:flex-start; gap:var(--sp-2); }
+  .block-card .meta-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .block-card .actions-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+  .block-card .secondary-row { font-size:var(--fs-caption); color:var(--text-muted); }
+  .block-card .secondary-row a { font-weight:var(--fw-medium); }
+  .progress-row { display:flex; flex-direction:column; gap:var(--sp-2); border-top:1px solid var(--border); padding-top:var(--sp-3); }
+  .prog-item .prog-label { display:flex; justify-content:space-between; font-size:var(--fs-caption); color:var(--text-muted); margin-bottom:4px; }
+  .prog-item .prog-label b { font-weight:var(--fw-semibold); color:var(--text); }
+  .prog-item .bar-track { height:6px; }
+  .auto-hint { font-size:var(--fs-caption); color:var(--text-subtle); }
+
+  /* Resumen del bloque — siempre visible, 1-2 frases */
+  .bc-desc { margin:0; font-size:var(--fs-sm); color:var(--text-muted); }
+
+  /* Pill "Bloque completado" — estado con intención, no un checkbox suelto */
+  .done-row { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); }
+  .done-left { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pill-toggle { font-family:inherit; font-size:var(--fs-sm); font-weight:var(--fw-medium); border-radius:var(--r-pill);
+    padding:7px 14px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text-muted); cursor:pointer;
+    transition:background var(--ease), border-color var(--ease), color var(--ease); }
+  .pill-toggle:hover { border-color:var(--accent); color:var(--accent); }
+  .pill-toggle.done { background:var(--success-weak); border-color:var(--success); color:var(--success); }
+  .pill-toggle.done:hover { border-color:var(--success); color:var(--success); }
+
+  @media (max-width:700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div id="topbar-controls"></div>
+</header>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · ÍNDICE DEL CURSO</div>
+    <h1>Índice del curso</h1>
+    <p class="lead">El <strong>Claude Certified Architect – Foundations (CCAR-F)</strong> es un examen oficial de Anthropic, gestionado vía Pearson VUE, que evalúa la capacidad de diseñar, configurar y operar sistemas agénticos con Claude en producción. Este curso organiza el temario en un bloque transversal de fundamentos (Bloque 0) y cinco bloques alineados con los dominios del blueprint oficial, cada uno con su guía de estudio y su quiz de práctica. Marca tu avance con el botón de cada ficha: el progreso automático de guía y quiz se calcula solo cuando ya has interactuado con esos recursos en este navegador.</p>
+  </div>
+
+  <section class="block" id="blueprint">
+    <div class="eyebrow">Blueprint del examen</div>
+    <h2>Dominios y pesos</h2>
+    <p class="note">Cinco dominios evaluables suman el 100% de la puntuación; el Bloque 0 de este curso es transversal y no tiene peso propio en el blueprint, pero sustenta la mecánica de base (API, tool use, bucle agéntico) que aparece como distractor en preguntas de los cinco dominios.</p>
+    <div class="blueprint-grid" id="blueprint-grid"></div>
+    <div class="doc-links" id="doc-links">
+      <a class="doc-link" target="_blank" rel="noopener" href="https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2F6nizmqk8tpzpfjvt6qmmav7rh%2Fpublic%2F1783542750%2FClaude+Certified+Architect+%E2%80%93+Foundations+Exam+Guide.pdf">Guía oficial del examen (PDF) <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://platform.claude.com/docs">Docs oficiales — Claude API <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://code.claude.com/docs">Docs oficiales — Claude Code <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/">Anthropic Partner Academy <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://anthropic-partners.skilljar.com/page/faq-certifications">FAQ de certificaciones <span class="ext">↗</span></a>
+      <a class="doc-link" target="_blank" rel="noopener" href="https://www.pearsonvue.com/us/en/anthropic.html">Pearson VUE — programación del examen <span class="ext">↗</span></a>
+    </div>
+  </section>
+
+  <section class="block" id="progreso">
+    <div class="eyebrow">Tu avance</div>
+    <h2>Progreso del curso</h2>
+    <div class="progress-card">
+      <div class="continue-slot" id="continue-slot"></div>
+      <div class="bar-row">
+        <div class="bar-track"><div class="bar-fill" id="global-bar"></div></div>
+        <div class="bar-pct" id="global-pct">0%</div>
+      </div>
+      <p class="note" style="margin-top:var(--sp-3)">Cada bloque aporta la media de sus dos barras (guía leída + aciertos del quiz; 0% sin datos, 100% si está marcado <strong>completado</strong>, a mano o automáticamente al leer el 100% de la guía y superar el corte de aprobado del quiz); la barra global es la media de esos 6 porcentajes sobre el curso completo, aunque los bloques 1–5 sigan «Próximamente». Las barras de cada ficha solo tienen datos si abres esos recursos desde este mismo origen (mismo sitio o carpeta) en este navegador; si no hay datos, se muestran como «—».</p>
+      <div class="progress-actions"><button type="button" class="btn-reset" id="reset-all">Reiniciar todo el progreso del curso</button></div>
+    </div>
+  </section>
+
+  <section class="block" id="bloques">
+    <div class="eyebrow">Contenido</div>
+    <h2>Bloques del curso</h2>
+    <div class="blocks-grid" id="blocks-grid"></div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+// El generador (herramientas/generar-index-html.py) sustituye el objeto de ejemplo
+// siguiente por los datos reales, calculados desde versiones.json y comprobados
+// contra los ficheros que existen de verdad en corpus/ y recursos/.
+const INDEX_DATA =
+// __INDEX_DATA_START__
+{"generado":"2026-01-01","examenVersion":"1.0","dominios":[{"n":1,"nombre":"DEMO domain","peso":27,"bloqueCurso":4}],"bloques":[{"n":0,"titulo":"DEMO — sustituir por los datos reales","dominioNum":null,"peso":null,"dominioNombre":null,"corpusVersion":"1.0","descripcion":"DEMO — 1-2 frases extraídas de la guía.","guia":{"version":"1.0","lecciones":0,"html":null},"quiz":null,"flashcards":null,"resumen":null}]}
+// __INDEX_DATA_END__
+;
+
+(function () {
+  "use strict";
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ===================================================================
+  // SEÑALES DE PROGRESO AUTOMÁTICO — solo se lee lo que otros recursos
+  // persisten de verdad; si la clave no existe se devuelve null y la
+  // ficha muestra "—" (nunca se inventa un valor). Toda señal y todo
+  // agregado se acota a [0,100] justo antes de pintar (clamp() abajo):
+  // un desajuste entre lo persistido y el estado vigente de un recurso
+  // (p.ej. nVisited > totalSections tras cambiar de versión) nunca debe
+  // traducirse en un porcentaje fuera de rango.
+  // ===================================================================
+  function clamp(x) { return Math.max(0, Math.min(100, x)); }
+
+  // Guía (plantillas/guia-interactiva.template.html): cada guía guarda un
+  // resumen propio en "ccarf-sum-guia-<bloque>" -> {nVisited, totalSections,
+  // mcDone, mcTotal, ...}. Señal usada aquí: % de secciones (h2) visitadas.
+  // nVisited se acota primero a totalSections (nunca se puede "visitar" más
+  // secciones de las que la guía vigente tiene) y el cociente final también
+  // se acota con clamp(): así un estado persistido desincronizado (p.ej. de
+  // una versión anterior de la guía con más/menos secciones) no puede pintar
+  // más del 100%.
+  function guideProgress(n) {
+    try {
+      const st = JSON.parse(localStorage.getItem("ccarf-sum-guia-" + n));
+      if (!st || !st.totalSections) return null;
+      const visited = Math.min(st.nVisited || 0, st.totalSections);
+      return clamp(Math.round(visited / st.totalSections * 100));
+    } catch (e) { return null; }
+  }
+  // Quiz (plantillas/quiz.template.html): cada intento sincroniza
+  // "ccarf-sum-quiz-<bloque>" -> {best, ...} con el mejor resultado escalado
+  // estilo Pearson (100-1000, fórmula scaled = 100 + pct*900). Para un % real
+  // hay que invertir esa fórmula; usar "best" sin convertir (o dividido solo
+  // entre 10, ignorando la base de 100 puntos) sobreestima el acierto real y
+  // es una de las dos causas típicas del progreso por encima del 100%.
+  // Resultado acotado a [0,100].
+  function quizProgress(n) {
+    try {
+      const st = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + n));
+      if (!st || !st.best) return null;
+      return clamp(Math.round((st.best - 100) / 900 * 100));
+    } catch (e) { return null; }
+  }
+  // Valor bruto de "best" (escala 100-1000), sin convertir, para comparar
+  // contra el corte de aprobado sin el redondeo de quizProgress() — evita que
+  // un best=719 (no aprobado) se redondee a un % igual al del corte y pase
+  // por error el chequeo de autocompletado.
+  function quizBestRaw(n) {
+    try {
+      const st = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + n));
+      return (st && st.best) ? st.best : null;
+    } catch (e) { return null; }
+  }
+  // Nota: la ficha del quiz/flashcards usa "ccarf-theme" para el tema, igual
+  // que este índice; el tema de flashcards.template.html vive en la clave
+  // "ccarf-tema" (inconsistencia heredada de esa plantilla, no corregida aquí
+  // por estar fuera de alcance) y por tanto no sincroniza con el resto.
+
+  // ===================================================================
+  // AUTOCOMPLETADO (punto 2) — corte de aprobado del examen real (Pearson):
+  // "Passing score: Scaled score of 720 on a scale of 100–1,000" / "the cut
+  // score is 720" (fuentes/exam-guide-oficial-v1.0.txt, líneas 53 y 1122-1124).
+  // No hay umbral propio en preguntas_v1.0.json ni en esquema-pregunta.schema.json,
+  // así que se usa este dato oficial del examen, no un supuesto. Regla de borde:
+  // >= 720 aprueba (nota de corte inclusiva, práctica estándar en programas de
+  // certificación). Un bloque se autocompleta cuando su guía está al 100%
+  // leído (guideProgress===100) Y su mejor intento de quiz alcanza el corte.
+  // ===================================================================
+  const QUIZ_PASS_SCALED = 720;
+  function quizPassed(n) {
+    const raw = quizBestRaw(n);
+    return raw != null && raw >= QUIZ_PASS_SCALED;
+  }
+  function guidePassed(gp) { return gp === 100; }
+
+  // ===================================================================
+  // % DE UN BLOQUE (para la barra global, progreso continuo): media de sus
+  // dos señales visibles en la ficha (guía leída + aciertos del quiz), 0
+  // cuando una señal no tiene datos (nunca se omite, a diferencia de otros
+  // usos de estas mismas señales en la ficha) -- así un bloque a medias
+  // pesa lo que ha avanzado de verdad, no 0 hasta que cierra del todo. Si
+  // el bloque está marcado completado (a mano o por autocompletado) cuenta
+  // 100 sin mirar las señales. Acotado a [0,100].
+  // ===================================================================
+  function blockPct(b) {
+    if (isDone(b.n)) return 100;
+    const gp = (b.guia && b.guia.html) ? guideProgress(b.n) : null;
+    const qp = (b.quiz && b.quiz.html) ? quizProgress(b.n) : null;
+    return clamp(Math.round(((gp || 0) + (qp || 0)) / 2));
+  }
+
+  // "Bloque completado" — botón manual + autocompletado, misma clave.
+  // Nota: el autocompletado solo promueve false -> true; no vuelve a marcar
+  // un bloque que el usuario haya desmarcado a mano mientras siga cumpliendo
+  // las condiciones en la MISMA carga de página (se evalúa una sola vez al
+  // renderizar). Si recarga la página con las condiciones aún cumplidas, se
+  // autocompletará de nuevo: es la limitación esperada de reutilizar una
+  // única clave booleana para "manual" y "automático" (decisión del punto 2:
+  // no añadir una segunda clave para no complicarlo).
+  function doneKey(n) { return "ccarf-index-bloque-" + n + "-done"; }
+  function isDone(n) { try { return localStorage.getItem(doneKey(n)) === "1"; } catch (e) { return false; } }
+  function setDone(n, val) { try { localStorage.setItem(doneKey(n), val ? "1" : "0"); } catch (e) {} }
+
+  // Progreso GLOBAL = media de blockPct() de los 6 bloques -- denominador
+  // SIEMPRE 6 (el curso completo), aunque los bloques 1-5 sigan
+  // "Próximamente" y por tanto pesen 0 hasta que tengan recursos o se
+  // marquen completados a mano. Redondeo al entero más cercano, igual que
+  // el resto de porcentajes de la página (Math.round + clamp).
+  function updateGlobalBar() {
+    const bloques = INDEX_DATA.bloques;
+    const sum = bloques.reduce(function (acc, b) { return acc + blockPct(b); }, 0);
+    const pct = clamp(Math.round(sum / bloques.length));
+    document.getElementById("global-bar").style.width = pct + "%";
+    document.getElementById("global-pct").textContent = pct + "%";
+  }
+
+  // ===================================================================
+  // BOTÓN GLOBAL "CONTINUAR" — el recurso (guía o quiz, de cualquier
+  // bloque) con el timestamp de último acceso MÁS RECIENTE en el tiempo,
+  // no el bloque de número más alto. Campos leídos (ambos escritos por el
+  // propio recurso en cada carga de página, no por este índice):
+  //   - "ccarf-sum-guia-<N>".updated  (plantillas/guia-interactiva.template.html)
+  //   - "ccarf-sum-quiz-<N>".updated  (plantillas/quiz.template.html)
+  // Compatibilidad: los resúmenes ya persistidos ANTES de esta funcionalidad
+  // no traen "updated" -- se tratan como "sin dato" (se ignoran al comparar,
+  // nunca se asume 0/Infinity) hasta que el usuario reabra ese recurso y lo
+  // escriba. Si ningún bloque tiene "updated" todavía, el botón se oculta y
+  // se muestra una nota en su lugar.
+  // ===================================================================
+  function latestContinue() {
+    let best = null;
+    INDEX_DATA.bloques.forEach(function (b) {
+      if (b.guia && b.guia.html) {
+        try {
+          const st = JSON.parse(localStorage.getItem("ccarf-sum-guia-" + b.n));
+          if (st && st.updated && (!best || st.updated > best.updated)) {
+            best = { updated: st.updated, href: b.guia.html + "?continue=1", label: "Bloque " + b.n + " · Guía" };
+          }
+        } catch (e) {}
+      }
+      if (b.quiz && b.quiz.html) {
+        try {
+          const st = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + b.n));
+          if (st && st.updated && (!best || st.updated > best.updated)) {
+            best = { updated: st.updated, href: b.quiz.html + "?continue=1", label: "Bloque " + b.n + " · Quiz" };
+          }
+        } catch (e) {}
+      }
+    });
+    return best;
+  }
+  function renderContinueButton() {
+    const slot = document.getElementById("continue-slot");
+    const c = latestContinue();
+    slot.innerHTML = c
+      ? '<a class="btn primary" href="' + esc(c.href) + '">Continuar — ' + esc(c.label) + '</a>'
+      : '<p class="note">Aún no hay avance guardado en este navegador — empieza por el Bloque 0.</p>';
+  }
+
+  // ===================================================================
+  // REINICIO DE PROGRESO — inventario de claves localStorage por bloque
+  // (obtenido con grep sobre las 3 plantillas de recursos, 2026-08-07):
+  //   - "ccarf-sum-guia-<N>"             guia-interactiva.template.html:
+  //     única clave del bloque; guarda a la vez el resumen (nVisited/
+  //     totalSections) y el estado crudo (visited/mc/mcTry).
+  //   - "ccarf-sum-quiz-<N>"             quiz.template.html: resumen con el
+  //     mejor resultado (best/hits/scaled).
+  //   - "ccarf-quiz-<título>-v<versión>" quiz.template.html: intento crudo
+  //     (en curso o finalizado). El título completo del bloque forma parte
+  //     de la clave, así que en vez de reconstruirlo se localiza por
+  //     prefijo "ccarf-quiz-" + sufijo "-v<versión>" (la versión sí se
+  //     conoce, vía INDEX_DATA). Borrar solo el resumen no basta: si este
+  //     intento crudo sobrevive, el quiz ofrece "reanudar" y puede
+  //     reescribir el resumen (y por tanto el autocompletado) al terminarlo.
+  //   - "ccarf-fc-b<N>-v<versión>"       flashcards.template.html: estado
+  //     Leitner crudo por carta. No se enlaza en la ficha, pero se borra
+  //     igual por higiene, localizado por el mismo patrón de prefijo.
+  //   - "ccarf-index-bloque-<N>-done"    este índice: checkbox/pill.
+  // El reinicio GENERAL borra la unión de las claves de los 6 bloques más
+  // cualquier otra clave con prefijo "ccarf-index-" (barrido de seguridad).
+  // En NINGÚN caso se toca "ccarf-theme" (tema; compartida por este índice,
+  // la guía y el quiz) ni "ccarf-lang" (idioma de código; solo la guía).
+  // ===================================================================
+  function blockStorageKeys(n) {
+    const b = INDEX_DATA.bloques.find(function (x) { return x.n === n; });
+    const out = ["ccarf-sum-guia-" + n, "ccarf-sum-quiz-" + n, doneKey(n)];
+    const quizSuffix = (b && b.quiz && b.quiz.version) ? "-v" + b.quiz.version : null;
+    const fcPrefix = "ccarf-fc-b" + n + "-v";
+    Object.keys(localStorage).forEach(function (k) {
+      if (k.indexOf(fcPrefix) === 0) out.push(k);
+      if (quizSuffix && k.indexOf("ccarf-quiz-") === 0 && k.slice(-quizSuffix.length) === quizSuffix) out.push(k);
+    });
+    return out;
+  }
+  function removeKeys(keys) {
+    keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+  }
+  function resetBlock(n) {
+    const ok = window.confirm("¿Reiniciar el progreso del bloque " + n + "? Se borrará la lectura de la guía, los resultados del quiz y la marca de completado.");
+    if (!ok) return;
+    removeKeys(blockStorageKeys(n));
+    renderBlocks();
+    updateGlobalBar();
+    renderContinueButton();
+  }
+  function resetAll() {
+    const ok = window.confirm("¿Reiniciar el progreso de todo el curso? Se borrará la lectura de las guías, los resultados de los quiz y las marcas de completado de los 6 bloques.");
+    if (!ok) return;
+    INDEX_DATA.bloques.forEach(function (b) { removeKeys(blockStorageKeys(b.n)); });
+    Object.keys(localStorage).filter(function (k) { return k.indexOf("ccarf-index-") === 0; }).forEach(function (k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+    renderBlocks();
+    updateGlobalBar();
+    renderContinueButton();
+  }
+
+  // ===================================================================
+  // BLUEPRINT
+  // ===================================================================
+  const bpGrid = document.getElementById("blueprint-grid");
+  INDEX_DATA.dominios.slice().sort(function (a, b) { return a.n - b.n; }).forEach(function (d) {
+    bpGrid.insertAdjacentHTML("beforeend",
+      '<div class="domain-card"><div class="dn">Dominio ' + d.n + '</div><div class="dp">' + d.peso + '%</div>' +
+      '<div class="dname">' + esc(d.nombre) + '</div><div class="dblock">→ Bloque ' + d.bloqueCurso + '</div></div>');
+  });
+
+  // ===================================================================
+  // FICHAS DE BLOQUE
+  // ===================================================================
+  const grid = document.getElementById("blocks-grid");
+  function renderBlocks() {
+    grid.innerHTML = "";
+    INDEX_DATA.bloques.forEach(function (b) {
+      const disponible = !!(b.guia && b.guia.html);
+      const domBadge = b.peso == null
+        ? '<span class="badge neutral">Transversal</span>'
+        : '<span class="badge accent">Dominio ' + b.dominioNum + ' · ' + b.peso + '%</span>';
+      // Enlaces: solo guía y quiz por ahora (flashcards/resumen se siguen
+      // calculando en DATA pero no se muestran en la ficha). Mismo estilo
+      // (secondary) para los dos: ninguno pesa más que el otro en la ficha.
+      // "?continue=1": la propia guía/quiz decide dónde retomar (siguiente
+      // sección no leída / siguiente pregunta sin responder) con su propio
+      // estado; el índice solo añade el parámetro.
+      let actions = "";
+      if (disponible) {
+        actions += '<a class="btn secondary" href="' + esc(b.guia.html) + '?continue=1">Guía</a>';
+        actions += b.quiz && b.quiz.html ? '<a class="btn secondary" href="' + esc(b.quiz.html) + '?continue=1">Quiz</a>' : '<span class="btn secondary disabled" aria-disabled="true">Quiz</span>';
+      } else {
+        actions = '<span class="badge neutral">Próximamente</span>';
+      }
+      const meta = [
+        b.guia ? '<span class="badge neutral">' + b.guia.lecciones + ' lecciones</span>' : '',
+        b.quiz ? '<span class="badge neutral">' + b.quiz.preguntas + ' preguntas</span>' : ''
+      ].filter(Boolean).join("");
+
+      const gp = disponible ? guideProgress(b.n) : null;
+      const qp = (b.quiz && b.quiz.html) ? quizProgress(b.n) : null;
+      const autoEligible = disponible && (b.quiz && b.quiz.html) && guidePassed(gp) && quizPassed(b.n);
+      if (autoEligible && !isDone(b.n)) setDone(b.n, true);
+      const done = isDone(b.n);
+
+      const card = document.createElement("div");
+      card.className = "block-card" + (done ? " done" : "") + (disponible ? "" : " proximamente");
+      card.innerHTML =
+        '<div class="bc-top"><div><div class="eyebrow">Bloque ' + b.n + '</div><h3>' + esc(b.titulo) + '</h3></div>' + domBadge + '</div>' +
+        '<p class="bc-desc">' + esc(b.descripcion) + '</p>' +
+        '<div class="meta-row">' + meta + '</div>' +
+        '<div class="actions-row">' + actions + '</div>' +
+        '<div class="progress-row">' +
+          '<div class="prog-item"><div class="prog-label">Guía <b>' + (gp == null ? "—" : gp + "%") + '</b></div><div class="bar-track"><div class="bar-fill" style="width:' + (gp || 0) + '%"></div></div></div>' +
+          '<div class="prog-item"><div class="prog-label">Quiz (aciertos) <b>' + (qp == null ? "—" : qp + "%") + '</b></div><div class="bar-track"><div class="bar-fill" style="width:' + (qp || 0) + '%"></div></div></div>' +
+        '</div>' +
+        '<div class="done-row"><div class="done-left"><button type="button" class="pill-toggle' + (done ? " done" : "") + '" id="done-' + b.n + '" aria-pressed="' + done + '">' + (done ? "✓ Completado" : "Marcar completado") + '</button>' +
+          (done && autoEligible ? ' <span class="auto-hint">guía + quiz superados</span>' : '') + '</div>' +
+          '<button type="button" class="btn-reset" id="reset-' + b.n + '">Reiniciar progreso</button></div>';
+      grid.appendChild(card);
+      card.querySelector("#done-" + b.n).addEventListener("click", function (ev) {
+        const next = !isDone(b.n);
+        setDone(b.n, next);
+        ev.target.classList.toggle("done", next);
+        ev.target.setAttribute("aria-pressed", String(next));
+        ev.target.textContent = next ? "✓ Completado" : "Marcar completado";
+        card.classList.toggle("done", next);
+        var hint = card.querySelector(".auto-hint");
+        if (hint) hint.remove(); // el matiz "auto" solo aplica al estado ya evaluado al cargar
+        updateGlobalBar();
+      });
+      card.querySelector("#reset-" + b.n).addEventListener("click", function () { resetBlock(b.n); });
+    });
+  }
+
+  renderBlocks();
+  updateGlobalBar();
+  renderContinueButton();
+  document.getElementById("reset-all").addEventListener("click", resetAll);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "☀ Claro" : "🌙 Oscuro";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de estilos · Volt</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* =====================================================================
+     DESIGN TOKENS — Volt
+     Copia este bloque en tus documentos/recursos HTML.
+     ===================================================================== */
+  :root{
+    /* Tipografía */
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    /* Escala tipográfica */
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    /* Pesos */
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    /* Espaciado (base 4px) */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    /* Radios */
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    /* Sombras (discretas; el peso visual recae en el borde) */
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    /* Transición estándar */
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    /* ---- Color · MODO CLARO ---- */
+    --bg:#FCFDFF;
+    --surface:#FFFFFF;
+    --surface-2:#F1F5FA;
+    --border:#E1E9F1;
+    --border-strong:#C7D6E4;
+    --text:#0E1B2C;
+    --text-muted:#51607A;
+    --text-subtle:#8496A8;
+
+    --accent:#0E82FF;
+    --accent-hover:#0A6BDB;
+    --accent-active:#0857B4;
+    --accent-weak:#E2F1FF;
+    --accent-contrast:#06121F;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"]{
+    /* ---- Color · MODO OSCURO ---- */
+    --bg:#06101C;
+    --surface:#101927;
+    --surface-2:#172230;
+    --border:#213244;
+    --border-strong:#2E4257;
+    --text:#E4EDF6;
+    --text-muted:#8C9DB4;
+    --text-subtle:#66788C;
+
+    --accent:#3FA9FF;
+    --accent-hover:#63BBFF;
+    --accent-active:#2C93F0;
+    --accent-weak:#0E2C48;
+    --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);
+    font-size:var(--fs-body);line-height:1.6;-webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease);}
+
+  h1,h2,h3,h4{margin:0 0 var(--sp-3);line-height:1.15;}
+  .display{font-size:var(--fs-display);font-weight:var(--fw-extra);letter-spacing:-.03em;line-height:1.05;}
+  h1{font-size:var(--fs-h1);font-weight:var(--fw-extra);letter-spacing:-.025em;}
+  h2{font-size:var(--fs-h2);font-weight:var(--fw-bold);letter-spacing:-.02em;}
+  h3{font-size:var(--fs-h3);font-weight:var(--fw-bold);letter-spacing:-.015em;}
+  h4{font-size:var(--fs-h4);font-weight:var(--fw-bold);}
+  p{margin:0 0 var(--sp-4);}
+  a{color:var(--accent);text-decoration:none;font-weight:var(--fw-medium);}
+  a:hover{text-decoration:underline;}
+  small,.caption{font-size:var(--fs-caption);color:var(--text-muted);}
+  code,kbd{font-family:var(--font-mono);font-size:var(--fs-code);
+    background:var(--accent-weak);color:var(--accent);padding:1px 6px;border-radius:var(--r-sm);}
+  hr{border:none;border-top:1px solid var(--border);margin:var(--sp-6) 0;}
+
+  /* =====================================================================
+     LAYOUT DE LA GUÍA
+     ===================================================================== */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+    gap:var(--sp-4);padding:14px 24px;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:var(--fw-bold);letter-spacing:-.01em;}
+  .dot{width:20px;height:20px;border-radius:6px;background:var(--accent);}
+  .topbar nav{display:none;gap:var(--sp-4);font-size:var(--fs-sm);}
+  @media(min-width:900px){.topbar nav{display:flex;}}
+  .topbar nav a{color:var(--text-muted);font-weight:var(--fw-medium);}
+  .topbar nav a:hover{color:var(--accent);text-decoration:none;}
+  .toggle{cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);
+    padding:8px 13px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:var(--fw-semibold);font-family:inherit;}
+
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 90px;}
+  .hero p.lead{font-size:1.125rem;color:var(--text-muted);max-width:640px;}
+
+  section.block{padding-top:56px;}
+  section.block > h2{scroll-margin-top:80px;}
+  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+  .note{font-size:var(--fs-sm);color:var(--text-muted);max-width:680px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--sp-5);box-shadow:var(--shadow-sm);}
+  .demo{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--sp-5);margin:var(--sp-4) 0;}
+
+  /* Swatches */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--sp-3);margin:var(--sp-4) 0;}
+  .swatch{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;}
+  .swatch .cap{height:64px;}
+  .swatch .meta{padding:8px 10px;font-size:var(--fs-caption);}
+  .swatch .meta b{display:block;font-size:.8125rem;font-weight:var(--fw-semibold);color:var(--text);}
+  .swatch .meta span{font-family:var(--font-mono);color:var(--text-muted);}
+
+  /* Type scale rows */
+  .type-row{display:flex;align-items:baseline;gap:var(--sp-4);padding:10px 0;border-bottom:1px solid var(--border);}
+  .type-row .tag{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--text-muted);white-space:nowrap;min-width:120px;}
+
+  /* Spacing viz */
+  .sp-row{display:flex;align-items:center;gap:var(--sp-3);padding:6px 0;font-size:var(--fs-sm);}
+  .sp-row .bar{background:var(--accent);height:14px;border-radius:3px;}
+  .sp-row .tag{font-family:var(--font-mono);color:var(--text-muted);min-width:90px;}
+
+  /* Buttons */
+  .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semibold);border-radius:var(--r-md);
+    padding:9px 16px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
+  .btn.primary{background:var(--accent);color:var(--accent-contrast);}
+  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.primary:active{background:var(--accent-active);}
+  .btn.secondary{background:transparent;color:var(--text);border-color:var(--border-strong);}
+  .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.ghost{background:transparent;color:var(--accent);}
+  .btn.ghost:hover{background:var(--accent-weak);}
+  .btn.danger{background:var(--danger);color:#fff;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .row{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center;}
+
+  /* Badges / pills */
+  .badge{font-size:var(--fs-caption);font-weight:var(--fw-semibold);padding:3px 10px;border-radius:var(--r-pill);}
+  .badge.accent{background:var(--accent-weak);color:var(--accent);}
+  .badge.success{background:var(--success-weak);color:var(--success);}
+  .badge.warning{background:var(--warning-weak);color:var(--warning);}
+  .badge.danger{background:var(--danger-weak);color:var(--danger);}
+  .badge.info{background:var(--info-weak);color:var(--info);}
+  .badge.neutral{background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);}
+
+  /* Form */
+  .field{margin-bottom:var(--sp-3);max-width:360px;}
+  .field label{display:block;font-size:var(--fs-caption);font-weight:var(--fw-semibold);color:var(--text-muted);margin-bottom:6px;}
+  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:var(--fs-sm);
+    padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--border-strong);
+    background:var(--surface);color:var(--text);outline:none;transition:border-color var(--ease),box-shadow var(--ease);}
+  .field input::placeholder{color:var(--text-subtle);}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak);}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:var(--fs-sm);}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);}
+  thead th{font-size:var(--fs-caption);text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);}
+  tbody tr:hover{background:var(--surface-2);}
+
+  /* Alerts / callouts */
+  .alert{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);border:1px solid;font-size:var(--fs-sm);margin-bottom:var(--sp-3);}
+  .alert .ic{font-weight:var(--fw-bold);}
+  .alert.info{background:var(--info-weak);border-color:color-mix(in srgb,var(--info) 30%,transparent);color:var(--text);}
+  .alert.info .ic{color:var(--info);}
+  .alert.success{background:var(--success-weak);border-color:color-mix(in srgb,var(--success) 30%,transparent);}
+  .alert.success .ic{color:var(--success);}
+  .alert.warning{background:var(--warning-weak);border-color:color-mix(in srgb,var(--warning) 35%,transparent);}
+  .alert.warning .ic{color:var(--warning);}
+  .alert.danger{background:var(--danger-weak);border-color:color-mix(in srgb,var(--danger) 30%,transparent);}
+  .alert.danger .ic{color:var(--danger);}
+
+  /* Code block */
+  pre{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
+    padding:16px;overflow-x:auto;font-family:var(--font-mono);font-size:var(--fs-code);line-height:1.6;margin:var(--sp-4) 0;}
+  pre code{background:none;color:var(--text);padding:0;}
+  blockquote{margin:var(--sp-4) 0;padding:8px 18px;border-left:3px solid var(--accent);color:var(--text-muted);}
+
+  /* Do / Don't */
+  .dd{display:grid;gap:var(--sp-4);grid-template-columns:1fr;}
+  @media(min-width:640px){.dd{grid-template-columns:1fr 1fr;}}
+  .dd .box{border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-4);}
+  .dd .do{border-top:3px solid var(--success);}
+  .dd .dont{border-top:3px solid var(--danger);}
+  .dd h4{margin-bottom:var(--sp-2);}
+  .dd ul{margin:0;padding-left:18px;font-size:var(--fs-sm);color:var(--text-muted);}
+  .dd li{margin-bottom:6px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Volt · Guía de estilos</div>
+  <nav>
+    <a href="#color">Color</a>
+    <a href="#type">Tipografía</a>
+    <a href="#space">Espaciado</a>
+    <a href="#components">Componentes</a>
+    <a href="#a11y">Accesibilidad</a>
+    <a href="#tokens">Tokens</a>
+  </nav>
+  <button class="toggle" id="tg">◐ Oscuro</button>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="eyebrow">Sistema de diseño · v1.0</div>
+    <div class="display">Volt</div>
+    <p class="lead">Lenguaje visual para documentos y recursos HTML. Tecnología y modernidad con un acento púrpura sobrio: formas nítidas, tipografía contemporánea y contraste cuidado en claro y oscuro.</p>
+    <p class="note"><b>Principios:</b> claridad sobre decoración · el peso visual recae en el borde, no en la sombra · un único color de acento, usado con moderación · accesible por defecto (contraste AA).</p>
+  </div>
+
+  <!-- ============ COLOR ============ -->
+  <section class="block" id="color">
+    <div class="eyebrow">01 — Color</div>
+    <h2>Paleta</h2>
+    <p class="note">Un solo acento (púrpura Volt) sobre una base neutra fría. Reserva el acento para acciones y énfasis; el resto de la interfaz vive en neutros. Cada color tiene variante en modo claro y oscuro (activa el conmutador arriba para verlas).</p>
+
+    <h4 style="margin-top:var(--sp-5)">Acento</h4>
+    <div class="swatches">
+      <div class="swatch"><div class="cap" style="background:var(--accent)"></div><div class="meta"><b>accent</b><span>--accent</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--accent-hover)"></div><div class="meta"><b>accent-hover</b><span>--accent-hover</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--accent-active)"></div><div class="meta"><b>accent-active</b><span>--accent-active</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--accent-weak)"></div><div class="meta"><b>accent-weak</b><span>--accent-weak</span></div></div>
+    </div>
+
+    <h4 style="margin-top:var(--sp-5)">Neutros y superficies</h4>
+    <div class="swatches">
+      <div class="swatch"><div class="cap" style="background:var(--bg)"></div><div class="meta"><b>bg</b><span>--bg</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--surface)"></div><div class="meta"><b>surface</b><span>--surface</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--surface-2)"></div><div class="meta"><b>surface-2</b><span>--surface-2</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--border)"></div><div class="meta"><b>border</b><span>--border</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--border-strong)"></div><div class="meta"><b>border-strong</b><span>--border-strong</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--text)"></div><div class="meta"><b>text</b><span>--text</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--text-muted)"></div><div class="meta"><b>text-muted</b><span>--text-muted</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--text-subtle)"></div><div class="meta"><b>text-subtle</b><span>--text-subtle</span></div></div>
+    </div>
+
+    <h4 style="margin-top:var(--sp-5)">Semánticos</h4>
+    <div class="swatches">
+      <div class="swatch"><div class="cap" style="background:var(--success)"></div><div class="meta"><b>success</b><span>--success</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--warning)"></div><div class="meta"><b>warning</b><span>--warning</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--danger)"></div><div class="meta"><b>danger</b><span>--danger</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--info)"></div><div class="meta"><b>info</b><span>--info</span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPOGRAFÍA ============ -->
+  <section class="block" id="type">
+    <div class="eyebrow">02 — Tipografía</div>
+    <h2>Escala tipográfica</h2>
+    <p class="note"><b>Plus Jakarta Sans</b> para texto e interfaz; <b>JetBrains Mono</b> para código, etiquetas técnicas y metadatos. Titulares en 800/700 con <i>tracking</i> negativo para un aire compacto y moderno; cuerpo en 400 a 1.6 de interlínea para lectura larga.</p>
+    <div class="demo">
+      <div class="type-row"><span class="tag">display · 40 / 800</span><span class="display">Tecnología con criterio</span></div>
+      <div class="type-row"><span class="tag">h1 · 32 / 800</span><h1 style="margin:0">Titular de sección</h1></div>
+      <div class="type-row"><span class="tag">h2 · 24 / 700</span><h2 style="margin:0">Subtítulo destacado</h2></div>
+      <div class="type-row"><span class="tag">h3 · 20 / 700</span><h3 style="margin:0">Encabezado menor</h3></div>
+      <div class="type-row"><span class="tag">h4 · 17 / 700</span><h4 style="margin:0">Etiqueta de bloque</h4></div>
+      <div class="type-row"><span class="tag">body · 16 / 400</span><span>Texto de lectura cómodo, con <a href="#">enlaces</a> y <code>código en línea</code>.</span></div>
+      <div class="type-row"><span class="tag">small · 14 / 400</span><span style="font-size:var(--fs-sm)">Texto secundario y ayudas de formulario.</span></div>
+      <div class="type-row" style="border:none"><span class="tag">caption · 12 / 400</span><span class="caption">Metadatos, pies y notas al margen.</span></div>
+    </div>
+  </section>
+
+  <!-- ============ ESPACIADO / FORMA ============ -->
+  <section class="block" id="space">
+    <div class="eyebrow">03 — Espaciado y forma</div>
+    <h2>Ritmo y geometría</h2>
+    <p class="note">Escala de espaciado en múltiplos de 4px. Radios contenidos (6px por defecto) para el aire nítido característico. Sombras mínimas: el borde de 1px es el que define los planos.</p>
+    <div class="demo">
+      <div class="sp-row"><span class="tag">--sp-1 · 4</span><span class="bar" style="width:4px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-2 · 8</span><span class="bar" style="width:8px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-3 · 12</span><span class="bar" style="width:12px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-4 · 16</span><span class="bar" style="width:16px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-5 · 24</span><span class="bar" style="width:24px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-6 · 32</span><span class="bar" style="width:32px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-7 · 48</span><span class="bar" style="width:48px"></span></div>
+      <div class="sp-row"><span class="tag">--sp-8 · 64</span><span class="bar" style="width:64px"></span></div>
+    </div>
+    <div class="row" style="margin-top:var(--sp-3)">
+      <div class="card" style="text-align:center"><div style="width:60px;height:40px;background:var(--accent-weak);border:1px solid var(--border-strong);border-radius:var(--r-sm);margin:0 auto 8px"></div><small>r-sm · 4</small></div>
+      <div class="card" style="text-align:center"><div style="width:60px;height:40px;background:var(--accent-weak);border:1px solid var(--border-strong);border-radius:var(--r-md);margin:0 auto 8px"></div><small>r-md · 6</small></div>
+      <div class="card" style="text-align:center"><div style="width:60px;height:40px;background:var(--accent-weak);border:1px solid var(--border-strong);border-radius:var(--r-lg);margin:0 auto 8px"></div><small>r-lg · 8</small></div>
+      <div class="card" style="text-align:center"><div style="width:60px;height:40px;background:var(--accent-weak);border:1px solid var(--border-strong);border-radius:var(--r-xl);margin:0 auto 8px"></div><small>r-xl · 12</small></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENTES ============ -->
+  <section class="block" id="components">
+    <div class="eyebrow">04 — Componentes</div>
+    <h2>Biblioteca base</h2>
+
+    <h3 style="margin-top:var(--sp-5)">Botones</h3>
+    <div class="demo">
+      <div class="row">
+        <button class="btn primary">Acción principal</button>
+        <button class="btn secondary">Secundaria</button>
+        <button class="btn ghost">Fantasma</button>
+        <button class="btn danger">Destructiva</button>
+        <button class="btn primary" disabled>Deshabilitada</button>
+      </div>
+    </div>
+
+    <h3>Etiquetas y estados</h3>
+    <div class="demo">
+      <div class="row">
+        <span class="badge accent">Acento</span>
+        <span class="badge success">Éxito</span>
+        <span class="badge warning">Aviso</span>
+        <span class="badge danger">Error</span>
+        <span class="badge info">Info</span>
+        <span class="badge neutral">Neutral</span>
+      </div>
+    </div>
+
+    <h3>Formularios</h3>
+    <div class="demo">
+      <div class="field"><label>Nombre</label><input placeholder="Escribe aquí…"></div>
+      <div class="field"><label>Correo</label><input type="email" placeholder="nombre@dominio.com"></div>
+      <div class="field"><label>Rol</label><select><option>Selecciona…</option><option>Diseño</option><option>Desarrollo</option></select></div>
+    </div>
+
+    <h3>Tabla</h3>
+    <div class="demo" style="padding:0;overflow:hidden">
+      <table>
+        <thead><tr><th>Recurso</th><th>Estado</th><th>Actualizado</th></tr></thead>
+        <tbody>
+          <tr><td>Landing producto</td><td><span class="badge success">Publicado</span></td><td>Hoy</td></tr>
+          <tr><td>Informe Q3</td><td><span class="badge warning">Borrador</span></td><td>Ayer</td></tr>
+          <tr><td>Slides onboarding</td><td><span class="badge neutral">Archivado</span></td><td>Hace 2 sem.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Avisos</h3>
+    <div class="demo">
+      <div class="alert info"><span class="ic">ℹ</span><div><b>Información.</b> Detalle contextual sin urgencia.</div></div>
+      <div class="alert success"><span class="ic">✓</span><div><b>Todo correcto.</b> La operación se completó.</div></div>
+      <div class="alert warning"><span class="ic">▲</span><div><b>Atención.</b> Revisa este punto antes de continuar.</div></div>
+      <div class="alert danger"><span class="ic">✕</span><div><b>Error.</b> Algo ha fallado y requiere acción.</div></div>
+    </div>
+
+    <h3>Tarjeta, cita y código</h3>
+    <div class="demo">
+      <div class="card" style="margin-bottom:var(--sp-4)">
+        <h4 style="margin-bottom:6px">Tarjeta de contenido</h4>
+        <p class="note" style="margin-bottom:var(--sp-3)">Contenedor sobre <code>--surface</code> con borde de 1px y sombra sutil.</p>
+        <button class="btn ghost" style="padding-left:0">Ver más →</button>
+      </div>
+      <blockquote>El diseño no es solo cómo se ve; es cómo funciona.</blockquote>
+<pre><code>:root{
+  --accent: #0E82FF;
+  --accent-hover: #0A6BDB;
+}</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ ACCESIBILIDAD ============ -->
+  <section class="block" id="a11y">
+    <div class="eyebrow">05 — Accesibilidad y uso</div>
+    <h2>Reglas prácticas</h2>
+    <div class="dd">
+      <div class="box do">
+        <h4>Hazlo</h4>
+        <ul>
+          <li>Reserva el acento para 1 acción principal por vista.</li>
+          <li>Texto normal ≥ 4.5:1 de contraste; controles y texto grande ≥ 3:1.</li>
+          <li>Usa <code>--text-muted</code> para jerarquía, no gris arbitrario.</li>
+          <li>Focus siempre visible (anillo <code>--accent-weak</code>).</li>
+          <li>Comunica estado con color <b>e</b> icono/texto, nunca solo color.</li>
+        </ul>
+      </div>
+      <div class="box dont">
+        <h4>Evítalo</h4>
+        <ul>
+          <li>Varios botones primarios compitiendo en la misma zona.</li>
+          <li>Púrpura saturado como fondo de bloques grandes de texto.</li>
+          <li>Sombras pesadas o degradados: rompen el registro sobrio.</li>
+          <li>Texto sobre <code>--accent-weak</code> con colores que no sean el acento.</li>
+          <li>Tamaños fuera de la escala tipográfica definida.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note" style="margin-top:var(--sp-4)">Todos los pares texto/fondo de esta guía cumplen WCAG AA. El acento en verde/púrpura se aclara en modo oscuro para preservar el contraste sobre fondos oscuros.</p>
+  </section>
+
+  <!-- ============ TOKENS ============ -->
+  <section class="block" id="tokens">
+    <div class="eyebrow">06 — Implementación</div>
+    <h2>Tokens listos para copiar</h2>
+    <p class="note">Pega este bloque en cualquier documento o recurso HTML y consume las variables. El modo oscuro se activa con <code>data-theme="dark"</code> en <code>&lt;html&gt;</code> (o vía <code>prefers-color-scheme</code> si lo prefieres automático).</p>
+<pre><code>:root{
+  /* Fuentes */
+  --font-sans:"Plus Jakarta Sans",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+
+  /* Color · claro */
+  --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+  --border:#E1E9F1; --border-strong:#C7D6E4;
+  --text:#0E1B2C; --text-muted:#51607A; --text-subtle:#8496A8;
+  --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+  --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+  --success:#0E8546; --warning:#B5760F; --danger:#CE4148; --info:#2E63FF;
+
+  /* Espaciado / radios */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+  --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+}
+[data-theme="dark"]{
+  --bg:#06101C; --surface:#101927; --surface-2:#172230;
+  --border:#213244; --border-strong:#2E4257;
+  --text:#E4EDF6; --text-muted:#8C9DB4; --text-subtle:#66788C;
+  --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+  --accent-weak:#0E2C48; --accent-contrast:#06101C;
+  --success:#37DA84; --warning:#F0A93C; --danger:#F0656C; --info:#6684FF;
+}</code></pre>
+    <p class="note">Fuentes vía Google Fonts:<br>
+    <code>&lt;link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"&gt;</code></p>
+  </section>
+
+</div>
+
+<script>
+  const r=document.documentElement,b=document.getElementById('tg');
+  b.addEventListener('click',()=>{
+    const d=r.getAttribute('data-theme')==='dark';
+    r.setAttribute('data-theme',d?'light':'dark');
+    b.textContent=d?'◐ Oscuro':'◑ Claro';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Fundamentos: API de Claude, tool use y bucle agéntico — resumen</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* ---- Volt design tokens (modo claro — impresión) ---- */
+  :root{
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px;
+    --r-sm:4px; --r-md:6px; --r-pill:999px;
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB;
+
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+  }
+
+  * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body { margin:0; font-family:var(--font-sans); font-size:9.5pt; line-height:1.38; color:var(--text); background:var(--bg); }
+  @page { size:A4; margin:13mm 12mm; }
+  .pagina { max-width:186mm; margin:0 auto; padding:6mm 0; }
+
+  /* ---- Cabecera de documento (sin cuadros/marcos) ---- */
+  .eyebrow { font-family:var(--font-mono); font-size:7.2pt; font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; }
+  header.doc-header { border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); margin-bottom:var(--sp-3); }
+  header.doc-header .eyebrow { margin-bottom:4px; }
+  header.doc-header h1 { margin:0 0 7px; font-size:16pt; font-weight:var(--fw-extra); letter-spacing:-.02em; line-height:1.15; color:var(--text); }
+
+  /* ---- Separadores de seccion: eyebrow numerado, sin barras ni cajas ---- */
+  .sec-eyebrow { font-family:var(--font-mono); font-size:7.6pt; font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.06em; margin:var(--sp-4) 0 6px; break-after:avoid; }
+  section:first-of-type .sec-eyebrow { margin-top:0; }
+
+  h3 { font-size:9.8pt; font-weight:var(--fw-bold); color:var(--text); margin:var(--sp-3) 0 4px; break-after:avoid; }
+  p { margin:3px 0; }
+  code { font-family:var(--font-mono); font-size:.9em; background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-sm); padding:0 4px; color:var(--text); }
+
+  /* ---- Tablas: bordes 1px limpios, sin barra de acento ---- */
+  table { border-collapse:collapse; width:100%; font-size:8.1pt; margin:var(--sp-2) 0 var(--sp-3); break-inside:avoid; }
+  th, td { border-bottom:1px solid var(--border); padding:3px 7px; text-align:left; vertical-align:top; }
+  th { color:var(--text-muted); border-bottom:1px solid var(--border-strong); font-weight:var(--fw-medium); font-size:7.4pt; text-transform:uppercase; letter-spacing:.03em; }
+  tbody tr:nth-child(even) { background:var(--surface-2); }
+
+  ul, ol { margin:3px 0 var(--sp-2); padding-left:16px; }
+  li { margin:2px 0; }
+  dl { margin:3px 0 var(--sp-2); }
+  dt { font-family:var(--font-mono); font-weight:var(--fw-semibold); font-size:.95em; color:var(--text); }
+  dd { margin:0 0 4px 14px; color:var(--text-muted); }
+
+  /* ---- Callouts estilo .alert Volt: borde izquierdo, sin doble marco ---- */
+  .clave { border-left:3px solid var(--warning); background:var(--warning-weak); border-radius:0 var(--r-sm) var(--r-sm) 0; padding:5px 9px; margin:5px 0; break-inside:avoid; color:var(--text); }
+  .antipatron { border-left:3px solid var(--danger); background:var(--danger-weak); border-radius:0 var(--r-sm) var(--r-sm) 0; padding:5px 9px; margin:5px 0; break-inside:avoid; color:var(--text); }
+  .antipatron b:first-child { color:var(--text); }
+  .dos-col { column-count:2; column-gap:16px; }
+  .dos-col > * { break-inside:avoid; }
+
+  footer { margin-top:var(--sp-3); padding-top:5px; border-top:1px solid var(--border); font-size:6.8pt; color:var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header class="doc-header">
+    <div class="eyebrow">CCAR-F · Bloque 0</div>
+    <h1>Fundamentos: API de Claude, tool use y bucle agéntico — resumen de estudio</h1>
+  </header>
+
+  <!-- RESUMEN -->
+  <section>
+    <div class="sec-eyebrow">01 — Eje → idea clave</div>
+    <table>
+      <thead><tr><th>Eje</th><th>Título</th><th>Idea a retener</th></tr></thead>
+      <tbody>
+        <tr><td>0.1</td><td>Anatomía Messages API</td><td>API <b>stateless</b>: el cliente reenvía el array <code>messages</code> completo en cada request; <code>system</code> es parámetro top-level, nunca un mensaje del array (salvo mid-conversation en Opus 5/4.8, Fable 5, Mythos 5, tras turno de usuario).</td></tr>
+        <tr><td>0.2</td><td>Definición de tools</td><td><code>description</code> es el único canal para que el modelo sepa cuándo/cómo usar la tool; <code>strict: true</code> fuerza conformidad exacta del <code>input</code> con cualquier <code>tool_choice</code>.</td></tr>
+        <tr><td>0.3</td><td>Ciclo tool_use/tool_result</td><td>El bucle se controla con <code>stop_reason == "tool_use"</code>; <code>tool_result</code> va inmediatamente después del <code>tool_use</code> y primero en el content array; server tools no llevan <code>tool_result</code> manual.</td></tr>
+        <tr><td>0.4</td><td>stop_reason</td><td>Único campo que decide si el bucle continúa o termina; verificarlo con <code>if/elif</code> explícito antes de tocar <code>content</code>, nunca inferir fin por lenguaje natural o contador de iteraciones.</td></tr>
+        <tr><td>0.5</td><td>tool_choice</td><td>4 valores (<code>auto</code>/<code>any</code>/tool forzada/<code>none</code>) gradúan libertad vs determinismo; <code>any</code>/forzada prefillan el mensaje del asistente (sin texto previo) e invalidan cache de bloques de mensaje.</td></tr>
+        <tr><td>0.6</td><td>Agente vs workflow</td><td>Decisión dirigida por el modelo (agente, <code>tool_choice: auto</code>) vs secuencia fija sin margen (workflow); para reglas no negociables, hook/gate programático — el prompt-only falla ~12% documentado.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-eyebrow">02 — Valores y enumeraciones memorizables</div>
+    <h3>stop_reason → reacción</h3>
+    <dl>
+      <dt><code>end_turn</code></dt><dd>Terminal, respuesta completa: usar el resultado tal cual.</dd>
+      <dt><code>tool_use</code></dt><dd>No terminal: ejecutar tool(s), enviar <code>tool_result</code>, continuar el bucle.</dd>
+      <dt><code>max_tokens</code></dt><dd>Truncada (posiblemente a media palabra): subir <code>max_tokens</code> o aceptar parcial.</dd>
+      <dt><code>stop_sequence</code></dt><dd>Se emitió una <code>stop_sequences</code> personalizada; campo <code>stop_sequence</code> indica cuál.</dd>
+      <dt><code>pause_turn</code></dt><dd>Límite de iteraciones internas de server tools (10 por defecto); reenviar el mensaje del asistente tal cual, sin <code>tool_result</code>, para continuar.</dd>
+      <dt><code>refusal</code></dt><dd>Rechazo por política; <code>stop_details</code> trae categoría (p. ej. "violence"); definir fallback, no reintentar a ciegas.</dd>
+      <dt><code>model_context_window_exceeded</code></dt><dd>Ventana llena (raro en modelos recientes); tratar como truncación.</dd>
+    </dl>
+    <h3>tool_choice</h3>
+    <dl>
+      <dt><code>auto</code> (default)</dt><dd>Claude decide si llama a tool o responde en texto.</dd>
+      <dt><code>any</code></dt><dd>Debe llamar a alguna tool disponible, elige cuál; prefill automático.</dd>
+      <dt><code>{"type":"tool","name":"..."}</code></dt><dd>Tool forzada exacta; prefill automático.</dd>
+      <dt><code>none</code></dt><dd>Solo texto, ninguna tool; default cuando no hay tools definidas.</dd>
+    </dl>
+    <h3>Defaults, límites y restricciones</h3>
+    <ul>
+      <li><code>name</code> de tool: regex <code>^[a-zA-Z0-9_-]{1,64}$</code>; <code>description</code>: mínimo 3-4 oraciones.</li>
+      <li><code>input_examples</code> cuesta ~20-50 tokens/ejemplo simple, 100-200/complejo; <b>no soportado en server-side tools</b>.</li>
+      <li>Orden estricto: <code>tool_result</code> inmediatamente tras el <code>tool_use</code> del asistente (nada interpolado); dentro del content array del mensaje, <code>tool_result</code> primero, texto adicional después — invertir produce error 400.</li>
+      <li>Cada <code>tool_use</code> exige su <code>tool_result</code>; <code>tool_use_id</code> debe matchear exactamente.</li>
+      <li><code>strict: true</code> funciona con cualquier <code>tool_choice</code> (incluido <code>auto</code>); combinarlo con <code>any</code> da garantía compuesta (llamada + schema).</li>
+      <li>Extended thinking <b>manual</b>: solo <code>tool_choice</code> <code>auto</code>/<code>none</code> (no <code>any</code> ni forzada); <b>adaptive</b> thinking sí soporta forzada.</li>
+      <li>Cambiar <code>tool_choice</code> entre requests invalida bloques de mensaje cacheados (tools/system persisten cacheados).</li>
+      <li>Límite de iteraciones internas de server tools antes de <code>pause_turn</code>: 10 por defecto.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-eyebrow">03 — Tabla de decisión comprimida</div>
+    <table>
+      <thead><tr><th>Situación</th><th>Elección</th><th>Porqué</th></tr></thead>
+      <tbody>
+        <tr><td>Salida estructurada garantizada</td><td><code>tool_choice: any</code> + <code>strict: true</code></td><td>Prefill fuerza la llamada; strict garantiza schema exacto</td></tr>
+        <tr><td>Orden crítico de pasos</td><td>Tool forzada en 1er paso, <code>auto</code> en el resto</td><td>Garantiza secuencia sin perder flexibilidad en lo no crítico</td></tr>
+        <tr><td>Conversación general, tool opcional</td><td><code>auto</code> (default)</td><td>El modelo decide si la tool aporta valor</td></tr>
+        <tr><td>QA puro, sin efectos secundarios</td><td><code>none</code></td><td>Impide cualquier llamada a tool</td></tr>
+        <tr><td>Falla crítica no negociable (compliance, dinero)</td><td>Workflow determinista o hook, no solo prompting</td><td>Prompt-only falla ~12% documentado; el gate no depende del razonamiento del modelo</td></tr>
+        <tr><td>Tarea variable, requiere adaptación</td><td>Agente (<code>auto</code>, decisión del modelo)</td><td>Puede investigar y ajustar el plan dinámicamente</td></tr>
+        <tr><td>Tool ejecutada por Anthropic (<code>web_search</code>, <code>code_execution</code>...)</td><td>Server tool: sin <code>tool_result</code> manual</td><td>Anthropic la resuelve internamente; enviarlo produce comportamiento indefinido</td></tr>
+        <tr><td>Tool ejecutada por tu código</td><td>Client tool: parsear, ejecutar, devolver <code>tool_result</code></td><td>El bucle depende de que el cliente cierre el ciclo</td></tr>
+        <tr><td>Extended thinking manual activado</td><td><code>tool_choice</code> solo <code>auto</code>/<code>none</code></td><td><code>any</code>/forzada no compatibles con thinking manual</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="sec-eyebrow">04 — Anti-patrones</div>
+    <div class="antipatron"><b>System message dentro del array</b> — <code>{"role":"system",...}</code> produce error/comportamiento indefinido; <code>system</code> siempre top-level (salvo mid-conversation en los modelos excepcionados).</div>
+    <div class="antipatron"><b>Asumir memoria en servidor</b> — la API es stateless; no reenviar el historial completo pierde contexto. Enviar solo el último turno "para ahorrar tokens" causa el mismo fallo.</div>
+    <div class="antipatron"><b>Texto antes de tool_result en el content array</b> — invierte el orden requerido y provoca error 400; <code>tool_result</code> siempre primero.</div>
+    <div class="antipatron"><b>Ignorar stop_reason</b> — procesar <code>content</code> asumiendo siempre <code>end_turn</code> trata truncaciones (<code>max_tokens</code>), pausas (<code>pause_turn</code>) o rechazos (<code>refusal</code>) como respuestas finales.</div>
+    <div class="antipatron"><b>tool_result con mensaje de error genérico</b> — ("Operation failed") en vez de instructivo impide que Claude decida entre reintentar o escalar; además, omitir <code>is_error: true</code> le oculta el fallo por completo.</div>
+    <div class="antipatron"><b>Confiar solo en prompting para reglas críticas</b> — "verify customer first" como instrucción de texto falla ~12% de los casos documentado; usar hook o gate programático.</div>
+  </section>
+
+  <section>
+    <div class="sec-eyebrow">05 — Trampas de examen</div>
+    <div class="clave"><code>max_tokens</code> limita tokens de <b>salida</b>, no la ventana de contexto total.</div>
+    <div class="clave"><code>pause_turn</code> (server tools aún en marcha, no terminal) vs <code>end_turn</code> (terminal): confundirlos entrega al usuario una respuesta incompleta.</div>
+    <div class="clave">Descripción insuficiente → <i>misrouting</i> (tool equivocada); schema insuficiente (campo <code>required</code> que no siempre llega) → alucinación de valores. Son dos fallos distintos con arreglos distintos.</div>
+    <div class="clave"><code>strict: true</code> funciona con <b>cualquier</b> <code>tool_choice</code>, incluido <code>auto</code> — no solo con <code>any</code>/forzada; lo que <code>any</code> añade es garantizar que se llame a una tool.</div>
+    <div class="clave"><code>tool_choice: any</code> es compatible con <i>adaptive</i> thinking, NO con extended thinking <b>manual</b>.</div>
+    <div class="clave">Cambiar <code>tool_choice</code> entre requests SÍ invalida el cache de bloques de mensaje (tools/system quedan cacheados igualmente).</div>
+    <div class="clave">Un server tool nunca lleva <code>tool_result</code> manual del cliente; solo los client tools cierran el ciclo así.</div>
+  </section>
+
+  <section>
+    <div class="sec-eyebrow">06 — Glosario mínimo</div>
+    <div class="dos-col">
+      <dl>
+        <dt>Client tool</dt><dd>Tool ejecutada por el código del cliente (user-defined o de schema Anthropic como <code>bash</code>, <code>text_editor</code>, <code>memory</code>, <code>computer</code>).</dd>
+        <dt>Server tool</dt><dd>Tool ejecutada internamente por Anthropic (<code>web_search</code>, <code>web_fetch</code>, <code>code_execution</code>, <code>tool_search</code>).</dd>
+        <dt>Prompt chaining</dt><dd>Secuencia fija de llamadas/pasos, pipeline determinista sin decisión del modelo.</dd>
+        <dt>Dynamic decomposition</dt><dd>El modelo genera subtareas a partir de hallazgos intermedios; dirigido por modelo.</dd>
+      </dl>
+      <dl>
+        <dt>Namespacing de tools</dt><dd>Prefijo por servicio (<code>github_list_prs</code>) para evitar confusión con muchas tools.</dd>
+        <dt>Consolidación de tools</dt><dd>Agrupar en pocas tools con parámetro <code>action</code> en vez de muchas hiperespecíficas.</dd>
+        <dt>Grammar-constrained sampling</dt><dd>Mecanismo detrás de <code>strict: true</code> que restringe el muestreo al schema exacto.</dd>
+        <dt>Coordinador-subagente</dt><dd>Patrón dirigido por modelo: el coordinador decide qué subagentes invocar y en qué orden.</dd>
+      </dl>
+    </div>
+  </section>
+  <!-- FIN_RESUMEN -->
+
+  <footer>Material de estudio no oficial elaborado a partir de documentación pública de Anthropic. Las preguntas del examen real no se reproducen. Curso CCAR-F.</footer>
+</div>
+</body>
+</html>

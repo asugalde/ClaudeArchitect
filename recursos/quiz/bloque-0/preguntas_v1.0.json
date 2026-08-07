@@ -1,0 +1,340 @@
+{
+  "config": {
+    "titulo": "Bloque 0 — Fundamentos: API de Claude, tool use y bucle agéntico",
+    "version": "1.0",
+    "bloque": 0,
+    "modo_defecto": "estudio",
+    "solo_examen": false,
+    "generado_desde_corpus": "bloque-0-fundamentos.md v1.0",
+    "fecha": "2026-08-05"
+  },
+  "preguntas": [
+    {
+      "id": "b0-q01",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.1",
+      "escenario": "Your team migrated a chatbot from a stateful framework to the raw Messages API. After the migration, users report that Claude 'forgets' earlier turns whenever a conversation exceeds three exchanges, even though the backend logs confirm every prior user and assistant turn was returned successfully in earlier responses.",
+      "enunciado": "The client currently sends only the latest user message on each request, to save on input tokens. What is the most likely root cause of the memory loss, and the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "The Messages API is stateless; the client must resend the full accumulated messages array on every request, since the server does not retain history between calls.", "correcta": true, "justificacion": "The API never persists context server-side. Every request must include the complete conversation history the client wants Claude to consider; sending only the latest turn is equivalent to starting over."},
+        {"id": "B", "texto": "max_tokens is configured too low, causing the model to lose track of earlier turns.", "correcta": false, "justificacion": "max_tokens only bounds the output token budget for the current response; it has no effect on which prior turns the model can see, since that depends entirely on what the client includes in messages."},
+        {"id": "C", "texto": "The system prompt was likely placed inside the messages array instead of as a top-level parameter, corrupting the history.", "correcta": false, "justificacion": "A misplaced system message produces an error or undefined behavior, not selective memory loss after exactly three exchanges tied to sending only the last message."},
+        {"id": "D", "texto": "The conversation triggered model_context_window_exceeded, so older turns were silently dropped by the server.", "correcta": false, "justificacion": "That stop_reason reflects the context window filling up with a very long history the client sent; it does not apply here, since the client is sending only a single message per request."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-0-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/working-with-messages"]
+    },
+    {
+      "id": "b0-q02",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.1",
+      "escenario": "A summarization endpoint asks Claude to produce five detailed steps, but stop_reason consistently comes back as \"max_tokens\" after only the first two steps are written, even though the conversation history for that request totals under 800 tokens.",
+      "enunciado": "What is the correct interpretation of this behavior and the appropriate fix?",
+      "opciones": [
+        {"id": "A", "texto": "max_tokens is configured too low for this response; since it bounds only output tokens, raise its value so the full five-step answer fits.", "correcta": true, "justificacion": "max_tokens caps output tokens exclusively. A small history (800 tokens of input) is irrelevant to a truncated output; the fix is to increase the output budget."},
+        {"id": "B", "texto": "The request exceeded the total context window, so the response was truncated mid-generation.", "correcta": false, "justificacion": "model_context_window_exceeded is a distinct stop_reason tied to input context size; an 800-token history is far from exhausting the context window."},
+        {"id": "C", "texto": "A stop_sequence configured in the request matched partway through step two, ending generation early.", "correcta": false, "justificacion": "If a stop_sequence matched, stop_reason would be \"stop_sequence\" with the matched value populated, not \"max_tokens\"."},
+        {"id": "D", "texto": "The system prompt is misplaced inside the messages array, causing the model to stop early.", "correcta": false, "justificacion": "A misplaced system parameter causes an error or undefined behavior, not a max_tokens stop_reason specifically after two of five steps."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/working-with-messages"]
+    },
+    {
+      "id": "b0-q03",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.1",
+      "escenario": "A team wants to prime Claude with a specific reply style by inserting, before the real conversation starts, an assistant turn that the model never actually produced — a client-authored example response meant to steer tone for the rest of the session.",
+      "enunciado": "Is constructing the messages array this way a valid pattern under the Messages API?",
+      "opciones": [
+        {"id": "A", "texto": "Yes: assistant messages can be client-authored synthetic turns (a conversational few-shot pattern), as long as roles alternate correctly in the array.", "correcta": true, "justificacion": "The API does not require that assistant turns come from real prior model outputs; client-constructed synthetic assistant messages for few-shot priming are an explicitly valid and common pattern."},
+        {"id": "B", "texto": "No: every assistant-role message must be a literal response previously returned by the Messages API.", "correcta": false, "justificacion": "This restriction does not exist; the API only structurally requires role and content, not provenance of the assistant text."},
+        {"id": "C", "texto": "No: only the top-level system parameter can be used to influence tone, never a synthetic assistant turn.", "correcta": false, "justificacion": "system and synthetic assistant turns serve different purposes and are not mutually exclusive; the array can contain fabricated assistant content."},
+        {"id": "D", "texto": "Yes, but only if the request also sets stop_reason explicitly to prevent the model from ignoring the synthetic turn.", "correcta": false, "justificacion": "stop_reason is a response field the client cannot set on a request; it plays no role in whether synthetic assistant turns are accepted."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/working-with-messages"]
+    },
+    {
+      "id": "b0-q04",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.2",
+      "escenario": "Your get_stock_price tool has the description \"Gets the stock price for a ticker.\" Production logs show Claude sometimes invokes it for cryptocurrency tickers and gets an error response back, and other times fails to call it at all when a user asks \"what's AAPL trading at right now\".",
+      "enunciado": "What is the most effective fix for this tool selection problem?",
+      "opciones": [
+        {"id": "A", "texto": "Rewrite the description to state the exact scope (e.g., publicly traded US-exchange tickers only), what it returns, and when it should and should not be used.", "correcta": true, "justificacion": "description is the model's only mechanism for deciding when and how to call a tool; a minimal description without scope or usage boundaries directly causes this kind of misrouting."},
+        {"id": "B", "texto": "Add strict: true to the tool definition to prevent invalid calls.", "correcta": false, "justificacion": "strict enforces that the input JSON conforms exactly to the schema; it does not teach the model when the tool is or isn't applicable, which is a description problem, not a schema-conformance problem."},
+        {"id": "C", "texto": "Set tool_choice to \"any\" so Claude is forced to call some tool on every turn.", "correcta": false, "justificacion": "Forcing a tool call on every turn does not fix which tool gets selected or improve scope clarity; it would make the crypto-ticker misrouting worse by removing the option to not call any tool."},
+        {"id": "D", "texto": "Consolidate get_stock_price into a broader get_price tool covering all asset classes.", "correcta": false, "justificacion": "Consolidation addresses ambiguity across many overlapping tools with an action parameter; here the actual problem is a single tool's vague description, a lower-effort and more direct fix."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-0-2",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]
+    },
+    {
+      "id": "b0-q05",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.2",
+      "escenario": "A compliance workflow requires two independent guarantees for its extract_data tool: (1) Claude must call some tool on that turn, never respond with plain text, and (2) the input it produces must conform exactly to the JSON Schema, with no missing required fields or type mismatches.",
+      "enunciado": "Select TWO configuration changes that together provide both guarantees, per the documented behavior of tool definitions and tool_choice.",
+      "opciones": [
+        {"id": "A", "texto": "Set tool_choice to {\"type\": \"any\"} so Claude must call one of the available tools.", "correcta": true, "justificacion": "\"any\" forces Claude to call a tool rather than respond with text only, which is exactly the first required guarantee."},
+        {"id": "B", "texto": "Set strict: true on the tool's definition so its input is validated via grammar-constrained sampling against the schema.", "correcta": true, "justificacion": "strict guarantees schema conformance of the input whenever the tool is called, independent of tool_choice, satisfying the second required guarantee; combined with \"any\" it gives the documented compound guarantee of call + schema compliance."},
+        {"id": "C", "texto": "Add 10 or more input_examples so the model reliably infers the required fields.", "correcta": false, "justificacion": "input_examples improves the model's understanding of formats and optional parameters but is not a validation mechanism and provides no hard guarantee of schema conformance or that the tool will be called."},
+        {"id": "D", "texto": "Keep tool_choice at \"auto\" and add a strongly worded system prompt insisting the tool must always be called.", "correcta": false, "justificacion": "\"auto\" leaves the decision to the model; prompt-based insistence is probabilistic compliance, not the deterministic guarantee the scenario requires."},
+        {"id": "E", "texto": "Consolidate extract_data with related tools under a single action parameter.", "correcta": false, "justificacion": "Consolidation addresses tool-selection ambiguity across a large catalog; it does not, by itself, guarantee that a tool is always called or that its input conforms to the schema."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-2",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools", "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"]
+    },
+    {
+      "id": "b0-q06",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.2",
+      "escenario": "Your extract_contact tool marks customer_phone as a required field in its input_schema, but roughly 30% of source documents processed do not contain a phone number at all. Logs show Claude fabricating placeholder values like \"000-000-0000\" whenever the field is absent from the source.",
+      "enunciado": "What is the correct fix for this fabrication pattern?",
+      "opciones": [
+        {"id": "A", "texto": "Mark customer_phone as optional (not required, nullable) in input_schema instead of required.", "correcta": true, "justificacion": "If a field can legitimately be missing from the source, marking it required forces the model to invent a value to satisfy the schema; making it optional removes that pressure."},
+        {"id": "B", "texto": "Enable strict: true so the phone number format is validated more strictly.", "correcta": false, "justificacion": "strict enforces exact schema conformance of whatever input is produced; it does not stop the model from fabricating a value to satisfy a required field that the source data doesn't always provide."},
+        {"id": "C", "texto": "Add input_examples demonstrating valid phone number formats.", "correcta": false, "justificacion": "Examples help with format and optional-parameter understanding, but they don't address the root cause: a field marked required when the source data legitimately lacks it."},
+        {"id": "D", "texto": "Have the client return a tool_result with is_error: true whenever the phone number is missing from the source document.", "correcta": false, "justificacion": "A missing optional field in the source document is not a tool execution error; using is_error for this would misrepresent normal, valid extraction outcomes."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-2",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]
+    },
+    {
+      "id": "b0-q07",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.3",
+      "escenario": "Your client builds the next request's user message by placing a text block explaining what was found first, followed by the tool_result block referencing the prior tool_use id. The API rejects the request with a 400 error.",
+      "enunciado": "What is the correct fix for this content array ordering issue?",
+      "opciones": [
+        {"id": "A", "texto": "Reorder the content array so the tool_result block comes first, with any additional text placed after it.", "correcta": true, "justificacion": "The API enforces a strict ordering rule: within the content array of the message carrying a tool_result, the tool_result block(s) must come first, with any extra text after; inverting that order produces a 400 error."},
+        {"id": "B", "texto": "Remove the text block entirely; a tool_result message can never include any text content.", "correcta": false, "justificacion": "Text is allowed alongside tool_result in the same content array; the constraint is about ordering (tool_result first), not about forbidding text altogether."},
+        {"id": "C", "texto": "Move the tool_result into its own separate request, sent after the explanatory text request.", "correcta": false, "justificacion": "tool_result blocks must immediately follow the corresponding tool_use in the conversation history within the same turn; splitting them into a separate later request breaks that adjacency requirement."},
+        {"id": "D", "texto": "Add is_error: true to the tool_result so the validator accepts the reordered content.", "correcta": false, "justificacion": "is_error communicates whether the tool execution failed; it has no bearing on content array ordering and won't resolve a 400 caused by an ordering violation."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-3",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works"]
+    },
+    {
+      "id": "b0-q08",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.3",
+      "escenario": "After adding the web_search server tool alongside several client-defined tools, an engineer's code detects the server_tool_use block in the response and manually constructs and sends a tool_result for it, just like it does for client tools. The conversation then behaves unpredictably in subsequent turns.",
+      "enunciado": "What is the root cause of this unpredictable behavior?",
+      "opciones": [
+        {"id": "A", "texto": "Server tools like web_search are executed and resolved internally by Anthropic; manually sending a tool_result for them produces undefined behavior, since only client tool_use blocks require a client-supplied tool_result.", "correcta": true, "justificacion": "Server tools are run by Anthropic's infrastructure and their results are already resolved server-side; the client should only construct tool_result blocks for the client tools it executes itself, never for server tools."},
+        {"id": "B", "texto": "The tool_use_id used in the manual tool_result doesn't match the corresponding tool_use id exactly.", "correcta": false, "justificacion": "The scenario describes a category mismatch (server tool vs client tool), not an id typo; even a correctly matched id would still be the wrong thing to send for a server tool."},
+        {"id": "C", "texto": "The content array ordering rule was violated by inserting the manual tool_result out of place.", "correcta": false, "justificacion": "The problem described is sending a tool_result at all for a server tool, not where it was placed in the array."},
+        {"id": "D", "texto": "The manual tool_result was missing the is_error flag.", "correcta": false, "justificacion": "is_error indicates execution failure; its presence or absence doesn't change the fact that server tools should never receive a client-constructed tool_result."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-3",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works"]
+    },
+    {
+      "id": "b0-q09",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.3",
+      "escenario": "Claude's response contains two tool_use blocks in the same turn — check_inventory and get_shipping_cost. The check_inventory call fails with a database timeout. To \"save a round trip,\" the client sends a tool_result only for get_shipping_cost, silently skipping check_inventory, and separately sends a generic message of \"failed\" whenever an error does get reported.",
+      "enunciado": "Select TWO changes required to bring this handling in line with the documented tool_use/tool_result pattern.",
+      "opciones": [
+        {"id": "A", "texto": "Return a tool_result for every tool_use block emitted in that turn, including check_inventory, since each tool_use requires its own corresponding tool_result.", "correcta": true, "justificacion": "When Claude emits multiple tool_use blocks in parallel, the client must execute and return a tool_result for each one; omitting one breaks the required one-to-one correspondence and can break the loop."},
+        {"id": "B", "texto": "Mark the check_inventory tool_result with is_error: true and a descriptive message (e.g., \"Database timeout after 30s, inventory service unavailable\") instead of a generic string.", "correcta": true, "justificacion": "Errors must be flagged with is_error and carry an instructive message so Claude can decide intelligently whether to retry or escalate; a generic message like \"failed\" gives it nothing to act on."},
+        {"id": "C", "texto": "Buffer the whole batch and wait until check_inventory eventually succeeds before sending any tool_result.", "correcta": false, "justificacion": "This isn't the documented pattern; a failed execution should be reported as an error result, not withheld indefinitely, and get_shipping_cost's already-available result shouldn't be blocked on it."},
+        {"id": "D", "texto": "Replace the failed call's tool_result with an empty content array to mark it as non-fatal.", "correcta": false, "justificacion": "An empty content array without is_error is reserved for a valid, genuinely empty (non-error) result, not for masking a real execution failure like a database timeout."},
+        {"id": "E", "texto": "Increase max_tokens so Claude can produce a longer error message on the next turn.", "correcta": false, "justificacion": "max_tokens bounds the output token budget; it has no relationship to whether the client correctly reports tool execution errors back to Claude."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-0-3",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works", "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"]
+    },
+    {
+      "id": "b0-q10",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.4",
+      "escenario": "An agent uses the web_search server tool. After several internal search iterations, a response comes back with stop_reason: \"pause_turn\", and the client immediately renders response.content to the end user as the final answer.",
+      "enunciado": "What is wrong with this handling of pause_turn?",
+      "opciones": [
+        {"id": "A", "texto": "pause_turn is not a terminal state — the internal server-tool iteration limit was reached but Claude hasn't finished; the client must resend the assistant message as-is so Claude can continue where it paused.", "correcta": true, "justificacion": "pause_turn signals that server tools hit their internal iteration cap (default 10) without the model finishing; treating it as final serves an incomplete answer, exactly the documented anti-pattern of confusing pause_turn with end_turn."},
+        {"id": "B", "texto": "This is expected; pause_turn and end_turn carry the same semantics for rendering purposes.", "correcta": false, "justificacion": "The two are explicitly different: end_turn is a terminal state ready to use, while pause_turn requires the client to resend and continue the loop."},
+        {"id": "C", "texto": "The client should increase max_tokens on the next request to force an end_turn result.", "correcta": false, "justificacion": "max_tokens governs the output token budget of a single response; it does not change server tool iteration limits or convert pause_turn into end_turn."},
+        {"id": "D", "texto": "The client should discard the paused assistant message and start a fresh user turn instead.", "correcta": false, "justificacion": "Discarding the paused work loses the server tool progress already made; the documented pattern is to resend the assistant message, including the already-received server_tool_use results, unchanged."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-4",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"]
+    },
+    {
+      "id": "b0-q11",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.4",
+      "escenario": "The agentic loop's control code has only two branches: `if response.stop_reason == \"tool_use\": ...` and `else: return response`. QA reports that about 4% of long answers end abruptly mid-sentence with no error surfaced to the user or logs.",
+      "enunciado": "What is the root cause and the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "The else branch conflates max_tokens (a truncated, incomplete response) with end_turn (a complete one); add an explicit check for max_tokens that either raises the limit and retries or flags the response as partial.", "correcta": true, "justificacion": "stop_reason must be checked with explicit branches for each value; collapsing max_tokens into a generic \"else, done\" path is exactly the anti-pattern of treating a truncated response as final without detection."},
+        {"id": "B", "texto": "Increase the model's context window configuration.", "correcta": false, "justificacion": "max_tokens bounds output tokens and is unrelated to the input context window; increasing a context window setting would not address output truncation."},
+        {"id": "C", "texto": "Add a stop_sequence to prevent truncation from occurring.", "correcta": false, "justificacion": "stop_sequences intentionally end generation early on a matched string; they don't prevent or detect max_tokens truncation, and would introduce a different, unrelated stop_reason."},
+        {"id": "D", "texto": "Switch tool_choice to \"none\" so responses are shorter.", "correcta": false, "justificacion": "tool_choice controls whether tools can be called; it has no direct effect on output length or on detecting a max_tokens truncation that already occurred."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-4",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"]
+    },
+    {
+      "id": "b0-q12",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.4",
+      "escenario": "The current agentic loop stops after a hardcoded 5 iterations regardless of stop_reason. Separately, whenever the response text contains words like \"cannot\" or \"unable\", the client treats the turn as finished, without ever inspecting the actual stop_reason field.",
+      "enunciado": "Select TWO changes that bring this loop in line with the documented control pattern for agentic loops.",
+      "opciones": [
+        {"id": "A", "texto": "Replace the hardcoded iteration cap with a loop condition based solely on stop_reason == \"tool_use\" continuing and any other value exiting.", "correcta": true, "justificacion": "The canonical control logic reenqueues requests only while stop_reason == \"tool_use\" and exits on any other value; an arbitrary iteration cap as the primary stop mechanism is an explicitly documented anti-pattern."},
+        {"id": "B", "texto": "Replace the natural-language keyword detection with an explicit check for stop_reason == \"refusal\", using response.stop_details for logging or fallback handling.", "correcta": true, "justificacion": "Parsing natural-language text to infer loop termination is a documented anti-pattern; the correct signal is the structured stop_reason == \"refusal\" value together with stop_details."},
+        {"id": "C", "texto": "Keep the 5-iteration cap in place as a secondary safety net in addition to the stop_reason checks.", "correcta": false, "justificacion": "The scenario's core problem is using the arbitrary cap as the primary termination mechanism instead of stop_reason; the corrective change described is replacing it, not layering it on top."},
+        {"id": "D", "texto": "Increase max_tokens so that a refusal never occurs.", "correcta": false, "justificacion": "max_tokens bounds output length; refusals are triggered by policy considerations, not by an insufficient output budget, so this does not address the refusal detection problem."},
+        {"id": "E", "texto": "Use a regex over the response text to detect refusal-like phrasing more precisely.", "correcta": false, "justificacion": "This is a more refined version of the same text-parsing anti-pattern; the documented correct approach is to rely on the structured stop_reason field, not on parsing generated text."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-0-4",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"]
+    },
+    {
+      "id": "b0-q13",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.5",
+      "escenario": "Product wants Claude to always invoke one of several available document-extraction tools for every incoming document, but the specific tool to use should depend on the document's type, which is unknown ahead of time and left to the model to determine.",
+      "enunciado": "Which tool_choice setting best matches this requirement?",
+      "opciones": [
+        {"id": "A", "texto": "{\"type\": \"any\"}", "correcta": true, "justificacion": "\"any\" forces Claude to call some tool while still letting it choose which one fits the input, matching the requirement of always extracting but with an unknown document type."},
+        {"id": "B", "texto": "\"auto\"", "correcta": false, "justificacion": "\"auto\" allows Claude to respond with plain text instead of calling a tool, which doesn't satisfy the \"always invoke one of the tools\" requirement."},
+        {"id": "C", "texto": "{\"type\": \"tool\", \"name\": \"extract_json\"}", "correcta": false, "justificacion": "Forcing a single named tool removes the flexibility needed when the document type — and therefore the correct extraction tool — is unknown in advance."},
+        {"id": "D", "texto": "\"none\"", "correcta": false, "justificacion": "\"none\" prevents any tool call entirely, the opposite of what's required."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-0-5",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]
+    },
+    {
+      "id": "b0-q14",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.5",
+      "escenario": "An engineer sets tool_choice to {\"type\": \"tool\", \"name\": \"process_refund\"} and adds an explicit prompt instruction: \"Before calling the tool, briefly explain your reasoning in one sentence.\" In production, Claude never outputs that explanatory sentence — only the tool_use block appears.",
+      "enunciado": "What explains this behavior?",
+      "opciones": [
+        {"id": "A", "texto": "Forced tool_choice (and \"any\") triggers an automatic prefill of the assistant message, which prevents any preceding text regardless of prompt instructions.", "correcta": true, "justificacion": "When tool_choice is \"any\" or a forced tool, the API automatically prefills the assistant message so that no text block precedes the tool_use; this is by design and prompt instructions cannot override it."},
+        {"id": "B", "texto": "The system prompt was placed inside the messages array, corrupting the instruction.", "correcta": false, "justificacion": "The scenario describes the documented prefill effect of forced tool_choice, not a system-parameter placement error, which would produce a different symptom (error or undefined behavior)."},
+        {"id": "C", "texto": "strict: true on the tool definition is silently suppressing the text block.", "correcta": false, "justificacion": "strict governs conformance of the tool's input JSON to its schema; it has no documented effect on whether an assistant message can include a preceding text block."},
+        {"id": "D", "texto": "The model interpreted the word \"briefly\" as requesting zero-length output.", "correcta": false, "justificacion": "This is not a documented behavior; the actual cause is the automatic prefill triggered by forced tool_choice, not an interpretation of the word \"briefly\"."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-5",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]
+    },
+    {
+      "id": "b0-q15",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.5",
+      "escenario": "A compliance-sensitive workflow enables manual extended thinking with thinking: {\"type\": \"enabled\"} and sets tool_choice to {\"type\": \"any\"}, expecting Claude to always call one of two verification tools. Requests fail or behave unexpectedly.",
+      "enunciado": "What is the root cause of this failure?",
+      "opciones": [
+        {"id": "A", "texto": "tool_choice \"any\" (and forced tool) is not supported alongside manual extended thinking; only \"auto\" or \"none\" are compatible with thinking: {\"type\": \"enabled\"}.", "correcta": true, "justificacion": "The documented compatibility rule is explicit: with manual extended thinking, only \"auto\" (default) or \"none\" are supported; \"any\" and forced tool are not, though adaptive thinking does support forced tool."},
+        {"id": "B", "texto": "strict: true is required on every tool whenever extended thinking is enabled.", "correcta": false, "justificacion": "strict and thinking are independent mechanisms; there is no documented requirement that strict be set whenever thinking is enabled."},
+        {"id": "C", "texto": "Extended thinking always requires tool_choice \"none\", with no exceptions.", "correcta": false, "justificacion": "\"auto\" is also compatible with manual extended thinking, and adaptive thinking additionally supports forced tool choice, so \"none\" is not the only allowed value in every case."},
+        {"id": "D", "texto": "Adaptive thinking must first be disabled before any tool_choice value can be used.", "correcta": false, "justificacion": "This inverts the documented relationship: it is adaptive thinking (not manual thinking) that supports forced tool_choice, so disabling it would not fix a manual-thinking compatibility issue."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-0-5",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]
+    },
+    {
+      "id": "b0-q16",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.6",
+      "escenario": "A team builds a refund system that always executes, in fixed order: (1) verify_customer, (2) lookup_order, (3) process_refund — with no branching based on the model's reasoning, and if verify_customer fails, the process simply stops.",
+      "enunciado": "How should this design be characterized, and is it appropriate?",
+      "opciones": [
+        {"id": "A", "texto": "It's a deterministic workflow, and it's appropriate for a critical operation like refunds, where compliance can't be left to probabilistic model decisions.", "correcta": true, "justificacion": "A fixed sequence with no model-driven branching, reserved for non-negotiable critical operations, is precisely the documented definition and appropriate use of a deterministic workflow."},
+        {"id": "B", "texto": "It's an agent, because Claude is still involved in generating each step's output.", "correcta": false, "justificacion": "What defines an agent is the model deciding the order and whether to call tools; a fixed, non-negotiable sequence with no branching is a workflow regardless of whether Claude executes each step."},
+        {"id": "C", "texto": "It's a poorly designed agent, and tool_choice should be switched to \"auto\" to restore flexibility.", "correcta": false, "justificacion": "Switching to \"auto\" would remove the very determinism that makes this design appropriate for a refund flow where order and compliance are non-negotiable."},
+        {"id": "D", "texto": "It's over-engineered; a single tool_choice: \"any\" call would achieve the same guarantee.", "correcta": false, "justificacion": "\"any\" only guarantees that some tool is called, not a specific enforced order across three sequential dependent steps; it does not replace a deterministic workflow's ordering guarantee."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-0-6",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works"]
+    },
+    {
+      "id": "b0-q17",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.6",
+      "escenario": "Production logs show that in 12% of cases the agent skips verify_customer and calls process_refund directly based on customer-stated information, despite the system prompt explicitly stating \"always verify customer before refund.\"",
+      "enunciado": "What is the most effective fix per the documented pattern for this kind of reliability issue?",
+      "opciones": [
+        {"id": "A", "texto": "Add a programmatic gate or hook that blocks process_refund until verify_customer has returned a verified customer ID.", "correcta": true, "justificacion": "Prompt-only guidance for a critical order is documented to fail even when explicitly stated; a programmatic prerequisite gate provides the deterministic guarantee that prompting cannot."},
+        {"id": "B", "texto": "Rephrase the system prompt more forcefully and add 10 few-shot examples reinforcing the required order.", "correcta": false, "justificacion": "This still relies on probabilistic prompt compliance for a non-negotiable ordering requirement, which is the exact anti-pattern documented to fail in a meaningful fraction of cases."},
+        {"id": "C", "texto": "Deploy a classifier that pre-selects which subset of tools is available for each request type.", "correcta": false, "justificacion": "This addresses tool availability, not enforcing a required call order; it does not stop the model from calling process_refund without a prior verified customer ID."},
+        {"id": "D", "texto": "Set tool_choice: \"any\" so Claude must call some tool every turn.", "correcta": false, "justificacion": "\"any\" only guarantees that a tool is called, not which one or in what order; it does nothing to prevent process_refund from being called before verify_customer."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-decision",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works"]
+    },
+    {
+      "id": "b0-q18",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.6",
+      "escenario": "In a multi-agent research system, the coordinator decides at runtime which subagents to invoke and in what order, based on query complexity. One of those subagents, however, always executes a fixed extract -> validate -> store sequence internally, with no branching.",
+      "enunciado": "Which statement correctly characterizes this architecture?",
+      "opciones": [
+        {"id": "A", "texto": "The overall system is model-driven at the coordinator level, and individual subagents can legitimately implement deterministic workflows internally; the two are not mutually exclusive.", "correcta": true, "justificacion": "The coordinator-subagent pattern is itself model-driven, since the coordinator decides which subagents to invoke and in what order; that a given subagent runs a fixed internal workflow for its own bounded task doesn't contradict that."},
+        {"id": "B", "texto": "This is inconsistent: if any subagent is a fixed workflow, the whole system must be reclassified as a deterministic workflow.", "correcta": false, "justificacion": "Classification happens at the level where the decision is made; the coordinator's runtime decision-making is what makes the overall system model-driven, regardless of one subagent's internal determinism."},
+        {"id": "C", "texto": "The coordinator should be converted into a fixed workflow to match the subagent's determinism for consistency.", "correcta": false, "justificacion": "There's no documented requirement to force uniformity; the coordinator's variable, complexity-dependent decisions are exactly the case where model-driven behavior adds value, unlike the subagent's bounded, repeatable task."},
+        {"id": "D", "texto": "Subagents must always use tool_choice: \"auto\" to qualify as part of an agentic system, so this subagent doesn't qualify.", "correcta": false, "justificacion": "No such requirement exists; a subagent's internal determinism doesn't disqualify it from being part of a larger agentic (coordinator-driven) system."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-0-6",
+      "fuentes": ["https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works"]
+    }
+  ]
+}

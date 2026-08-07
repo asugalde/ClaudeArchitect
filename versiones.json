@@ -1,0 +1,142 @@
+{
+  "$comment": "Manifest del pipeline nuevo. Lo actualizan las skills; no editar a mano salvo correccion. El material v1.2 anterior esta congelado en legacy/v1.2/ con su propio versiones.json.",
+  "guia_oficial_examen": {
+    "version": "1.0",
+    "fecha_descarga": "2026-08-05",
+    "diff_vs_anterior": "sin cambios: el PDF re-descargado de la URL S3 es identico (SHA-256) al fuentes/exam-guide-oficial-v1.0.pdf existente; no se genera diff ni ficheros nuevos"
+  },
+  "corpus": {
+    "gate_general": {
+      "estado": "aprobado",
+      "fecha_aprobacion": "2026-08-05",
+      "nota": "Aprobacion explicita del usuario ('aprobado, revisare despues'): su lectura posterior puede pedir cambios, que se pliegan sobre la v1.0 de cada bloque sin subir version."
+    },
+    "bloques": {
+      "0": {
+        "corpus": {
+          "version": "1.0",
+          "fichero": "corpus/bloque-0-fundamentos.md",
+          "estado": "aprobado",
+          "fecha": "2026-08-05",
+          "fecha_aprobado": "2026-08-05",
+          "nota_aprobacion": "explicita en el gate del piloto; el usuario revisara despues y los cambios que pida se pliegan sobre la v1.0 sin incrementar version",
+          "informe_contraste": "corpus/contraste/informe-contraste-bloque-0_v1.0.md",
+          "nota": "Piloto del pipeline nuevo. Veredicto del verificador: APTO CON CAMBIOS; 2 criticos corregidos por el orquestador (C1 tipos de content block de la respuesta; C2 strict tool use independiente de tool_choice, verificado contra la pagina oficial Strict tool use) y fuente strict-tool-use anadida. Mejoras M1-M6 aplicadas tambien (cifra 12%, input_examples sin soporte en server tools, tools Anthropic-schema, search_result, fuente strict-tool-use, assistant sinteticos), cerrando los huecos de deriva vs v1.2 salvo el matiz menor stateless-servidor vs memoria-aplicacion, cubierto ya por la prosa de 0.1."
+        },
+        "notas": {
+          "fecha": "2026-08-05",
+          "fuentes_procesadas": "5/7 (2 de skilljar exigen login: revision manual pendiente)",
+          "huecos": "prefill exacto, timing de parallel tool use, stop_sequence custom, tool_choice+streaming, metricas cuantitativas agente vs workflow"
+        }
+      },
+      "1": {
+        "corpus": { "version": "1.0", "fichero": "corpus/bloque-1-prompt-engineering.md", "estado": "verificado", "fecha": "2026-08-05", "informe_contraste": "corpus/contraste/informe-contraste-bloque-1_v1.0.md", "nota": "APTO CON CAMBIOS: 0 criticos, 5 mejoras (M1-M4 aplicadas, M5 descartada por fuera de blueprint). 0 contradicciones vs v1.2." },
+        "notas": { "fecha": "2026-08-05", "fuentes_procesadas": "8/9 (video de YouTube no accesible)" }
+      },
+      "2": {
+        "corpus": { "version": "1.0", "fichero": "corpus/bloque-2-claude-code.md", "estado": "verificado", "fecha": "2026-08-05", "informe_contraste": "corpus/contraste/informe-contraste-bloque-2_v1.0.md", "nota": "APTO CON CAMBIOS: 2 criticos corregidos (numeracion de secciones 2.x->3.x; fallback real de description en skills) y 8 mejoras/huecos aplicados (CLAUDE.md como user message, rules no vinculantes -> PreToolUse, /compact vs /clear, GitHub Code Review, etc.)." },
+        "notas": { "fecha": "2026-08-05", "fuentes_procesadas": "11/13 (skilljar y deeplearning.ai parciales por login)" }
+      },
+      "3": {
+        "corpus": { "version": "1.0", "fichero": "corpus/bloque-3-tools-mcp.md", "estado": "verificado", "fecha": "2026-08-05", "informe_contraste": "corpus/contraste/informe-contraste-bloque-3_v1.0.md", "nota": "APTO CON CAMBIOS: 2 criticos corregidos (metadata de error separada como caso de propagacion; sintaxis real de MCP resources @server:protocol://path) y 5 mejoras aplicadas (prefill de tool_choice, .mcp.json sin type, nombres reservados, ciclo de iteracion de tools)." },
+        "notas": { "fecha": "2026-08-05", "fuentes_procesadas": "10/10" }
+      },
+      "4": {
+        "corpus": { "version": "1.0", "fichero": "corpus/bloque-4-agent-sdk.md", "estado": "verificado", "fecha": "2026-08-05", "informe_contraste": "corpus/contraste/informe-contraste-bloque-4_v1.0.md", "nota": "NO APTO en primera verificacion: sintaxis de hooks INVENTADA (regresion vs v1.2), sin stop_reason pese a ser vocabulario literal del blueprint, sin patrones mcp__ en disallowedTools. Los 3 criticos corregidos re-verificando la sintaxis en vivo contra la doc oficial; M1-M3/M5 aplicadas; bloqueo post-hoc en PostToolUse queda en deuda (la doc vigente no lo documenta)." },
+        "notas": { "fecha": "2026-08-05", "fuentes_procesadas": "8/10 (2 videos de YouTube no accesibles)" }
+      },
+      "5": {
+        "corpus": { "version": "1.0", "fichero": "corpus/bloque-5-contexto-fiabilidad.md", "estado": "verificado", "fecha": "2026-08-05", "informe_contraste": "corpus/contraste/informe-contraste-bloque-5_v1.0.md", "nota": "APTO CON CAMBIOS: 1 critico corregido (2 fuentes oficiales asignadas sin usar, incorporadas: artefactos de harnesses en TS 5.4 y scratchpad de citas en TS 5.1) y 4 mejoras aplicadas. Mejora de rigor vs v1.2: eliminadas cifras [NO OFICIAL] no trazables." },
+        "notas": { "fecha": "2026-08-05", "fuentes_procesadas": "7/7", "huecos": "TS 5.2 y 5.5 con cobertura oficial limitada" }
+      }
+    }
+  },
+  "formato_validado": {
+    "guia": false,
+    "quiz": false,
+    "flashcards": false,
+    "pdf_resumen": false,
+    "index": false
+  },
+  "recursos": {
+    "bloques": {
+      "0": {
+        "flashcards": {
+          "version": "1.0",
+          "estado": "generado",
+          "fecha": "2026-08-05",
+          "generado_desde_corpus": "bloque-0-fundamentos.md v1.0",
+          "mazo": "recursos/flashcards/mazos/mazo-bloque-0_v1.0.json",
+          "html": "recursos/flashcards/html/flashcards-bloque-0_v1.0.html",
+          "nota": "Piloto del formato flashcards: 31 cartas en ingles (6 ejes + tabla de decision), Leitner de 3 cajas en localStorage, validado contra esquema-flashcard.schema.json y anchors del corpus; render verificado en Edge headless. Restyle Volt (2026-08-07, plantillas/volt-style-guide.html) plegado sobre v1.0; iteracion 2 mismo dia: layout Volt completo (topbar+hero sin cuadros, badges peso 500, boton primario texto casi blanco, tarjeta centrada 720px). Pendiente del gate de formato del usuario."
+        },
+        "guia": {
+          "version": "1.0",
+          "estado": "generado",
+          "fecha": "2026-08-05",
+          "generado_desde_corpus": "bloque-0-fundamentos.md v1.0",
+          "md": "recursos/guias/bloque-0/guia_v1.0.md",
+          "html": "recursos/guias/bloque-0/guia_v1.0.html",
+          "nota": "Piloto del formato guia: 6 lecciones narrativas (una por eje), 6 mini-checks, 2 mermaid, 1 par de variantes TS/Python, referencias oficiales por leccion. Seccion de ejercicios retirada de la guia y de la plantilla (fuera del pipeline nuevo). Verificado en Edge headless: TOC generado, 6 mini-checks, sin placeholders. Restyle Volt (2026-08-07) plegado sobre v1.0: tokens Volt idénticos en plantilla y generado, tokens de la identidad corporativa anterior eliminados, mermaid remapeado a paleta Volt; iteracion 2 mismo dia: layout Volt completo (topbar con controles integrados, hero sin header.doc, TOC horizontal en chips, secciones numeradas via contador CSS, badges peso 500, boton texto casi blanco); iteracion 3: TOC devuelto a sidebar sticky izquierda (260px, se colapsa <900px, oculto al imprimir) a peticion del usuario, wrap ampliado a 1240px. Pendiente del gate de formato del usuario."
+        },
+        "quiz": {
+          "version": "1.0",
+          "estado": "generado",
+          "fecha": "2026-08-05",
+          "generado_desde_corpus": "bloque-0-fundamentos.md v1.0",
+          "json": "recursos/quiz/bloque-0/preguntas_v1.0.json",
+          "html": "recursos/quiz/bloque-0/quiz_v1.0.html",
+          "nota": "Piloto del formato quiz: 18 preguntas en ingles (3 por eje, 3 multiple-response, 22/56/22 de dificultad), validadas contra esquema-pregunta.schema.json y anchors del corpus por generar-quiz-html.py. Incidencia corregida en el inyector: los marcadores citados en el comentario de instrucciones de la plantilla hacian que la primera inyeccion cayera dentro del comentario (se usa ahora la ultima aparicion, tambien en el de flashcards). Verificado en Edge headless. Restyle Volt (2026-08-07) plegado sobre v1.0, regenerado desde el JSON; nota: el revelado ?print=1 pertenece a la plantilla de guía, el quiz solo oculta botones flotantes al imprimir; iteracion 2 mismo dia: layout Volt completo (topbar+hero sin riel/escuadra, badges peso 500, texto casi blanco en boton primario y navgrid actual; el timer sigue en la tarjeta de pregunta). Pendiente del gate de formato del usuario."
+        },
+        "pdf_resumen": {
+          "version": "1.0",
+          "estado": "generado",
+          "fecha": "2026-08-05",
+          "generado_desde_corpus": "bloque-0-fundamentos.md v1.0",
+          "html": "recursos/pdf/resumen-bloque-0_v1.0.html",
+          "pdf": "recursos/pdf/resumen-bloque-0_v1.0.pdf",
+          "nota": "Piloto del formato cheat-sheet: 3 paginas A4 con eje->idea clave (6 filas), enumeraciones memorizables (stop_reason x7, tool_choice x4, limites), tabla de decision (9 filas), 6 anti-patrones, 7 trampas de examen y glosario a 2 columnas. Estatico (sin JS/mermaid/red salvo Google Fonts con fallbacks). Restyle Volt (2026-08-07) plegado sobre v1.0, PDF regenerado (3 paginas). REGLA del usuario (2026-08-07): en lo sucesivo NO regenerar PDFs salvo peticion explicita; los HTML son el recurso principal. Iteracion 2 mismo dia: layout Volt completo SOLO en los HTML (cabecera sin cuadros, sec-eyebrow numerados, callouts tipo alert; paginacion comprobada en 3 paginas con PDF temporal); el PDF v1.0 queda DESINCRONIZADO del HTML a proposito, se regenerara bajo demanda. Pendiente del gate de formato del usuario."
+        }
+      },
+      "1": {
+        "guia": { "version": "1.0", "estado": "md_generado", "fecha": "2026-08-07", "generado_desde_corpus": "bloque-1-prompt-engineering.md v1.0", "md": "recursos/guias/bloque-1/guia_v1.0.md", "nota": "Contenido adelantado en paralelo a las pruebas de formato (decision del usuario): 6 lecciones TS 4.1-4.6, 6 mini-checks, 2 mermaid, 2 HUECOS heredados del corpus. HTML pendiente de que el formato quede validado." }
+      },
+      "2": {
+        "guia": { "version": "1.0", "estado": "md_generado", "fecha": "2026-08-07", "generado_desde_corpus": "bloque-2-claude-code.md v1.0", "md": "recursos/guias/bloque-2/guia_v1.0.md", "nota": "6 lecciones TS 3.1-3.6, 6 mini-checks, 2 mermaid del corpus, sin huecos nuevos. HTML pendiente de formato validado." }
+      },
+      "3": {
+        "guia": { "version": "1.0", "estado": "md_generado", "fecha": "2026-08-07", "generado_desde_corpus": "bloque-3-tools-mcp.md v1.0", "md": "recursos/guias/bloque-3/guia_v1.0.md", "nota": "5 lecciones TS 2.1-2.5, 5 mini-checks, 2 mermaid del corpus, sin huecos (corpus sin deuda). HTML pendiente de formato validado." }
+      },
+      "4": {
+        "guia": { "version": "1.0", "estado": "md_generado", "fecha": "2026-08-07", "generado_desde_corpus": "bloque-4-agent-sdk.md v1.0", "md": "recursos/guias/bloque-4/guia_v1.0.md", "nota": "7 lecciones TS 1.1-1.7, 6 mini-checks, 2 mermaid, variantes TS/Python solo donde el corpus las traia; sintaxis de hooks copiada literal del corpus verificado; 3 HUECOS senalados en prosa sin codigo inventado. HTML pendiente de formato validado." }
+      },
+      "5": {
+        "guia": { "version": "1.0", "estado": "md_generado", "fecha": "2026-08-07", "generado_desde_corpus": "bloque-5-contexto-fiabilidad.md v1.0", "md": "recursos/guias/bloque-5/guia_v1.0.md", "nota": "6 lecciones TS 5.1-5.6, 6 mini-checks, 3 mermaid; HUECOS de TS 5.2/5.5 conservados sin rellenar. HTML pendiente de formato validado." }
+      }
+    },
+    "simulacro": null,
+    "index": {
+      "version": "1.0",
+      "estado": "generado",
+      "fecha": "2026-08-07",
+      "fichero": "recursos/index_v1.0.html",
+      "plantilla": "plantillas/index.template.html",
+      "herramienta": "herramientas/generar-index-html.py",
+      "nota": "Index del curso (decisiones del usuario 2026-08-07): intro + blueprint de dominios con pesos + enlaces oficiales publicos (nunca el PDF de fuentes/) + fichas de bloque con metadatos de versiones.json y progreso MIXTO en localStorage (auto: ccarf-sum-guia-N secciones leidas, ccarf-sum-quiz-N mejor resultado, ccarf-fc-bN-vX cartas en caja 3; manual: ccarf-index-bloque-N-done, unico que alimenta la media global). Bloques sin HTML se muestran como Proximamente segun existencia real en disco. Se regenera con generar-index-html.py al cambiar versiones.json. Pendiente del gate de formato del usuario."
+    }
+  },
+  "historial": [
+    {
+      "fecha": "2026-08-07",
+      "accion": "Iteracion 2 de formato (gate abierto): layout Volt completo en los 4 recursos y plantillas del bloque 0 tras feedback del usuario (no solo tokens): cabeceras topbar+hero sin cuadros, badges a peso 500, texto casi blanco sobre acento en botones primarios. Quiz y flashcards regenerados desde JSON; guia y resumen con estilo identico plantilla-generado. El PDF del resumen NO se regenero (regla: sin PDFs salvo peticion) y queda desincronizado de su HTML."
+    },
+    {
+      "fecha": "2026-08-07",
+      "accion": "Iteracion de formato (gate abierto): estilos Volt (plantillas/volt-style-guide.html) aplicados a las 4 plantillas y a los 4 recursos piloto del bloque 0, plegados sobre v1.0. Excepcion aprobada por el usuario: Google Fonts (Plus Jakarta Sans/JetBrains Mono) permitido ademas de mermaid CDN. Nueva regla: no generar PDFs salvo peticion explicita del usuario."
+    },
+    {
+      "fecha": "2026-08-05",
+      "accion": "Fase 0 del replanteamiento: v1.2 archivado en legacy/, estructura nueva creada, manifest reiniciado"
+    }
+  ]
+}

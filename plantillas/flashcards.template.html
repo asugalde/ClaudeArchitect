@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<!--
+  Plantilla de flashcards CCAR-F (autocontenida, JS vanilla, sin dependencias).
+  El generador inyecta el mazo JSON (conforme a esquema-flashcard.schema.json)
+  entre los marcadores __MAZO_JSON_START__ / __MAZO_JSON_END__ de la seccion DATA.
+  NUNCA editar cartas aqui: el JSON del mazo es la fuente unica y el HTML se regenera.
+  UI en espanol; cartas en ingles (condiciones reales del examen).
+
+  Layout: sistema Volt (ver plantillas/volt-style-guide.html) — topbar limpia,
+  hero sin cajas, contenido en tarjetas .card. Sin marcos/rejillas heredados.
+-->
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flashcards — CCAR-F</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — Volt
+     ===================================================================== */
+  :root{
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    /* ---- Color · modo claro ---- */
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+    --btn-primary-text:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"]{
+    /* ---- Color · modo oscuro ---- */
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+    --btn-primary-text:#FFFFFF;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-sans);font-size:var(--fs-body);line-height:1.55;
+    background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease);}
+  h1{margin:0;line-height:1.1;}
+  a{color:var(--accent);font-weight:var(--fw-medium);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  code{font-family:var(--font-mono);font-size:.95em;background:var(--accent-weak);color:var(--accent);
+    border-radius:var(--r-sm);padding:1px 6px;overflow-wrap:anywhere;}
+
+  /* =====================================================================
+     TOPBAR
+     ===================================================================== */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+    gap:var(--sp-4);padding:14px 24px;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:var(--fw-bold);letter-spacing:-.01em;}
+  .dot{width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none;}
+  .brand-sigla{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:var(--fw-medium);color:var(--text-muted);}
+  .topbar .controles-top{display:flex;gap:8px;align-items:center;}
+  .toggle{cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);
+    padding:8px 13px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:var(--fw-medium);
+    font-family:inherit;transition:border-color var(--ease),color var(--ease);}
+  .toggle:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* =====================================================================
+     LAYOUT / HERO
+     ===================================================================== */
+  .wrap{max-width:960px;margin:0 auto;padding:var(--sp-6) 24px 90px;}
+  .hero{padding-bottom:var(--sp-6);}
+  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:var(--sp-2);}
+  .display{font-size:var(--fs-display);font-weight:var(--fw-extra);letter-spacing:-.03em;
+    line-height:1.05;margin:0 0 var(--sp-4);}
+  /* Badges / chips — peso medium, nunca semibold/bold */
+  .badge{font-size:var(--fs-caption);font-weight:var(--fw-medium);padding:4px 11px;border-radius:var(--r-pill);
+    white-space:nowrap;}
+  .badge.neutral{background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);}
+  .badge.accent{background:var(--accent-weak);color:var(--accent);}
+  .badge.neutral.dif-facil{color:var(--success);} .badge.neutral.dif-media{color:var(--warning);} .badge.neutral.dif-dificil{color:var(--danger);}
+
+  /* =====================================================================
+     TARJETAS / PANELES
+     ===================================================================== */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:var(--sp-5);box-shadow:var(--shadow-sm);}
+
+  section.panel{margin-bottom:var(--sp-6);}
+
+  /* Resumen Leitner: fila de estadisticas, sin marcos individuales */
+  .stats-row{display:flex;flex-wrap:wrap;gap:var(--sp-5);}
+  .stat{flex:1 1 140px;padding-left:var(--sp-4);border-left:2px solid var(--border);}
+  .stat:first-child{padding-left:0;border-left:none;}
+  .stat b{display:block;font-size:1.5rem;font-weight:var(--fw-extra);line-height:1.2;}
+  .stat span{font-size:var(--fs-caption);color:var(--text-muted);}
+  .stat.c1 b{color:var(--danger);} .stat.c2 b{color:var(--warning);} .stat.c3 b{color:var(--success);}
+
+  .divisor{border:none;border-top:1px solid var(--border);margin:var(--sp-5) 0;}
+
+  /* Controles de sesion */
+  .controles{display:flex;gap:var(--sp-4);flex-wrap:wrap;align-items:end;}
+  .field-inline{display:flex;flex-direction:column;gap:6px;}
+  .field-inline label{font-size:var(--fs-caption);font-weight:var(--fw-medium);color:var(--text-muted);}
+  .field-inline select{font-family:inherit;font-size:var(--fs-sm);padding:9px 12px;border-radius:var(--r-md);
+    border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;
+    transition:border-color var(--ease);}
+  .field-inline select:hover,.field-inline select:focus{border-color:var(--accent);outline:none;}
+
+  /* CTA principal de pantalla (Empezar sesion / Otra sesion): un punto mayor que el resto de botones de accion. */
+  .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-medium);border-radius:var(--r-md);
+    padding:8px 14px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
+  .btn.primary{background:var(--accent);color:var(--btn-primary-text);}
+  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.primary:active{background:var(--accent-active);}
+  .btn.ghost{background:none;color:var(--text-muted);border:none;text-decoration:underline;cursor:pointer;
+    font-family:inherit;font-size:var(--fs-caption);padding:0;}
+  .btn.ghost:hover{color:var(--accent);}
+
+  /* =====================================================================
+     SESION DE ESTUDIO
+     ===================================================================== */
+  .progreso-sesion{font-size:var(--fs-sm);color:var(--text-muted);margin-bottom:var(--sp-2);}
+  .barra{height:8px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);
+    overflow:hidden;margin-bottom:var(--sp-5);}
+  .barra>div{height:100%;background:var(--accent);width:0;transition:width .3s;}
+
+  /* Tarjeta — protagonista, centrada, sin degradados */
+  .escena{max-width:720px;margin:0 auto var(--sp-4);perspective:1400px;}
+  .tarjeta{position:relative;width:100%;min-height:340px;cursor:pointer;
+    transform-style:preserve-3d;transition:transform .45s;}
+  .tarjeta.girada{transform:rotateY(180deg);}
+  .cara{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border:1px solid var(--border);border-radius:var(--r-xl);background:var(--surface);
+    padding:36px 40px;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);}
+  .cara.dorso{transform:rotateY(180deg);}
+  .cara .etq-cara{font-family:var(--font-mono);font-size:var(--fs-caption);letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-4);}
+  .cara .texto{flex:1;display:flex;align-items:center;font-size:1.25rem;text-align:center;}
+  .cara .texto>div{width:100%;}
+  .cara .pie-carta{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:var(--sp-4);}
+  .cara .texto code{font-size:.85em;}
+  .dif-facil{color:var(--success);} .dif-media{color:var(--warning);} .dif-dificil{color:var(--danger);}
+
+  .pista{text-align:center;color:var(--text-muted);font-size:var(--fs-caption);margin:0 0 var(--sp-5);}
+
+  /* Valoracion */
+  .valorar{display:none;gap:var(--sp-3);flex-wrap:wrap;max-width:720px;margin:0 auto;}
+  .valorar.visible{display:flex;}
+  .valorar button{flex:1 1 150px;border-radius:var(--r-lg);border:1px solid var(--border);border-top:3px solid var(--border);
+    padding:6px 12px;font-family:inherit;font-size:var(--fs-caption);cursor:pointer;background:var(--surface);
+    color:var(--text);transition:border-color var(--ease),background var(--ease);}
+  .valorar button:hover{background:var(--surface-2);}
+  .valorar .v1{border-top-color:var(--danger);} .valorar .v1 b{color:var(--danger);}
+  .valorar .v2{border-top-color:var(--warning);} .valorar .v2 b{color:var(--warning);}
+  .valorar .v3{border-top-color:var(--success);} .valorar .v3 b{color:var(--success);}
+  .valorar b{font-weight:var(--fw-semibold);}
+  .valorar small{display:block;color:var(--text-muted);}
+
+  /* Fin de sesion */
+  .fin{display:none;text-align:center;max-width:640px;margin:0 auto;}
+  .fin h2{color:var(--text);margin:0 0 var(--sp-2);font-size:var(--fs-h3);font-weight:var(--fw-bold);}
+  .fin p{color:var(--text-muted);margin-bottom:var(--sp-4);}
+
+  footer{margin-top:var(--sp-6);padding-top:var(--sp-3);border-top:1px solid var(--border);
+    font-size:var(--fs-caption);color:var(--text-muted);display:flex;justify-content:space-between;
+    flex-wrap:wrap;gap:8px;}
+
+  @media (max-width:600px){
+    .cara{padding:24px;}
+    .cara .texto{font-size:1.05rem;}
+    .stats-row{gap:var(--sp-4);}
+    .stat{flex:1 1 100px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="controles-top">
+    <button class="toggle" id="btnTema" title="Cambiar tema">◐ Oscuro</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow" id="eyebrowBloque"></div>
+    <h1 class="display" id="titulo"></h1>
+  </div>
+
+  <section class="panel card">
+    <div class="stats-row" aria-label="Cajas Leitner">
+      <div class="stat c1"><b id="nCaja1">0</b><span>Caja 1 · por aprender / falladas</span></div>
+      <div class="stat c2"><b id="nCaja2">0</b><span>Caja 2 · dudosas</span></div>
+      <div class="stat c3"><b id="nCaja3">0</b><span>Caja 3 · dominadas</span></div>
+    </div>
+    <hr class="divisor">
+    <div class="controles">
+      <div class="field-inline">
+        <label for="selModo">Sesión</label>
+        <select id="selModo">
+          <option value="repaso">Repaso inteligente (cajas 1→2→3)</option>
+          <option value="caja1">Solo caja 1</option>
+          <option value="caja12">Cajas 1 y 2</option>
+          <option value="todas">Todas las cartas</option>
+        </select>
+      </div>
+      <div class="field-inline">
+        <label for="selEtiqueta">Etiqueta</label>
+        <select id="selEtiqueta"><option value="">Todas las etiquetas</option></select>
+      </div>
+      <button class="btn primary" id="btnEmpezar">Empezar sesión</button>
+    </div>
+  </section>
+
+  <div id="zonaEstudio" style="display:none">
+    <div class="progreso-sesion"><span id="posSesion"></span></div>
+    <div class="barra"><div id="barraSesion"></div></div>
+    <div class="escena">
+      <div class="tarjeta" id="tarjeta" role="button" tabindex="0" aria-label="Tarjeta de estudio; pulsa para girar">
+        <div class="cara frente">
+          <div class="etq-cara">Pregunta</div>
+          <div class="texto"><div id="txtFrente"></div></div>
+          <div class="pie-carta" id="pieFrente"></div>
+        </div>
+        <div class="cara dorso">
+          <div class="etq-cara">Respuesta</div>
+          <div class="texto"><div id="txtDorso"></div></div>
+          <div class="pie-carta" id="pieDorso"></div>
+        </div>
+      </div>
+    </div>
+    <p class="pista" id="pistaGiro">Clic o barra espaciadora para girar la tarjeta</p>
+    <div class="valorar" id="valorar">
+      <button class="v1" data-v="1"><b>1 · No lo sabía</b><small>vuelve a la caja 1</small></button>
+      <button class="v2" data-v="2"><b>2 · Dudé</b><small>baja/queda en caja 2</small></button>
+      <button class="v3" data-v="3"><b>3 · Lo sabía</b><small>sube de caja</small></button>
+    </div>
+  </div>
+
+  <div class="fin card" id="fin">
+    <h2>Sesión terminada</h2>
+    <p id="resumenFin"></p>
+    <button class="btn primary" id="btnOtra">Otra sesión</button>
+  </div>
+
+  <footer>
+    <span id="pieMeta"></span>
+    <button class="btn ghost" id="btnReset">Reiniciar mi progreso de flashcards</button>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// ===================== DATA =====================
+const MAZO =
+// __MAZO_JSON_START__
+{"config":{"bloque":0,"nombre":"DEMO — sustituir por el mazo real","version":"0.0","fecha":"2026-01-01","guiaOficialExamen":"1.0","generadoDesdeCorpus":"demo"},"cartas":[{"id":"b0-fc01","taskStatement":"0.1","front":"DEMO card — what replaces this?","back":"The generator injects the real deck JSON between the markers.","refSeccion":"#ts-0-1","dificultad":"facil","etiquetas":["demo"]}]}
+// __MAZO_JSON_END__
+;
+// ================================================
+
+const CFG = MAZO.config;
+const CARTAS = MAZO.cartas;
+const KEY = `ccarf-fc-b${CFG.bloque}-v${CFG.version}`;
+const KEY_TEMA = "ccarf-theme";
+
+// ---------- utilidades ----------
+const $ = id => document.getElementById(id);
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function md(s){ // solo `inline code`
+  return escapeHtml(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+function barajar(a){ const r=[...a]; for(let i=r.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [r[i],r[j]]=[r[j],r[i]]; } return r; }
+
+// ---------- estado Leitner ----------
+function cargarEstado(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+function guardarEstado(e){ localStorage.setItem(KEY, JSON.stringify(e)); }
+let estado = cargarEstado(); // { cardId: {box:1|2|3, vistas:n, ultima:iso} }
+function cajaDe(id){ return (estado[id] && estado[id].box) || 1; }
+
+// ---------- tema ----------
+function aplicarTema(t){ document.documentElement.setAttribute("data-theme", t); localStorage.setItem(KEY_TEMA, t); }
+aplicarTema(localStorage.getItem(KEY_TEMA) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light"));
+$("btnTema").onclick = () => aplicarTema(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");
+
+// ---------- cabecera ----------
+document.title = `Flashcards B${CFG.bloque} — CCAR-F`;
+$("eyebrowBloque").textContent = `CCAR-F · Bloque ${CFG.bloque}`;
+$("titulo").textContent = `Flashcards: ${CFG.nombre}`;
+$("pieMeta").textContent = `Generado desde ${CFG.generadoDesdeCorpus} · el progreso vive en este navegador (localStorage)`;
+
+// ---------- filtros ----------
+const etiquetas = [...new Set(CARTAS.flatMap(c=>c.etiquetas))].sort();
+for(const e of etiquetas){ const o=document.createElement("option"); o.value=e; o.textContent=e; $("selEtiqueta").appendChild(o); }
+
+function refrescarCajas(){
+  const n={1:0,2:0,3:0};
+  for(const c of CARTAS) n[cajaDe(c.id)]++;
+  $("nCaja1").textContent=n[1]; $("nCaja2").textContent=n[2]; $("nCaja3").textContent=n[3];
+}
+refrescarCajas();
+
+// ---------- sesion ----------
+let cola=[], idx=0, resultados={1:0,2:0,3:0};
+
+function construirCola(){
+  const modo=$("selModo").value, etq=$("selEtiqueta").value;
+  let base = CARTAS.filter(c => !etq || c.etiquetas.includes(etq));
+  if(modo==="caja1")  base = base.filter(c=>cajaDe(c.id)===1);
+  if(modo==="caja12") base = base.filter(c=>cajaDe(c.id)<=2);
+  if(modo==="repaso"){
+    const g={1:[],2:[],3:[]};
+    for(const c of base) g[cajaDe(c.id)].push(c);
+    return [...barajar(g[1]), ...barajar(g[2]), ...barajar(g[3])];
+  }
+  return barajar(base);
+}
+
+function pintarCarta(){
+  const c = cola[idx];
+  $("posSesion").textContent = `Carta ${idx+1} de ${cola.length} · caja actual: ${cajaDe(c.id)}`;
+  $("barraSesion").style.width = `${Math.round(idx/cola.length*100)}%`;
+  $("txtFrente").innerHTML = md(c.front);
+  $("txtDorso").innerHTML  = md(c.back);
+  const pie = `<span class="badge neutral">TS ${escapeHtml(c.taskStatement)}</span>
+               <span class="badge neutral dif-${c.dificultad}">${c.dificultad}</span>
+               ${c.etiquetas.map(e=>`<span class="badge neutral">${escapeHtml(e)}</span>`).join("")}
+               <span class="badge neutral" title="Sección del corpus que respalda la carta">corpus ${escapeHtml(c.refSeccion)}</span>`;
+  $("pieFrente").innerHTML = pie; $("pieDorso").innerHTML = pie;
+  $("tarjeta").classList.remove("girada");
+  $("valorar").classList.remove("visible");
+  $("pistaGiro").style.display="";
+}
+
+function empezar(){
+  cola = construirCola(); idx=0; resultados={1:0,2:0,3:0};
+  if(!cola.length){ alert("No hay cartas que casen con ese filtro."); return; }
+  $("fin").style.display="none"; $("zonaEstudio").style.display=""; pintarCarta();
+}
+$("btnEmpezar").onclick = empezar;
+$("btnOtra").onclick = () => { $("fin").style.display="none"; refrescarCajas(); empezar(); };
+
+function girar(){
+  const t=$("tarjeta");
+  t.classList.toggle("girada");
+  const girada = t.classList.contains("girada");
+  $("valorar").classList.toggle("visible", girada);
+  $("pistaGiro").style.display = girada ? "none" : "";
+}
+$("tarjeta").addEventListener("click", girar);
+$("tarjeta").addEventListener("keydown", e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); girar(); } });
+
+function valorar(v){
+  const c = cola[idx];
+  const actual = cajaDe(c.id);
+  let nueva;
+  if(v===1) nueva = 1;
+  else if(v===2) nueva = Math.min(actual,2)===1 ? 2 : 2; // desde 1 sube a 2; desde 2/3 queda/baja a 2
+  else nueva = Math.min(3, actual+1);
+  estado[c.id] = { box:nueva, vistas:((estado[c.id]&&estado[c.id].vistas)||0)+1, ultima:new Date().toISOString().slice(0,10) };
+  guardarEstado(estado);
+  resultados[v]++;
+  idx++;
+  if(idx >= cola.length){ terminar(); } else { pintarCarta(); }
+}
+document.querySelectorAll("#valorar button").forEach(b => b.onclick = () => valorar(+b.dataset.v));
+
+document.addEventListener("keydown", e=>{
+  if($("zonaEstudio").style.display==="none") return;
+  if(e.key===" " && document.activeElement.tagName!=="BUTTON"){ e.preventDefault(); girar(); return; }
+  if($("valorar").classList.contains("visible") && ["1","2","3"].includes(e.key)) valorar(+e.key);
+});
+
+function terminar(){
+  $("zonaEstudio").style.display="none";
+  refrescarCajas();
+  $("resumenFin").innerHTML = `Has repasado <b>${cola.length}</b> cartas: `+
+    `<b class="dif-dificil">${resultados[1]}</b> falladas · <b class="dif-media">${resultados[2]}</b> dudosas · <b class="dif-facil">${resultados[3]}</b> sabidas.`+
+    `<br>Cajas ahora: ${$("nCaja1").textContent} / ${$("nCaja2").textContent} / ${$("nCaja3").textContent}. La caja 1 es tu prioridad del próximo repaso.`;
+  $("barraSesion").style.width="100%";
+  $("fin").style.display="";
+}
+
+$("btnReset").onclick = ()=>{
+  if(confirm("¿Borrar el progreso de estas flashcards en este navegador?")){
+    localStorage.removeItem(KEY); estado={}; refrescarCajas();
+    $("zonaEstudio").style.display="none"; $("fin").style.display="none";
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+{
+  "config": {
+    "bloque": 0,
+    "nombre": "Fundamentos: API de Claude, tool use y bucle agéntico",
+    "version": "1.0",
+    "fecha": "2026-08-05",
+    "guiaOficialExamen": "1.0",
+    "generadoDesdeCorpus": "bloque-0-fundamentos.md v1.0"
+  },
+  "cartas": [
+    {
+      "id": "b0-fc01",
+      "taskStatement": "0.1",
+      "front": "Is the Messages API stateless or stateful? What is the implication for agentic loops?",
+      "back": "The Messages API is completely stateless; the server remembers nothing between calls. The client must reconstruct and send the complete context in each request, including all previous messages. This is why agentic loops work by appending each turn to a local array and resending the full history.",
+      "refSeccion": "#ts-0-1",
+      "dificultad": "facil",
+      "etiquetas": ["messages-api", "stateless", "architecture"]
+    },
+    {
+      "id": "b0-fc02",
+      "taskStatement": "0.1",
+      "front": "Where should the `system` parameter be placed in a Messages API request?",
+      "back": "The `system` parameter must be a top-level parameter in the request, never as a message with `role: \"system\"` inside the `messages` array. Exception: Claude Opus 5, Opus 4.8, Fable 5, and Mythos 5 support mid-conversation system messages (always after a user turn).",
+      "refSeccion": "#ts-0-1",
+      "dificultad": "facil",
+      "etiquetas": ["system-prompt", "messages-api", "request-structure"]
+    },
+    {
+      "id": "b0-fc03",
+      "taskStatement": "0.1",
+      "front": "What does `max_tokens` limit in a Messages API response, and what happens when it is exhausted?",
+      "back": "`max_tokens` limits only the output token budget (not total context). If generation exhausts it mid-response, the response is truncated at the word boundary and `stop_reason` becomes `\"max_tokens\"`. The client must then increase `max_tokens` and retry, or accept the partial response.",
+      "refSeccion": "#ts-0-1",
+      "dificultad": "media",
+      "etiquetas": ["max-tokens", "stop-reason", "truncation"]
+    },
+    {
+      "id": "b0-fc04",
+      "taskStatement": "0.1",
+      "front": "Which content blocks can appear in the `content` array of a Messages API response from Claude?",
+      "back": "Only `text` and `tool_use` blocks can appear in the model's response. The blocks `tool_result` (and images/documents within them) belong to user messages constructed by the client, never to the assistant response.",
+      "refSeccion": "#ts-0-1",
+      "dificultad": "media",
+      "etiquetas": ["content-blocks", "response-structure", "tool-use"]
+    },
+    {
+      "id": "b0-fc05",
+      "taskStatement": "0.1",
+      "front": "What is the anti-pattern of treating `system` as a message inside the `messages` array, and why does it fail?",
+      "back": "Passing `{\"role\": \"system\", \"content\": \"...\"}` inside the array produces an error or undefined behavior because `system` is not a valid role in the messages array (except in the few models that support mid-conversation system messages). The correct pattern is to pass `system` as a top-level request parameter.",
+      "refSeccion": "#ts-0-1",
+      "dificultad": "dificil",
+      "etiquetas": ["anti-pattern", "system-prompt", "messages-api"]
+    },
+    {
+      "id": "b0-fc06",
+      "taskStatement": "0.2",
+      "front": "What are the three required fields to define a tool in the Claude API?",
+      "back": "`name` (regex `^[a-zA-Z0-9_-]{1,64}$`), `description` (minimum 3–4 sentences of plain text), and `input_schema` (a JSON Schema object with `type: \"object\"`, `properties`, and `required` fields).",
+      "refSeccion": "#ts-0-2",
+      "dificultad": "facil",
+      "etiquetas": ["tool-definition", "schema", "structure"]
+    },
+    {
+      "id": "b0-fc07",
+      "taskStatement": "0.2",
+      "front": "Why is the tool `description` field critical for tool invocation reliability?",
+      "back": "The description is the only mechanism the model has to decide when and how to invoke a tool. Its quality—clarity about what the tool does, when to use it, and its limitations—directly determines whether the model selects the tool correctly or misroutes the call.",
+      "refSeccion": "#ts-0-2",
+      "dificultad": "facil",
+      "etiquetas": ["tool-description", "design", "reliability"]
+    },
+    {
+      "id": "b0-fc08",
+      "taskStatement": "0.2",
+      "front": "What is `input_examples` and what are its cost and limitations?",
+      "back": "`input_examples` is an optional array of valid schema instances that help the model understand parameters, formats, and patterns. Cost: ~20–50 tokens per simple example, ~100–200 for complex ones. Limitation: NOT supported in server-side tools.",
+      "refSeccion": "#ts-0-2",
+      "dificultad": "media",
+      "etiquetas": ["input-examples", "cost", "server-tools"]
+    },
+    {
+      "id": "b0-fc09",
+      "taskStatement": "0.2",
+      "front": "What does `strict: true` guarantee in a tool definition, and with which `tool_choice` values does it work?",
+      "back": "`strict: true` guarantees via grammar-constrained sampling that every tool call matches the schema exactly—no missing required parameters or type mismatches. This guarantee applies regardless of `tool_choice` value: `\"auto\"`, `\"any\"`, forced tool, or `\"none\"`.",
+      "refSeccion": "#ts-0-2",
+      "dificultad": "media",
+      "etiquetas": ["strict-mode", "schema-validation", "tool-choice"]
+    },
+    {
+      "id": "b0-fc10",
+      "taskStatement": "0.2",
+      "front": "What anti-pattern occurs when tool descriptions are ambiguous or overlapping, and how does it manifest?",
+      "back": "Ambiguous descriptions (e.g., 'lookup_data' without specifying whether to search by ID, name, or email) force the model to guess the correct invocation, resulting in misrouting and incorrect tool calls. The solution is explicit boundaries: what each tool accepts, when to choose one over another, and caveats.",
+      "refSeccion": "#ts-0-2",
+      "dificultad": "dificil",
+      "etiquetas": ["anti-pattern", "description", "misrouting"]
+    },
+    {
+      "id": "b0-fc11",
+      "taskStatement": "0.3",
+      "front": "What three fields does a `tool_use` content block contain?",
+      "back": "`type: \"tool_use\"`, `id` (unique identifier for that specific call), `name` (tool name), and `input` (JSON object matching the tool's `input_schema`).",
+      "refSeccion": "#ts-0-3",
+      "dificultad": "facil",
+      "etiquetas": ["tool-use", "content-blocks", "structure"]
+    },
+    {
+      "id": "b0-fc12",
+      "taskStatement": "0.3",
+      "front": "What must the `tool_use_id` field in a `tool_result` block exactly match?",
+      "back": "The `tool_use_id` must match exactly the `id` field from the corresponding `tool_use` block. This is how the API maps results back to their originating tool calls.",
+      "refSeccion": "#ts-0-3",
+      "dificultad": "media",
+      "etiquetas": ["tool-result", "tool-use-id", "mapping"]
+    },
+    {
+      "id": "b0-fc13",
+      "taskStatement": "0.3",
+      "front": "What is the correct order of content blocks in a user message containing `tool_result`, and what error occurs if reversed?",
+      "back": "`tool_result` blocks must come FIRST in the content array, followed by any additional text. Putting text before `tool_result` causes a 400 API error. This strict ordering is non-negotiable.",
+      "refSeccion": "#ts-0-3",
+      "dificultad": "media",
+      "etiquetas": ["tool-result", "content-order", "error"]
+    },
+    {
+      "id": "b0-fc14",
+      "taskStatement": "0.3",
+      "front": "What is the fundamental difference between client tools and server tools regarding `tool_result` responsibility?",
+      "back": "Client tools: the client executes the tool and returns `tool_result` manually. Server tools (`web_search`, `code_execution`, etc.): Anthropic executes them internally. Sending manual `tool_result` for a server tool produces undefined behavior.",
+      "refSeccion": "#ts-0-3",
+      "dificultad": "media",
+      "etiquetas": ["client-tools", "server-tools", "execution"]
+    },
+    {
+      "id": "b0-fc15",
+      "taskStatement": "0.3",
+      "front": "How should error messages in `tool_result` (with `is_error: true`) be structured to enable intelligent model recovery?",
+      "back": "Error messages must be descriptive and instructive—e.g., 'Rate limit exceeded. Retry after 60 seconds' or 'Missing required location parameter'—not generic like 'Operation failed.' This allows the model to decide whether to retry, use a fallback, or escalate.",
+      "refSeccion": "#ts-0-3",
+      "dificultad": "dificil",
+      "etiquetas": ["error-handling", "tool-result", "messaging"]
+    },
+    {
+      "id": "b0-fc16",
+      "taskStatement": "0.4",
+      "front": "List the seven possible values of `stop_reason` in a Messages API response.",
+      "back": "`\"end_turn\"` (completed normally), `\"tool_use\"` (tool call requested), `\"max_tokens\"` (output budget exhausted), `\"stop_sequence\"` (custom stop sequence triggered), `\"pause_turn\"` (server tool iteration limit reached), `\"refusal\"` (policy rejection), `\"model_context_window_exceeded\"` (context window full).",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "facil",
+      "etiquetas": ["stop-reason", "values", "enumeration"]
+    },
+    {
+      "id": "b0-fc17",
+      "taskStatement": "0.4",
+      "front": "What should happen in an agentic loop when `stop_reason == \"tool_use\"`?",
+      "back": "Execute all `tool_use` blocks (in parallel if multiple), collect results, construct a `tool_result` for each, and send a new request with those results appended to the message history. The loop continues because the tool call was received.",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "media",
+      "etiquetas": ["tool-use", "loop-control", "flow"]
+    },
+    {
+      "id": "b0-fc18",
+      "taskStatement": "0.4",
+      "front": "What action should the client take when `stop_reason == \"max_tokens\"`?",
+      "back": "The response is truncated (possibly mid-word). The client has two options: (1) increase `max_tokens` and retry the same request, or (2) accept the partial response and present it to the user with a warning that it's incomplete.",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "media",
+      "etiquetas": ["max-tokens", "truncation", "handling"]
+    },
+    {
+      "id": "b0-fc19",
+      "taskStatement": "0.4",
+      "front": "Why is confusing `pause_turn` with `end_turn` especially dangerous in an agentic loop?",
+      "back": "If a `pause_turn` response (server tools still executing internally) is returned to the user as final, the server tool work remains incomplete and the result is misleading. `pause_turn` is NOT terminal; the client must resend the assistant message without `tool_result` so the model can continue.",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "dificil",
+      "etiquetas": ["pause-turn", "end-turn", "server-tools"]
+    },
+    {
+      "id": "b0-fc20",
+      "taskStatement": "0.4",
+      "front": "What does `stop_reason == \"pause_turn\"` indicate, and how should the client respond?",
+      "back": "`pause_turn` indicates server tools are still running (the internal iteration limit was reached). The client should resend the assistant message with any collected `server_tool_use` results so the model can continue iterating where it paused.",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "media",
+      "etiquetas": ["pause-turn", "server-tools", "iteration"]
+    },
+    {
+      "id": "b0-fc21",
+      "taskStatement": "0.4",
+      "front": "What is the canonical control logic for deciding whether an agentic loop should continue or exit?",
+      "back": "The loop continues while `stop_reason == \"tool_use\"`; it exits on any other value. Each exit value requires an explicit action: `\"end_turn\"` (return result), `\"max_tokens\"` (truncate or retry), `\"refusal\"` (apply fallback/escalate), `\"pause_turn\"` (resend to continue), etc.",
+      "refSeccion": "#ts-0-4",
+      "dificultad": "dificil",
+      "etiquetas": ["loop-control", "stop-reason", "logic"]
+    },
+    {
+      "id": "b0-fc22",
+      "taskStatement": "0.5",
+      "front": "What is the difference between `tool_choice: \"auto\"` and `tool_choice: \"any\"`?",
+      "back": "`\"auto\"` (default): the model decides whether to call a tool at all—it will respond with text alone if that's more appropriate. `\"any\"`: the model MUST call some tool, but chooses which one.",
+      "refSeccion": "#ts-0-5",
+      "dificultad": "facil",
+      "etiquetas": ["tool-choice", "auto", "any"]
+    },
+    {
+      "id": "b0-fc23",
+      "taskStatement": "0.5",
+      "front": "What does 'prefill' mean in the context of `tool_choice: \"any\"` or tool-forced?",
+      "back": "The API automatically prefills the assistant message, suppressing any explanatory text before the `tool_use` block. This means Claude will not emit text like 'I'll check the weather' before the tool call—the prefill enforces the structure.",
+      "refSeccion": "#ts-0-5",
+      "dificultad": "media",
+      "etiquetas": ["prefill", "tool-choice", "behavior"]
+    },
+    {
+      "id": "b0-fc24",
+      "taskStatement": "0.5",
+      "front": "What is the combined guarantee when using `tool_choice: \"any\"` + `strict: true` together?",
+      "back": "The combined guarantee ensures that a tool WILL be called (`\"any\"` forces the call) AND the input WILL conform exactly to the schema (`strict: true` prevents invalid parameters). This is a compound guarantee: call + conformity.",
+      "refSeccion": "#ts-0-5",
+      "dificultad": "media",
+      "etiquetas": ["tool-choice", "strict", "guarantee"]
+    },
+    {
+      "id": "b0-fc25",
+      "taskStatement": "0.5",
+      "front": "Which `tool_choice` values are compatible with extended thinking manual (`thinking: {type: \"enabled\"}` )?",
+      "back": "Only `\"auto\"` and `\"none\"` are compatible with manual extended thinking. `\"any\"` and tool-forced are NOT compatible. (Note: adaptive thinking, which is the default in some models, does support `\"any\"` and tool-forced.)",
+      "refSeccion": "#ts-0-5",
+      "dificultad": "dificil",
+      "etiquetas": ["extended-thinking", "tool-choice", "compatibility"]
+    },
+    {
+      "id": "b0-fc26",
+      "taskStatement": "0.5",
+      "front": "When should `tool_choice: \"none\"` be used?",
+      "back": "`\"none\"` is used for pure QA mode where side effects are not allowed—no tool calls are permitted, only text responses. It is the default behavior when no tools are defined in the request.",
+      "refSeccion": "#ts-0-5",
+      "dificultad": "media",
+      "etiquetas": ["tool-choice", "none", "qa-mode"]
+    },
+    {
+      "id": "b0-fc27",
+      "taskStatement": "0.6",
+      "front": "What is the fundamental distinction between model-driven decision-making and deterministic workflows in agent design?",
+      "back": "Model-driven (agentic): the model decides which tools to call and in what order based on context (flexible, adaptive to new data). Deterministic (workflow): the sequence is fixed in advance—'always A, then B, then C'—with no adaptation, suitable for critical operations.",
+      "refSeccion": "#ts-0-6",
+      "dificultad": "media",
+      "etiquetas": ["agent", "workflow", "architecture"]
+    },
+    {
+      "id": "b0-fc28",
+      "taskStatement": "0.6",
+      "front": "Why is prompt-only guidance insufficient for critical operations like refunds, and what should be used instead?",
+      "back": "Prompt-only guidance fails in practice (~12% failure rate documented in the official exam guide) because the model can ignore instructions if it generates a plausible alternative reasoning. The solution is a programmatic gate or hook that enforces the rule independent of model reasoning.",
+      "refSeccion": "#ts-0-6",
+      "dificultad": "dificil",
+      "etiquetas": ["enforcement", "hook", "anti-pattern"]
+    },
+    {
+      "id": "b0-fc29",
+      "taskStatement": "0.6",
+      "front": "In an agentic loop, when should tool choice be forced for a specific tool, and when should it revert to `\"auto\"`?",
+      "back": "Force a tool for the first step of critical sequences (e.g., always verify customer before processing refund). After that critical step, revert to `\"auto\"` for non-critical subsequent steps to preserve flexibility and allow the model to adapt.",
+      "refSeccion": "#ts-0-6",
+      "dificultad": "media",
+      "etiquetas": ["tool-choice", "sequencing", "critical-step"]
+    },
+    {
+      "id": "b0-fc30",
+      "taskStatement": "0-decision",
+      "front": "When do you use `tool_choice: \"any\"` + `strict: true`, and what problem does this combination solve?",
+      "back": "Use this combination when you need guaranteed structured output validated by a schema. The prefill from `\"any\"` forces a tool call; `strict: true` ensures the input conforms exactly. This solves the problem of enforcing consistent output structure in extraction or classification tasks.",
+      "refSeccion": "#ts-0-decision",
+      "dificultad": "media",
+      "etiquetas": ["decision-table", "tool-choice", "strict"]
+    },
+    {
+      "id": "b0-fc31",
+      "taskStatement": "0-decision",
+      "front": "When should you use a deterministic workflow (programmed sequence) instead of an agentic loop, and what enforcement mechanism is required?",
+      "back": "Use a deterministic workflow for critical operations (compliance, money transfers) where failure is not an option. The enforcement mechanism must be programmatic—hooks, gates, or pre-configured sequences—not prompt-only guidance, because text-based rules fail ~12% of the time in practice.",
+      "refSeccion": "#ts-0-decision",
+      "dificultad": "dificil",
+      "etiquetas": ["decision-table", "workflow", "enforcement"]
+    }
+  ]
+}
