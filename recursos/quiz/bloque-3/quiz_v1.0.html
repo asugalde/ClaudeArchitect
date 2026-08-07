@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz CCAR-F · Bloque 3 — Diseño de tools y MCP: Tool Design &amp; MCP Integration</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<!--
+  PLANTILLA DE QUIZ CCAR-F (autocontenida, sin dependencias).
+  INSTRUCCIONES DE GENERACIÓN (fase2-bloque):
+  - Sustituir TODO el bloque comprendido entre las líneas
+      // __PREGUNTAS_JSON_START__   y   // __PREGUNTAS_JSON_END__
+    por:  const DATA = <contenido de preguntas_vX.Y.json>;
+  - No editar preguntas aquí: el JSON es la fuente única.
+  - El objeto DATA sigue plantillas/esquema-pregunta.schema.json (config + preguntas).
+-->
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — Volt (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+
+    /* Texto sobre fondo --accent: casi blanco en ambos temas (no --accent-contrast). */
+    --on-accent:#F7FBFF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6;
+    background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease); }
+  .wrap { max-width:960px; margin:0 auto; padding:40px 24px 90px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:var(--sp-5); margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm); }
+  h1 { font-size:var(--fs-h1); margin:0 0 var(--sp-1); font-weight:var(--fw-extra); letter-spacing:-.025em; color:var(--text); }
+  .display { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.05; }
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); letter-spacing:-.02em; color:var(--text); margin:0 0 var(--sp-3); }
+  .muted { color:var(--text-muted); font-size:var(--fs-sm); }
+  button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); border-radius:var(--r-md); padding:6px 12px; cursor:pointer;
+    transition:background var(--ease),border-color var(--ease),color var(--ease); }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); color:var(--on-accent); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  /* CTA principal de portada (elección de modo): un punto mayor que el resto de botones de acción. */
+  #m-estudio, #m-examen { font-size:var(--fs-sm); padding:8px 14px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--border); border-radius:var(--r-md);
+    padding:10px 12px; margin:8px 0; cursor:pointer; transition:border-color var(--ease),background var(--ease); }
+  .opt input { margin-top:4px; }
+  .opt.sel { border-color:var(--accent); background:var(--accent-weak); }
+  .opt.ok { border-color:var(--success); background:var(--success-weak); }
+  .opt.ko { border-color:var(--danger); background:var(--danger-weak); }
+  .creditos { margin:24px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .rationale { font-size:var(--fs-sm); color:var(--text-muted); margin-top:6px; display:none; }
+  .revealed .rationale { display:block; }
+  .repasa { font-size:var(--fs-sm); color:var(--text-muted); margin:6px 0 10px; }
+  .repasa a { color:var(--accent); font-weight:var(--fw-medium); }
+  .scenario { background:var(--surface-2); border-left:3px solid var(--accent); padding:10px 14px;
+    border-radius:0 var(--r-md) var(--r-md) 0; font-size:var(--fs-sm); margin-bottom:12px; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .timer { font-variant-numeric:tabular-nums; font-weight:var(--fw-semibold); font-family:var(--font-mono); }
+  .timer.low { color:var(--danger); }
+  .navgrid { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .navgrid button { width:38px; height:32px; padding:0; font-size:var(--fs-caption); }
+  .navgrid .answered { background:var(--success-weak); border-color:var(--success); }
+  .navgrid .flagged { outline:2px solid var(--warning); }
+  .navgrid .current { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .pill { display:inline-block; font-size:var(--fs-caption); font-weight:var(--fw-medium); border:1px solid var(--border); background:var(--surface-2);
+    border-radius:var(--r-pill); padding:1px 10px; margin-right:6px; color:var(--text-muted); }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  th,td { border-bottom:1px solid var(--border); padding:10px 12px; text-align:left; }
+  th { font-weight:var(--fw-semibold); font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-muted); border-bottom:2px solid var(--border-strong); }
+  tbody tr:hover { background:var(--surface-2); }
+  .big { font-size:2rem; font-weight:var(--fw-bold); }
+  .ok-t { color:var(--success); } .ko-t { color:var(--danger); }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  /* =====================================================================
+     CABECERA — topbar sticky + hero limpio (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  header.topbar { position:sticky; top:0; z-index:30; display:flex; justify-content:space-between;
+    align-items:center; gap:var(--sp-4); padding:14px 24px; margin:0;
+    background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border); }
+  header.topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold);
+    letter-spacing:-.01em; color:var(--text); white-space:nowrap; }
+  header.topbar .brand .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  header.topbar .controls { display:flex; gap:8px; align-items:center; }
+  .toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1; transition:border-color var(--ease),color var(--ease); }
+  .toggle:hover { border-color:var(--accent); color:var(--accent); }
+  @media print { header.topbar .controls { display:none !important; } }
+
+  .hero { padding:var(--sp-7) 0 var(--sp-2); }
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--sp-2); }
+  @media (max-width:700px) { .hero h1 { font-size:var(--fs-h2); } header.topbar { padding:12px 16px; } .wrap { padding-left:16px; padding-right:16px; } }
+  @media print { header.topbar { position:static; background:none; backdrop-filter:none; border-bottom:2px solid var(--accent); }
+    .hero { padding:var(--sp-4) 0 var(--sp-2); } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow" id="q-eyebrow">CCAR-F · QUIZ</div>
+    <h1 class="display" id="q-title">Quiz</h1>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// __PREGUNTAS_JSON_START__
+const DATA = {"config":{"titulo":"Bloque 3 — Diseño de tools y MCP: Tool Design & MCP Integration","version":"1.0","bloque":3,"modo_defecto":"estudio","solo_examen":false,"generado_desde_corpus":"bloque-3-tools-mcp.md v1.0","fecha":"2026-08-07"},"preguntas":[{"id":"b3-q01","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.1","escenario":"Your search_docs tool has the description \"Searches documents.\" Production traces show Claude invoking it for questions about internal HR policies, historical financial reports, and live customer support tickets alike, then failing when the underlying index doesn't cover certain content types.","enunciado":"What is the most effective fix for this tool selection problem?","opciones":[{"id":"A","texto":"Rewrite the description to state exactly what corpus the tool indexes, what it returns, and the boundary cases where it should not be used.","correcta":true,"justificacion":"description is the model's only channel for deciding when and how to call a tool; a minimal description without scope or boundaries directly causes this kind of misrouting across unrelated content types."},{"id":"B","texto":"Add input_examples covering typical HR, financial, and support queries.","correcta":false,"justificacion":"input_examples clarify ambiguous input formats and patterns; they don't communicate what corpus the tool actually covers, which is the real cause of misrouting here."},{"id":"C","texto":"Set tool_choice to \"any\" so the tool is always called.","correcta":false,"justificacion":"\"any\" only forces some tool to be called; it does nothing to fix which content types search_docs is appropriate for, and would force a call even when no tool applies."},{"id":"D","texto":"Consolidate search_docs into a broader search_everything tool.","correcta":false,"justificacion":"Widening scope further would make the ambiguity worse, not better; the documented fix for an underspecified description is to tighten and clarify its boundaries, not broaden them."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-3-1","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]},{"id":"b3-q02","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.1","escenario":"Two tools in your catalog, analyze_content and analyze_document, have nearly identical descriptions (\"Analyzes provided content and returns insights\"). Claude alternates unpredictably between the two for equivalent requests, and the team's fix so far has been to append two more sentences of generic detail to both descriptions, with no improvement.","enunciado":"What is the correct fix per the documented pattern for this kind of overlap?","opciones":[{"id":"A","texto":"Rename and rewrite one of the tools to remove the functional overlap, e.g., renaming analyze_content to extract_web_results with a description specific to web content, so the two tools no longer describe the same responsibility.","correcta":true,"justificacion":"When two tools overlap functionally with near-identical descriptions, the documented fix is to rename and differentiate their purpose, not to add more prose to descriptions that already say the same thing."},{"id":"B","texto":"Continue adding more descriptive text to both existing descriptions until the model can tell them apart.","correcta":false,"justificacion":"This is exactly the anti-pattern already tried and documented as ineffective: functional overlap, not description length, is the cause, so more text does not resolve it."},{"id":"C","texto":"Add strict: true to both tools so their inputs are validated more rigorously.","correcta":false,"justificacion":"strict enforces schema conformance of whatever input is produced once a tool is called; it has no effect on which of two overlapping tools gets selected."},{"id":"D","texto":"Merge both tools' catalogs under a shared action parameter without changing either description.","correcta":false,"justificacion":"Consolidation under an action parameter helps when a catalog has too many endpoint-specific tools; it does not by itself resolve two tools whose descriptions still describe the same overlapping responsibility."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-1","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools","https://www.anthropic.com/engineering/writing-tools-for-agents"]},{"id":"b3-q03","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.1","escenario":"A calendar integration exposes five separate tools — list_users, list_events, create_event, update_event, delete_event — each mapping 1:1 to an API endpoint. Claude's tool selection accuracy drops as more of these are added to the catalog, even though each individual description is well written.","enunciado":"What is the most effective structural fix for this catalog?","opciones":[{"id":"A","texto":"Consolidate the related operations into a single schedule_event tool with an action parameter, reducing the decision surface exposed to the model.","correcta":true,"justificacion":"Exposing one tool per API endpoint multiplies the model's decision surface without adding value; consolidating related operations behind an action parameter is the documented fix for this exact pattern."},{"id":"B","texto":"Improve namespacing by prefixing each tool with calendar_ (calendar_list_users, calendar_create_event, etc.).","correcta":false,"justificacion":"Namespacing helps the model differentiate tools belonging to different services when many coexist; it does not reduce the decision complexity created by having too many granular tools within the same service."},{"id":"C","texto":"Add 2-4 few-shot examples showing tool selection reasoning for each of the five tools.","correcta":false,"justificacion":"Few-shot examples close disambiguation gaps when well-written descriptions alone don't suffice between similar tools; here the root cause is catalog granularity, which consolidation fixes more directly."},{"id":"D","texto":"Force tool_choice to a single named tool for every request.","correcta":false,"justificacion":"Forcing one specific tool would prevent the other four operations from ever being called, breaking functionality rather than fixing the selection-surface problem."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-1","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]},{"id":"b3-q04","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.1","escenario":"A tool's response returns every field the underlying database exposes, including internal fields like row_uuid and 256px_thumbnail_url, for every call. Separately, the team wrote the tool's description once during initial development and has not touched it since, despite six months of production transcripts showing repeated selection errors.","enunciado":"What is the most effective combination of fixes for this tool?","opciones":[{"id":"A","texto":"Replace opaque identifiers with semantic field names (e.g., name, image_url) and apply pagination or truncation by default to reduce irrelevant payload, and treat the tool's description as part of an iterative cycle: revise it and the input_schema from the accumulated production transcripts, then validate against a held-out set of tasks not used during iteration.","correcta":true,"justificacion":"Semantic field names and default pagination/truncation are the documented output design rules that reduce token consumption and irrelevant payload, while revising the description and schema from real transcripts and validating against a held-out set is the documented iterative process for correcting a stale description; together they address both root causes described in the scenario."},{"id":"B","texto":"Add strict: true so the schema forces smaller output payloads.","correcta":false,"justificacion":"strict governs conformance of the tool's input JSON to its schema; it has no documented effect on the shape or size of the tool's output payload."},{"id":"C","texto":"Set tool_choice to \"any\" so the tool's output is trimmed automatically by the API.","correcta":false,"justificacion":"tool_choice controls whether and which tool gets called; it has no relationship to output payload shape or size."},{"id":"D","texto":"Rename the tool with a namespace prefix to reduce token consumption.","correcta":false,"justificacion":"Namespacing helps differentiate tools across multiple coexisting services; it does not reduce token consumption caused by a bloated output payload."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-3-1","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools","https://www.anthropic.com/engineering/writing-tools-for-agents"]},{"id":"b3-q05","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.2","escenario":"An MCP tool's failure responses always return isError: true with the same content text, \"Operation failed\", regardless of whether the underlying cause was a service timeout, an invalid input, or a denied permission. The agent alternates between blind retries and premature escalation to a human.","enunciado":"What is the most effective fix for this error handling gap?","opciones":[{"id":"A","texto":"Add errorCategory and isRetryable metadata so the agent can distinguish transient failures from validation, business, or permission failures and act accordingly.","correcta":true,"justificacion":"A generic error without category or retry signal forces the agent to guess between reindiscriminate retry and premature escalation; the structured errorCategory/isRetryable metadata is the documented mechanism that enables intelligent recovery."},{"id":"B","texto":"Replace the generic message with a longer, more detailed human-readable sentence, keeping isError as the only structured field.","correcta":false,"justificacion":"More descriptive free text still gives the agent no machine-readable signal to decide between retrying and escalating; the fix is structured categorization, not prose length."},{"id":"C","texto":"Set isError to false whenever the failure is likely transient, so the agent doesn't panic and can continue.","correcta":false,"justificacion":"Masking a real failure as a success breaks the isError contract and misleads the agent into treating a failed operation as having succeeded."},{"id":"D","texto":"Cap the number of retries the agent can attempt at three, regardless of error type.","correcta":false,"justificacion":"An arbitrary retry cap does nothing to distinguish transient from non-retryable failures; it doesn't address the missing categorization that is the actual root cause."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-3-2","fuentes":["https://modelcontextprotocol.io/docs/develop/build-server"]},{"id":"b3-q06","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.2","escenario":"A payment tool call fails twice in the same session: once because the payment gateway timed out after 30 seconds, and once because the requested refund amount exceeds the customer's single-transaction limit. The current implementation returns isRetryable: false for both cases and no errorCategory field.","enunciado":"Select TWO corrections needed to bring these two error responses in line with documented practice.","opciones":[{"id":"A","texto":"Mark the gateway timeout as errorCategory: \"transient\" with isRetryable: true, since a temporary infrastructure failure can reasonably succeed on retry.","correcta":true,"justificacion":"Transient errors such as timeouts are exactly the category documented as reasonably retryable, unlike validation, business, or permission failures."},{"id":"B","texto":"Mark the transaction-limit violation as errorCategory: \"business\" with isRetryable: false, and include a user-facing explanation of the limit so the agent can communicate it rather than retry.","correcta":true,"justificacion":"Business rule violations never change outcome on retry; the documented pattern is isRetryable: false plus a client-facing explanation so the agent can inform the user instead of retrying in vain."},{"id":"C","texto":"Mark both errors as errorCategory: \"validation\" with isRetryable: false, since neither call ultimately succeeded.","correcta":false,"justificacion":"This mislabels the timeout, which is a transient infrastructure issue, not a validation problem, and conflates two distinct documented categories."},{"id":"D","texto":"Mark both errors as isRetryable: true, since retrying can never make the situation worse.","correcta":false,"justificacion":"Retrying a business rule violation like an over-limit refund cannot change the outcome and wastes the agent's effort; treating all errors as retryable is a documented anti-pattern."},{"id":"E","texto":"Omit errorCategory for the transaction-limit case and rely on the human-readable text alone.","correcta":false,"justificacion":"Omitting the category forces the agent to parse free text to decide whether to retry, defeating the purpose of structured error metadata."}],"seleccionar":2,"dificultad":"media","refSeccion":"#ts-3-2","fuentes":["https://modelcontextprotocol.io/docs/develop/build-server"]},{"id":"b3-q07","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.2","escenario":"A search_records tool executes successfully against a well-formed query but finds zero matching rows. The current implementation returns isError: true with the text \"No results found\", causing a supervising agent to treat every empty search as a failed subtask and escalate to a human reviewer.","enunciado":"What is the correct fix for this behavior?","opciones":[{"id":"A","texto":"Return isError: false with empty content, since a successfully executed query with no matches is a valid success outcome, distinct from an execution failure.","correcta":true,"justificacion":"A query that runs successfully but finds no results is documented as a success case with empty content, not an error; conflating the two breaks the agent's ability to interpret what actually happened."},{"id":"B","texto":"Keep isError: true but add errorCategory: \"business\" so the coordinator can distinguish it from a timeout.","correcta":false,"justificacion":"This still misrepresents a valid success as an error; adding a category doesn't correct the core mislabeling of a zero-result success as a failure."},{"id":"C","texto":"Add isRetryable: true so the agent retries the query in case results appear later.","correcta":false,"justificacion":"Treating a legitimate zero-result outcome as retryable causes wasteful repeated retries for a query that already executed correctly."},{"id":"D","texto":"Return isError: true only when the search runs three times with no results, to filter out transient index lag.","correcta":false,"justificacion":"This introduces an arbitrary retry cap unrelated to the documented isError contract, and still doesn't fix that a successfully executed zero-match query is not an error at all."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-2","fuentes":["https://modelcontextprotocol.io/docs/develop/build-server"]},{"id":"b3-q08","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.2","escenario":"A research subagent hits a transient database timeout while enriching one of ten records. It immediately propagates the raw error to the coordinator without attempting any retry, and includes none of the nine records it had already successfully processed.","enunciado":"What is wrong with this handling, per the documented pattern for multi-agent error recovery?","opciones":[{"id":"A","texto":"Transient errors should be recovered locally within the subagent via retry with exponential backoff, and only what the subagent cannot resolve should be escalated, together with the partial results already obtained.","correcta":true,"justificacion":"The documented pattern is local recovery of transient failures inside the subagent, with escalation to the coordinator only for what remains unresolved, including any partial results already gathered."},{"id":"B","texto":"The subagent should have marked the error as isError: false, since nine of ten records succeeded.","correcta":false,"justificacion":"The failed enrichment for the tenth record is a real error; masking it as non-error misrepresents that specific failure, and the actual fix concerns propagation strategy and retry, not relabeling the failure."},{"id":"C","texto":"The coordinator, not the subagent, should always perform the retry with backoff for transient failures.","correcta":false,"justificacion":"This inverts the documented layering; local recovery belongs at the subagent level precisely to reduce the noise that reaches the coordinator."},{"id":"D","texto":"The subagent should discard the nine successful records and retry the entire batch of ten from scratch.","correcta":false,"justificacion":"Discarding already-successful work contradicts the documented practice of preserving and propagating partial results rather than discarding them."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-3-2","fuentes":["https://modelcontextprotocol.io/docs/develop/build-server"]},{"id":"b3-q09","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.3","escenario":"A single research agent has access to 18 tools spanning web search, document analysis, fact verification, summarization, and file export, even though on a typical run it only ever needs 3-4 of them. Tool selection errors have increased since the catalog grew from 6 to 18.","enunciado":"What is the most effective fix for this reliability degradation?","opciones":[{"id":"A","texto":"Apply scoped tool access, splitting the catalog across specialized agents so each one only has the tools relevant to its role, with cross-tool access limited to specific high-frequency needs.","correcta":true,"justificacion":"Giving an agent far more tools than its role needs is documented as degrading selection reliability by increasing decision complexity; scoped tool access by role is the documented structural fix."},{"id":"B","texto":"Set tool_choice to \"any\" so the agent is forced to pick a tool instead of responding with plain text.","correcta":false,"justificacion":"Forcing a call doesn't reduce the decision surface among 18 candidate tools; it addresses a different requirement (always calling some tool), not selection accuracy."},{"id":"C","texto":"Add strict: true to every tool so malformed inputs are rejected.","correcta":false,"justificacion":"strict enforces schema conformance of whatever tool is eventually called; it does not address selection accuracy degraded by an oversized catalog."},{"id":"D","texto":"Write longer descriptions for each of the 18 tools to help the model differentiate them.","correcta":false,"justificacion":"The root cause here is catalog size and role mismatch, not description quality; scoping the catalog per agent is the documented, lower-effort structural fix."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-3-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]},{"id":"b3-q10","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.3","escenario":"A refund workflow relies on tool_choice: \"auto\" and a system prompt instructing the agent to always call authenticate_customer before process_refund. Logs show that in a meaningful fraction of sessions, the agent calls process_refund directly.","enunciado":"What is the most effective fix, per the documented pattern for enforcing critical order?","opciones":[{"id":"A","texto":"For the required first step, force the exact tool with tool_choice: {\"type\": \"tool\", \"name\": \"authenticate_customer\"}, guaranteeing the sequence rather than relying on prompt compliance alone.","correcta":true,"justificacion":"When step order is critical, forcing the specific first tool guarantees the sequence; relying on \"auto\" plus prompt instructions is documented as insufficient for non-negotiable ordering."},{"id":"B","texto":"Strengthen the system prompt wording and add several few-shot examples reinforcing the required order, while keeping tool_choice at \"auto\".","correcta":false,"justificacion":"This still relies on probabilistic prompt compliance for a non-negotiable order requirement, which is documented to fail in a meaningful fraction of cases."},{"id":"C","texto":"Set tool_choice to \"any\" so the agent must call some tool on every turn.","correcta":false,"justificacion":"\"any\" guarantees that some tool is called, but not which one or in what order; it does not prevent process_refund from being called before authenticate_customer."},{"id":"D","texto":"Consolidate authenticate_customer and process_refund into a single tool with an action parameter.","correcta":false,"justificacion":"Consolidation addresses catalog granularity, not enforcement of a required call order; it does not guarantee that authentication happens before the refund is processed."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]},{"id":"b3-q11","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.3","escenario":"A data-extraction workflow must guarantee two things every turn: (1) the model always calls one of its extraction tools rather than replying with text, and (2) whatever input it produces conforms exactly to the tool's schema. A teammate also insists on adding a prompt instruction asking the model to briefly explain its reasoning in a sentence before the tool call, expecting that sentence to still appear once the guarantees are in place.","enunciado":"Select TWO statements that correctly describe how to achieve this, per the documented tool_choice and strict behavior.","opciones":[{"id":"A","texto":"Setting tool_choice to {\"type\": \"any\"} together with strict: true on the tools provides the compound guarantee: a tool is always called, and its input conforms exactly to the schema.","correcta":true,"justificacion":"\"any\" guarantees a tool is called, and strict guarantees schema conformance of the input; combined they give exactly the documented compound guarantee this workflow needs."},{"id":"B","texto":"The explanatory sentence will not appear before the tool_use block, because \"any\" (like a forced tool) triggers an automatic assistant-message prefill that prevents any preceding text regardless of prompt wording.","correcta":true,"justificacion":"Forced tool_choice values (\"any\" or a named tool) trigger an automatic prefill of the assistant message, which is documented to suppress any preceding text even when the prompt explicitly requests it."},{"id":"C","texto":"Keeping tool_choice at \"auto\" with strict: true achieves both guarantees while also preserving the explanatory sentence.","correcta":false,"justificacion":"\"auto\" does not guarantee that a tool is called at all, since the model can still respond with plain text; it fails the first required guarantee even though it would preserve the preceding sentence."},{"id":"D","texto":"The explanatory sentence will still appear, since strict only affects the input schema and has no relationship with tool_choice's prefill behavior.","correcta":false,"justificacion":"strict indeed doesn't cause the prefill, but the prefill still comes from \"any\" itself; this option incorrectly concludes the sentence will appear when it will not."},{"id":"E","texto":"A forced named tool, e.g., {\"type\": \"tool\", \"name\": \"extract_data\"}, should be used instead of \"any\" so the reasoning sentence can appear before the call.","correcta":false,"justificacion":"A forced named tool triggers the same automatic prefill behavior as \"any\"; it does not allow preceding text either."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-3-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"]},{"id":"b3-q12","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.3","escenario":"In a multi-agent pipeline, a synthesis agent that only summarizes already-gathered findings has been given the full tool catalog, including web_search and fetch_url. Logs show it repeatedly attempting new web searches mid-summary instead of relying on the data already collected by upstream agents.","enunciado":"What is the most effective fix for this behavior, per the documented role-based scoping pattern?","opciones":[{"id":"A","texto":"Restrict the synthesis agent's tool list to only what its role needs (e.g., verify_fact, summarize), removing web_search and fetch_url entirely.","correcta":true,"justificacion":"Role-based tool scoping assigns each agent only its specialization's catalog; giving a synthesis agent search tools outside its role is exactly the documented cause of this kind of misuse, and removing them is the fix."},{"id":"B","texto":"Add a system prompt instruction telling the synthesis agent never to call web_search.","correcta":false,"justificacion":"This relies on probabilistic prompt compliance for a decision that can be enforced structurally by simply not granting the tool at all."},{"id":"C","texto":"Set tool_choice to \"none\" for the synthesis agent so it can never call any tool.","correcta":false,"justificacion":"This is too restrictive; it would also block verify_fact, a legitimate cross-tool need documented for the synthesis role, not just the unwanted web_search."},{"id":"D","texto":"Keep the full catalog but add strict: true to web_search and fetch_url so their inputs are validated more carefully.","correcta":false,"justificacion":"strict governs input conformance once a tool is called; it does not address whether the agent should have access to the tool at all, which is the actual scoping problem."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools","https://code.claude.com/docs/en/mcp-quickstart"]},{"id":"b3-q13","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.4","escenario":"A team wants to share a GitHub MCP server configuration with every engineer working on a shared repository, requiring one-time approval per project before it connects, while an individual engineer separately wants a personal experimental MCP server active automatically across all of their own projects without per-project approval.","enunciado":"Which configuration correctly matches each need?","opciones":[{"id":"A","texto":"The shared GitHub server belongs in project-level .mcp.json (versioned, approval required on first access); the personal experimental server belongs in user-level ~/.claude.json (active automatically across all the user's projects).","correcta":true,"justificacion":"Project-level .mcp.json is versioned and requires explicit approval on first access before becoming available team-wide; user-level ~/.claude.json is registered once and activates automatically across the user's own projects without per-project approval."},{"id":"B","texto":"Both should go in ~/.claude.json, since user-level configuration is required for MCP servers that need approval.","correcta":false,"justificacion":"This inverts the documented approval model; ~/.claude.json activates automatically without per-project approval, the opposite of what the shared server's approval requirement needs."},{"id":"C","texto":"Both should go in .mcp.json, since project-level is the only scope that supports environment variable expansion for credentials.","correcta":false,"justificacion":"The personal experimental server isn't meant to be versioned or shared with the team; placing it in the project file would expose it to every team member instead of just the individual engineer."},{"id":"D","texto":"The shared GitHub server should go in ~/.claude.json so every team member gets it automatically without needing to approve it individually.","correcta":false,"justificacion":"~/.claude.json is per-user, not shared across a team's repository; it would not propagate the server configuration to other engineers at all."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-3-4","fuentes":["https://code.claude.com/docs/en/mcp"]},{"id":"b3-q14","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.4","escenario":"A project's .mcp.json file, checked into the team's git repository, hardcodes the value of GITHUB_TOKEN directly as a literal string in the env block, rather than referencing an environment variable.","enunciado":"What is the correct fix for this configuration?","opciones":[{"id":"A","texto":"Replace the literal token with environment variable expansion syntax, e.g., \"env\": {\"GITHUB_TOKEN\": \"${GITHUB_TOKEN}\"}, so the credential is resolved at connection time and never committed to version control.","correcta":true,"justificacion":"The ${VAR} expansion syntax in .mcp.json is the documented mechanism for managing credentials without committing them, resolved at connection time rather than stored as literal values."},{"id":"B","texto":"Move the entire mcpServers block into ~/.claude.json instead, since user-level configuration is not checked into git.","correcta":false,"justificacion":"Moving the server to user scope loses the team-wide sharing that .mcp.json provides for a standard integration; it sidesteps the credential problem rather than fixing it and changes the intended sharing scope."},{"id":"C","texto":"Add a \"type\": \"http\" field, since only HTTP servers support secure credential handling.","correcta":false,"justificacion":"The type field determines transport (http vs stdio), not credential security; it does nothing to address a hardcoded secret in the env block."},{"id":"D","texto":"Rename the server to avoid using any of the reserved names like workspace or computer-use.","correcta":false,"justificacion":"Reserved-name restrictions are a distinct, unrelated validity rule for server names; renaming does nothing about a hardcoded credential."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-4","fuentes":["https://code.claude.com/docs/en/mcp"]},{"id":"b3-q15","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.4","escenario":"A project's .mcp.json defines a server with only a url field pointing to a remote HTTP endpoint, with no type field set. When Claude Code starts, the connection to that server fails.","enunciado":"What is the root cause of this connection failure?","opciones":[{"id":"A","texto":"Claude Code does not infer \"http\" from the presence of a url field; without an explicit \"type\": \"http\", it defaults to interpreting the entry as stdio, so the connection fails.","correcta":true,"justificacion":"The type field is documented as mandatory: Claude Code does not infer the transport from url, and an entry without an explicit type is treated as stdio by default, causing an HTTP-only server to fail to connect."},{"id":"B","texto":"The url is missing the required ${VAR} environment variable expansion syntax.","correcta":false,"justificacion":"Environment variable expansion is only needed for credentials that shouldn't be committed as literals; it is not a general requirement for every url and is unrelated to this failure."},{"id":"C","texto":"HTTP servers are only supported in ~/.claude.json, not in project-level .mcp.json.","correcta":false,"justificacion":"No such restriction exists; both project-level and user-level scopes support http and stdio server definitions equally."},{"id":"D","texto":"The server name conflicts with a reserved name like workspace or computer-use.","correcta":false,"justificacion":"A reserved-name conflict produces an invalid configuration error tied to the server's name, not a connection failure caused by a missing type field."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-4","fuentes":["https://code.claude.com/docs/en/mcp","https://code.claude.com/docs/en/mcp-quickstart"]},{"id":"b3-q16","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.5","escenario":"An engineer needs to find every file in the repository whose name ends in .test.tsx, so they run a Grep search with the pattern \".test.tsx\" across the codebase. The search returns zero matches even though dozens of matching files exist.","enunciado":"What is the correct fix for this search?","opciones":[{"id":"A","texto":"Use Glob with the pattern **/*.test.tsx, since finding files by name pattern is Glob's purpose, while Grep searches file contents (lines), not file names.","correcta":true,"justificacion":"Grep matches patterns within file content, while Glob matches file paths by name pattern; a file-name search like this one is exactly what Glob's ** recursive matching is documented for."},{"id":"B","texto":"Escape the pattern for ripgrep syntax, e.g., \\.test\\.tsx, and rerun the same Grep search.","correcta":false,"justificacion":"Escaping helps when searching for literal special characters within file content, but it doesn't change the fact that Grep searches content, not names; a file's own name doesn't appear as text inside its content."},{"id":"C","texto":"Add the glob parameter to the Grep call to restrict the search to .tsx files, keeping the same content pattern.","correcta":false,"justificacion":"This configures which files Grep searches within, but the task is to find files by name, which is Glob's role, not a content search restricted by extension."},{"id":"D","texto":"Set multiline: true on the Grep call so it can match across the whole file.","correcta":false,"justificacion":"multiline affects whether a content pattern can span multiple lines within a file; it has no effect on matching file names."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-5","fuentes":["https://code.claude.com/docs/en/tools-reference"]},{"id":"b3-q17","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.5","escenario":"An agent attempts two Edit operations in the same session. The first fails because the target file was never read during the current conversation. The second fails because the old_string it supplied matches three separate locations in an already-read file.","enunciado":"Select TWO correct remedies, one for each failure.","opciones":[{"id":"A","texto":"For the first failure, read the file in the current conversation before calling Edit (unless the file is one recent models can edit without a prior read because reading it would not require permission).","correcta":true,"justificacion":"Edit requires the file to have been read in the current conversation as one of its three conditions; satisfying that prior-read condition (with the documented exception for permission-free reads on recent models) resolves this specific failure."},{"id":"B","texto":"For the second failure, either make old_string unique by including more surrounding context, or pass replace_all: true if every occurrence should be changed; falling back to Read + Write is also a valid recovery.","correcta":true,"justificacion":"Edit requires old_string to match exactly once unless replace_all is set; adding context for uniqueness, using replace_all, or falling back to Read + Write are all documented ways to resolve a non-unique match."},{"id":"C","texto":"For the first failure, retry Edit with replace_all: true, since that flag also satisfies the prior-read requirement.","correcta":false,"justificacion":"replace_all only controls how many matches of old_string get replaced; it has no effect on the separate prior-read requirement that caused the first failure."},{"id":"D","texto":"For the second failure, switch to Write with only the changed lines included, leaving the rest of the file untouched.","correcta":false,"justificacion":"Write always requires the complete file content and has no append or merge mode; supplying only the changed lines would erase the rest of the file."},{"id":"E","texto":"For both failures, add strict: true to the Edit tool call so it validates old_string automatically.","correcta":false,"justificacion":"strict is a tool-definition concept for validating tool input against a JSON Schema; Edit's prior-read and uniqueness requirements are independent built-in conditions that strict does not govern."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-3-5","fuentes":["https://code.claude.com/docs/en/tools-reference"]},{"id":"b3-q18","bloque":3,"dominio":"Tool Design & MCP Integration","taskStatement":"2.5","escenario":"To understand how a particular exported function is used across a large monorepo before renaming it, an agent begins by calling Read on every file under src/, planning to scan each one manually for references.","enunciado":"What is the more effective approach per the documented pattern for codebase exploration?","opciones":[{"id":"A","texto":"Start with Grep for the function's name (and any re-exported aliases) across the codebase to locate call sites directly, then use Read selectively on the files that need closer inspection, following imports to trace flows incrementally.","correcta":true,"justificacion":"The documented incremental exploration pattern is to start with Grep for targeted content searches (including checking exported names and wrapper modules), then Read selectively, rather than reading an entire codebase upfront."},{"id":"B","texto":"Use Glob with pattern **/*.ts to first enumerate all TypeScript files, then Read each one in full before searching.","correcta":false,"justificacion":"This would just reproduce the same exhaustive full-repository read the scenario is already doing, without the targeted content search that Grep provides for locating actual usages."},{"id":"C","texto":"Run Bash with cat on each file under src/ instead of Read, to avoid the Read tool's token limits.","correcta":false,"justificacion":"Relying on cat/head/tail for large-scale reads risks truncating or losing context compared to Read, and still doesn't target the actual usages the way a content search does."},{"id":"D","texto":"Use Write to create a summary file first, then decide which files to inspect based on that summary.","correcta":false,"justificacion":"Write only creates or overwrites file content; it has no capability to analyze or summarize codebase usage on its own, so this step accomplishes nothing toward finding the function's usages."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-3-5","fuentes":["https://code.claude.com/docs/en/tools-reference"]}]};
+// __PREGUNTAS_JSON_END__
+
+(function () {
+  "use strict";
+  const cfg = DATA.config, bank = DATA.preguntas;
+  const KEY = "ccarf-quiz-" + cfg.titulo + "-v" + cfg.version;
+  const app = document.getElementById("app");
+  document.getElementById("q-title").textContent = cfg.titulo;
+  document.getElementById("q-eyebrow").textContent = "CCAR-F · BLOQUE " + String(cfg.bloque).toUpperCase();
+  document.title = cfg.solo_examen ? "Simulacro de examen CCAR-F" : "Quiz CCAR-F · " + cfg.titulo;
+
+  let S = null; // state: {mode, order[], optOrder{}, answers{}, flags[], idx, remaining, finished, revealed{}}
+
+  // Funcionalidad "Continuar": marca "ccarf-sum-quiz-<bloque>.updated" como
+  // timestamp de último acceso a este quiz en CADA carga de página, aunque
+  // no se responda nada (syncSummary() ya lo actualiza al interactuar, pero
+  // solo abrir la portada no la llama). Se fusiona con el resumen existente
+  // -- nunca lo reemplaza -- para no perder "best"/"hits"/etc. de intentos
+  // previos. El índice del curso compara este campo con el equivalente de
+  // "ccarf-sum-guia-<bloque>.updated" para el botón global "Continuar".
+  (function touchAccess() {
+    try {
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      prev.bloque = cfg.bloque; prev.titulo = cfg.titulo; prev.version = cfg.version;
+      prev.updated = Date.now();
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(prev));
+    } catch (e) {}
+  })();
+
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const byId = id => bank.find(q => q.id === id);
+  const save = () => { localStorage.setItem(KEY, JSON.stringify(S)); syncSummary(); };
+  // Progress summary consumed by the course index (dist/index.html).
+  function syncSummary() {
+    if (S && S.subset) return;   // un repaso parcial no pisa la nota del intento completo
+    try {
+      const answered = Object.keys(S.answers).filter(k => (S.answers[k] || []).length).length;
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      const sum = { bloque: cfg.bloque, titulo: cfg.titulo, version: cfg.version, mode: S.mode,
+        answered, total: bank.length, finished: !!S.finished, best: prev.best || 0, updated: Date.now() };
+      if (S.finished) {
+        const hits = S.order.filter(id => isCorrect(byId(id))).length;
+        sum.hits = hits;
+        sum.scaled = Math.round(100 + hits / bank.length * 900);
+        sum.best = Math.max(sum.best, sum.scaled);
+      }
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(sum));
+    } catch (e) {}
+  }
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  // refSeccion apunta al documento de referencia, que no se publica. Se traduce
+  // a la leccion equivalente de la guia del bloque, que si esta en el sitio.
+  function leccionDe(q) {
+    const m = /^#cap-(\d+)-ts-(\d+)$/.exec(q.refSeccion || "");
+    if (!m) return null;
+    return { href: "../bloque-" + m[1] + "/guia_v1.2.html#leccion-" + m[2],
+             texto: "Bloque " + m[1] + ", Lección " + m[2] };
+  }
+  const isCorrect = q => {
+    const sel = (S.answers[q.id] || []).slice().sort().join(",");
+    const ok = q.opciones.filter(o => o.correcta).map(o => o.id).sort().join(",");
+    return sel === ok && sel !== "";
+  };
+
+  function startScreen() {
+    const saved = load();
+    let html = '<div class="card"><h2>Configuración</h2>';
+    if (saved && !saved.finished) html += '<p>Hay un intento guardado (' + (saved.mode === "examen" ? "modo examen" : "modo estudio") + ', pregunta ' + (saved.idx + 1) + '). </p><div class="actions"><button class="primary" id="resume">Reanudar intento</button></div><hr>';
+    html += '<p>Elige modo:</p><div class="actions">';
+    if (!cfg.solo_examen) html += '<button class="primary" id="m-estudio">Modo estudio</button>';
+    html += '<button ' + (cfg.solo_examen ? 'class="primary"' : '') + ' id="m-examen">Modo examen</button></div>';
+    html += '<p class="muted">Estudio: corrección y justificación inmediatas. Examen: temporizador de ' + examMinutes() + ' min, resultados al final con desglose por dominio.</p></div>';
+    app.innerHTML = html;
+    const r = document.getElementById("resume");
+    if (r) r.onclick = () => { S = saved; render(); };
+    const e1 = document.getElementById("m-estudio");
+    if (e1) e1.onclick = () => init("estudio");
+    document.getElementById("m-examen").onclick = () => init("examen");
+  }
+
+  function examMinutes() { return cfg.duracion_examen_min || Math.ceil(bank.length * 2); }
+
+  function init(mode, ids) {
+    // ids: subconjunto (repaso de falladas). Un repaso no es un intento puntuable.
+    const lista = ids && ids.length ? ids : bank.map(q => q.id);
+    S = { mode, order: shuffle(lista), subset: !!(ids && ids.length), optOrder: {}, answers: {}, flags: [], idx: 0, remaining: examMinutes() * 60, finished: false, revealed: {} };
+    bank.forEach(q => S.optOrder[q.id] = shuffle(q.opciones.map(o => o.id)));
+    save(); render();
+  }
+
+  let tick = null;
+  function startTimer(el) {
+    clearInterval(tick);
+    tick = setInterval(() => {
+      S.remaining--; save();
+      if (el.isConnected) { el.textContent = fmt(S.remaining); el.classList.toggle("low", S.remaining < 300); }
+      if (S.remaining <= 0) { clearInterval(tick); finishExam(); }
+    }, 1000);
+  }
+
+  function render() {
+    if (S.finished) return results();
+    const q = byId(S.order[S.idx]);
+    const multi = q.seleccionar > 1, type = multi ? "checkbox" : "radio";
+    const sel = S.answers[q.id] || [];
+    const revealed = S.mode === "estudio" && S.revealed[q.id];
+
+    let html = '<div class="card' + (revealed ? " revealed" : "") + '">';
+    html += '<div class="topbar"><div><span class="pill">' + (S.idx + 1) + " / " + S.order.length + '</span><span class="pill">' + esc(q.dominio || "Transversal") + '</span><span class="pill">TS ' + esc(q.taskStatement) + '</span></div>';
+    if (S.mode === "examen") html += '<div class="timer" id="timer">' + fmt(S.remaining) + "</div>";
+    html += "</div>";
+    if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+    html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+    S.optOrder[q.id].forEach(oid => {
+      const o = q.opciones.find(x => x.id === oid);
+      const chosen = sel.includes(oid);
+      let cls = chosen ? " sel" : "";
+      if (revealed) { if (o.correcta) cls = " ok"; else if (chosen) cls = " ko"; }
+      html += '<label class="opt' + cls + '"><input type="' + type + '" name="opt" value="' + oid + '"' + (chosen ? " checked" : "") + (revealed ? " disabled" : "") + "><div>" + esc(o.texto) + '<div class="rationale"><strong>' + (o.correcta ? "✔" : "✘") + "</strong> " + esc(o.justificacion) + "</div></div></label>";
+    });
+    html += '<div class="actions">';
+    if (S.mode === "estudio") {
+      html += revealed
+        ? '<button class="primary" id="next">' + (S.idx + 1 < S.order.length ? "Siguiente" : "Ver resultado") + "</button>"
+        : '<button class="primary" id="check" ' + (sel.length ? "" : "disabled") + ">Comprobar</button>";
+    } else {
+      html += '<button id="prev" ' + (S.idx ? "" : "disabled") + ">← Anterior</button>";
+      html += '<button id="nextq" ' + (S.idx + 1 < S.order.length ? "" : "disabled") + ">Siguiente →</button>";
+      html += '<button id="flag">' + (S.flags.includes(q.id) ? "Desmarcar" : "Marcar 🚩") + "</button>";
+      html += '<button class="primary" id="finish">Finalizar examen</button>';
+    }
+    html += "</div></div>";
+
+    if (S.mode === "examen") {
+      html += '<div class="card"><div class="navgrid">' + S.order.map((id, i) => {
+        let c = [];
+        if ((S.answers[id] || []).length) c.push("answered");
+        if (S.flags.includes(id)) c.push("flagged");
+        if (i === S.idx) c.push("current");
+        return '<button data-i="' + i + '" class="' + c.join(" ") + '">' + (i + 1) + "</button>";
+      }).join("") + '</div><div class="muted">Gris: respondida · Borde ámbar: marcada</div></div>';
+    }
+    app.innerHTML = html;
+
+    app.querySelectorAll('input[name="opt"]').forEach(inp => inp.onchange = () => {
+      let cur = S.answers[q.id] || [];
+      if (multi) {
+        cur = inp.checked ? cur.concat(inp.value) : cur.filter(v => v !== inp.value);
+        if (cur.length > q.seleccionar) { inp.checked = false; cur = cur.filter(v => v !== inp.value); }
+      } else cur = [inp.value];
+      S.answers[q.id] = cur; save(); render();
+    });
+    const $ = id => document.getElementById(id);
+    if ($("check")) $("check").onclick = () => { S.revealed[q.id] = true; save(); render(); };
+    if ($("next")) $("next").onclick = () => { S.idx + 1 < S.order.length ? (S.idx++, save(), render()) : finishExam(); };
+    if ($("prev")) $("prev").onclick = () => { S.idx--; save(); render(); };
+    if ($("nextq")) $("nextq").onclick = () => { S.idx++; save(); render(); };
+    if ($("flag")) $("flag").onclick = () => { S.flags.includes(q.id) ? S.flags = S.flags.filter(f => f !== q.id) : S.flags.push(q.id); save(); render(); };
+    if ($("finish")) $("finish").onclick = () => { const un = S.order.filter(id => !(S.answers[id] || []).length).length; if (!un || confirm("Quedan " + un + " preguntas sin responder. ¿Finalizar igualmente?")) finishExam(); };
+    app.querySelectorAll(".navgrid button").forEach(b => b.onclick = () => { S.idx = +b.dataset.i; save(); render(); });
+    if ($("timer")) startTimer($("timer"));
+  }
+
+  function finishExam() { clearInterval(tick); S.finished = true; save(); results(); }
+
+  function results() {
+    clearInterval(tick);
+    const total = S.order.length, hits = S.order.filter(id => isCorrect(byId(id))).length;
+    const pct = hits / total, scaled = Math.round(100 + pct * 900);
+    const dom = {};
+    S.order.forEach(id => { const q = byId(id), d = q.dominio || "Transversal"; dom[d] = dom[d] || [0, 0]; dom[d][1]++; if (isCorrect(q)) dom[d][0]++; });
+    let html = '<div class="card"><h2>' + (S.subset ? "Repaso de falladas" : "Resultado") + "</h2>";
+    if (S.subset) {
+      html += '<div class="big ' + (hits === total ? "ok-t" : "ko-t") + '">' + hits + " / " + total + "</div>";
+      html += "<p>Repaso de " + total + " pregunta(s) que habías fallado. No cuenta como intento: la nota del bloque sigue siendo la de tu última vuelta completa.</p>";
+    } else {
+      html += '<div class="big ' + (scaled >= 720 ? "ok-t" : "ko-t") + '">' + scaled + ' <span class="muted" style="font-size:1rem">/ 1000 (orientativo·)</span></div>';
+      html += "<p>" + hits + " de " + total + " correctas (" + Math.round(pct * 100) + "%). Corte real del examen: <strong>720</strong>.</p>";
+      html += '<p class="muted">· Aproximación lineal: el examen real usa equating estadístico no público.</p>';
+    }
+    html += "<table><tr><th>Dominio</th><th>Aciertos</th><th>%</th></tr>" + Object.entries(dom).map(([d, v]) => "<tr><td>" + esc(d) + "</td><td>" + v[0] + "/" + v[1] + "</td><td>" + Math.round(v[0] / v[1] * 100) + "%</td></tr>").join("") + "</table>";
+    const fallidas = S.order.filter(id => !isCorrect(byId(id)));
+    html += '<div class="actions"><button class="primary" id="review">Revisar respuestas</button>';
+    if (fallidas.length) {
+      html += '<button id="repasar">Repetir solo las ' + fallidas.length + " fallada(s)</button>";
+    }
+    html += '<button id="restart">' + (S.subset ? "Volver al banco completo" : "Nuevo intento") + "</button></div></div>";
+    app.innerHTML = html;
+    document.getElementById("restart").onclick = () => { localStorage.removeItem(KEY); startScreen(); };
+    document.getElementById("review").onclick = review;
+    const rep = document.getElementById("repasar");
+    if (rep) rep.onclick = () => init(S.mode, fallidas);
+  }
+
+  function review() {
+    let html = "";
+    S.order.forEach((id, i) => {
+      const q = byId(id), ok = isCorrect(q), sel = S.answers[id] || [];
+      html += '<div class="card revealed"><p><span class="pill">' + (i + 1) + '</span><span class="pill">' + esc(q.dominio || "Transversal") + " · TS " + esc(q.taskStatement) + '</span> <strong class="' + (ok ? "ok-t" : "ko-t") + '">' + (ok ? "Correcta" : "Incorrecta") + "</strong></p>";
+      if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+      html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+      const leccion = leccionDe(q);
+      if (leccion) html += '<p class="repasa">Repasa la <a href="' + leccion.href + '">' + esc(leccion.texto) + "</a></p>";
+      q.opciones.forEach(o => {
+        let cls = o.correcta ? " ok" : (sel.includes(o.id) ? " ko" : "");
+        html += '<div class="opt' + cls + '"><div>' + o.id + ". " + esc(o.texto) + '<div class="rationale">' + esc(o.justificacion) + "</div></div></div>";
+      });
+      html += "</div>";
+    });
+    html += '<div class="card"><div class="actions"><button class="primary" id="back">Volver al resultado</button></div></div>';
+    app.innerHTML = html;
+    document.getElementById("back").onclick = results;
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): si hay un intento sin
+  // terminar, lo reanuda directamente en la siguiente pregunta sin responder
+  // -- no necesariamente S.idx, que en modo examen puede quedar en cualquier
+  // pregunta por la navegación libre/el marcado -- sin pasar por la portada.
+  // Reutiliza el mismo S guardado y el mismo render() del botón "Reanudar
+  // intento" existente, no duplica estado. Si no hay intento en curso, cae a
+  // la portada normal (startScreen()).
+  let continued = false;
+  if (/[?&]continue=1/.test(location.search)) {
+    const saved = load();
+    if (saved && !saved.finished) {
+      S = saved;
+      const nextIdx = S.order.findIndex(id => !(S.answers[id] || []).length);
+      if (nextIdx !== -1) S.idx = nextIdx;
+      save();
+      render();
+      continued = true;
+    }
+  }
+  if (!continued) startScreen();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "toggle theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "toggle fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloque 3 — Diseño de tools y MCP</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{var l=localStorage.getItem("ccarf-lang");document.documentElement.dataset.lang=(l==="python")?"python":"typescript"}catch(e){document.documentElement.dataset.lang="typescript"}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* Design tokens · Volt (copiados de plantillas/volt-style-guide.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  /* Topbar sticky — marca a la izquierda, controles (tema/idioma/pantalla completa) a la derecha. */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
+  .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-5); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
+  .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+    border-right:1px solid var(--border); padding-right:var(--sp-5); }
+  .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
+  .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
+    white-space:normal; transition:color var(--ease),border-color var(--ease); }
+  .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
+  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
+
+  @media (max-width:900px) {
+    .layout { flex-direction:column; gap:var(--sp-4); }
+    .sidebar { position:static; width:100%; flex:0 0 auto; max-height:none; overflow:visible;
+      border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:var(--sp-4); }
+    .content-wrap { max-width:100%; }
+  }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin-top:var(--sp-8); border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin-top:var(--sp-7); }
+  /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
+     (consolidation/namespacing/renaming/splitting) son una sola palabra sin
+     punto de corte y se salian de la caja en movil. Solo parte si desborda. */
+  p, li { max-width:72ch; overflow-wrap:break-word; }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  strong { font-weight:var(--fw-semibold); }
+
+  /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
+     (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
+     de corte que desbordaba el ancho en movil. */
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
+  pre code { background:none; border:none; color:inherit; padding:0; }
+  pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
+  /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
+  pre[data-lang] { position:relative; padding-top:30px; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  /* Referencias oficiales al cierre de cada lección. */
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
+  /* Foco visible (regla de accesibilidad Volt). */
+  :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  tbody tr:hover { background:var(--surface-2); }
+
+  blockquote { border-left:3px solid var(--accent); margin:1.2em 0; padding:8px 18px; color:var(--text-muted); }
+  blockquote p { margin:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:var(--sp-6) 0; }
+
+  .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
+  .minicheck .mc-q { margin-top:0; }
+  .minicheck label { display:block; padding:5px 0; cursor:pointer; }
+  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover { background:var(--accent-hover); }
+  .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
+  .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
+  .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
+  body.print-mode .mc-answer, .mc-answer { font-weight:var(--fw-semibold); color:var(--success); }
+
+  .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .print-only { display:none; }
+  @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; }
+  }
+  @media print {
+    .topbar, .sidebar, .minicheck button { display:none !important; }
+    .wrap, .layout, main { max-width:100%; padding:0; margin:0; border:none; }
+    h2 { break-before:page; }
+    h2:first-of-type { break-before:auto; }
+    pre { white-space:pre-wrap; }
+    a { color:inherit; text-decoration:none; }
+    .print-only { display:block; }
+  }
+  body.print-mode .sidebar, body.print-mode .minicheck button { display:none; }
+  .theme-toggle, .fs-toggle { width:40px; padding-left:0; padding-right:0; text-align:center; }
+  html[data-lang="typescript"] .lang-variant[data-lang="python"],
+  html[data-lang="python"] .lang-variant[data-lang="typescript"] { display:none; }
+  .lang-variant > pre { margin-top:0; }
+  .lang-variant .lang-note { max-width:72ch; margin:8px 0 0; font-size:var(--fs-caption); line-height:1.45; color:var(--text-muted); border-left:3px solid var(--warning); padding-left:10px; }
+  .lang-variant .lang-note code { font-size:.92em; }
+  /* El PDF de estudio no tiene JS ni toggle: imprime siempre TypeScript. */
+  @media print {
+    .lang-variant[data-lang="python"] { display:none !important; }
+    .lang-variant[data-lang="typescript"] { display:block !important; }
+  }
+
+  /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
+  #contenido { counter-reset:sec; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    letter-spacing:.08em; margin-bottom:6px; }
+
+  /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
+  .minicheck button { color:var(--on-accent); }
+
+  /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
+  @media print {
+    .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
+    .eyebrow { color:#0E82FF; }
+    .hero h1 { color:#0E1B2C; }
+    .hero .lead { color:#45536C; }
+    #contenido > h2::before { color:#0E82FF; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="topbar-controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · Guía de estudio</div>
+    <h1>Bloque 3 — Diseño de tools y MCP</h1>
+    <p class="lead">Peso en el examen: 18% (Domain 2 oficial, "Tool Design &amp; MCP Integration") · Escenarios donde cae: comparación de dos tools con descripciones casi idénticas, catálogos de tools sobredimensionados repartidos sin criterio, respuestas de error de tools MCP sin categorizar, configuración de servidores MCP con campos ausentes o mal ubicados, elección entre Read/Write/Edit/Bash/Grep/Glob ante una tarea de exploración o modificación de código</p>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <nav id="toc"><div class="eyebrow">Contenido</div><div id="toc-links"></div></nav>
+    </aside>
+    <main class="content-wrap">
+      <div id="contenido">
+      <h2 id="que-evalua-el-examen">Qué evalúa el examen en este bloque</h2>
+
+      <p>El Domain 2 pesa el 18% del examen y mide un tipo de juicio muy concreto: no basta con conocer la sintaxis de <code>tool_choice</code> o el flag <code>isError</code>, hay que reconocer <em>cuándo</em> un diseño de tool concreto producirá <em>misrouting</em> (enrutado incorrecto hacia la tool equivocada), <em>cuándo</em> un error mal categorizado bloqueará la recuperación de un agente, y <em>cuándo</em> escalar de tools nativas a un servidor MCP tiene sentido frente a construir uno propio innecesariamente. Un ejemplo típico de enunciado: se presentan dos tools con descripciones casi idénticas (<code>analyze_content</code> y <code>analyze_document</code>) y se pregunta por qué el modelo eligió la incorrecta, o se muestra un catálogo de 18 tools repartidas sin criterio entre varios agentes y se pide identificar el problema de diseño subyacente. Los cinco task statements de este bloque recorren ese eje de dentro hacia fuera: primero cómo escribir una interfaz de tool sin ambigüedad (2.1); después cómo comunicar fallos de forma estructurada para que el agente decida entre reintentar, escalar o abandonar (2.2); a continuación cómo repartir el catálogo entre agentes especializados y forzar su uso con <code>tool_choice</code> (2.3); luego cómo conectar servidores MCP —el protocolo estándar para exponer tools y recursos externos— a Claude Code y a flujos de agentes (2.4); y por último cómo usar con criterio el set de tools nativas de Claude Code —Read, Write, Edit, Bash, Grep, Glob— en tareas de exploración y modificación de código (2.5).</p>
+
+      <h2 id="antes-de-empezar">Antes de empezar</h2>
+
+      <p>Este bloque asume que el bloque 0 (fundamentos de la Messages API) ya está dominado, en particular el ciclo <code>tool_use</code>/<code>tool_result</code>, el significado de <code>stop_reason</code> y las cuatro configuraciones de <code>tool_choice</code> (<code>auto</code>, <code>any</code>, tool forzada, <code>none</code>): aquí se construye sobre esa mecánica para tomar decisiones de <em>diseño</em>, no para repetir cómo funciona la llamada a una tool. Conviene traer fresco también el concepto de <code>description</code> como único canal de decisión del modelo —ya introducido en el bloque 0—, porque este bloque lo convierte en una disciplina de ingeniería con reglas propias de consolidación, <em>namespacing</em> y granularidad de catálogo.</p>
+
+      <hr>
+
+      <h2 id="leccion-3-1">Lección 1 — Interfaces de tools sin ambigüedad: description, input_schema y los límites del catálogo</h2>
+
+      <p>La <code>description</code> de una tool es el único canal por el que el modelo decide cuándo y cómo invocarla: no existe un canal adicional de "intención" fuera de ese texto. La razón de que este task statement (2.1) trate el diseño de la interfaz —nombre, descripción, schema, granularidad— como disciplina propia es que una descripción mínima ("Retrieves customer information" frente a "Retrieves order details") no le da al modelo contexto suficiente para diferenciar tools parecidas, y el resultado es <em>misrouting</em>.</p>
+
+      <p>El JSON mínimo de una tool exige <code>name</code> (regex <code>^[a-zA-Z0-9_-]{1,64}$</code>), <code>description</code> e <code>input_schema</code> (JSON Schema con <code>type</code>, <code>properties</code>, <code>required</code>):</p>
+
+      <pre data-lang="json"><code>// Definición mínima de una tool
+{
+  "name": "tool_name",
+  "description": "Detailed description: what it does, when to use it, boundaries, caveats",
+  "input_schema": {
+    "type": "object",
+    "properties": { "param1": { "type": "string" } },
+    "required": ["param1"]
+  }
+}</code></pre>
+
+      <p>Una descripción efectiva no es "más texto", es texto con contenido específico: qué hace, cuándo usarla frente a alternativas, inputs/outputs esperados, condiciones de contorno y qué NO hace. Compárense estas dos versiones de la misma tool:</p>
+
+      <pre data-lang="text"><code>Descripción POBRE: "Gets the stock price for a ticker."
+
+Descripción BUENA: "Retrieves the current stock price for a given ticker symbol.
+The ticker symbol must be a valid symbol for a publicly traded company on a major
+US stock exchange like NYSE or NASDAQ. The tool will return the latest trade
+price in USD. It should be used when the user asks about the current or most
+recent price of a specific stock. It will not provide any other information
+about the stock or company."</code></pre>
+
+      <p>La primera versión obliga al modelo a adivinar mercado admitido, formato de salida y límites; la segunda cierra esas tres preguntas de una vez. El campo opcional <code>input_examples</code> refuerza la desambiguación con instancias válidas de entrada —a un coste de 20-50 tokens por ejemplo simple y 100-200 para ejemplos complejos— cuando el patrón de entrada es ambiguo (formatos, objetos anidados).</p>
+
+      <p>La granularidad del catálogo se gobierna con dos principios opuestos. La <strong>consolidación</strong> agrupa operaciones relacionadas en una sola tool con un parámetro <code>action</code>, en vez de exponer cada endpoint de una API como tool separada: <code>schedule_event</code> en lugar de <code>list_users</code> + <code>list_events</code> + <code>create_event</code>. Su contrario, la <strong>descomposición por propósito</strong>, divide una tool genérica en funciones con contratos bien definidos cuando sus responsabilidades se solapan —por ejemplo, partir <code>analyze_document</code> en <code>extract_data_points</code>, <code>summarize_content</code> y <code>verify_claim_against_source</code>—. El <em>namespacing</em> con prefijos o sufijos (<code>asana_search</code>, <code>asana_projects_search</code>) ayuda al modelo a diferenciar tools de distintos servicios cuando coexisten muchas en el mismo contexto. En el diseño del output también hay reglas de higiene: nombres de campo semánticos (<code>name</code>, <code>image_url</code>) en vez de identificadores opacos (<code>uuid</code>, <code>256px_image_url</code>) reducen consumo de tokens y mejoran el razonamiento del modelo, y la paginación o truncado por defecto evita que el payload de respuesta sature el contexto con información de bajo valor.</p>
+
+      <p>En producción, el síntoma que delata un catálogo mal diseñado no es un error explícito, sino una tasa de <em>misrouting</em> que solo se detecta al revisar transcripciones: un equipo migra una API REST a tools 1:1 con cada endpoint —<code>list_users</code>, <code>list_events</code>, <code>create_event</code>, <code>update_event</code>, <code>delete_event</code>...— y el agente empieza a llamar a la tool contigua en vez de la correcta cuando el catálogo pasa de 10-12 tools. La causa no es un bug de la API, es que la superficie de decisión del modelo creció más rápido que su capacidad de diferenciarlas por descripción.</p>
+
+      <p>El anti-patrón narrado más frecuente ocurre cuando dos tools se solapan funcionalmente —<code>analyze_content</code> frente a <code>analyze_document</code>, con descripciones casi idénticas—. Alguien razonable, al ver que el modelo confunde ambas, añade más prosa a las dos descripciones existentes esperando que la desambiguación llegue con volumen de texto. Eso no corrige el problema porque la causa no es "poco texto", es solapamiento de propósito: la corrección real es renombrar y reescribir para diferenciar —<code>analyze_content</code> pasa a <code>extract_web_results</code> con una descripción específica de contenido web—. Cuando la descripción por sí sola no basta para desambiguar un escenario recurrente, 2-4 <em>few-shot examples</em> mostrando el razonamiento de selección para peticiones ambiguas cierran el hueco que ni la reescritura resuelve. "Writing effective tools for agents" plantea además el diseño de tools como ciclo iterativo, no como ejercicio de una sola pasada: prototipar con servidores MCP locales, evaluar contra tareas realistas, iterar la <code>description</code> y el <code>input_schema</code> a partir de transcripciones reales, y validar contra un <em>held-out set</em> no usado durante la iteración.</p>
+
+      <p>El examen distingue con cuidado "la descripción es insuficiente" (causa <em>misrouting</em> entre tools similares, remedio: reescribir) de "el catálogo tiene demasiadas tools granulares" (causa complejidad de decisión, remedio: consolidar o <em>scoping</em>, tema que retoma la Lección 3): son dos problemas de diseño distintos con remedios distintos, y confundirlos es el distractor más habitual de este eje.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 1.</strong> Dos tools de un catálogo (<code>analyze_content</code> y <code>analyze_document</code>) tienen descripciones casi idénticas y el modelo las confunde de forma sistemática. ¿Cuál es la corrección correcta?</p>
+        <label><input type="radio" name="mc1" value="A"> A. Añadir más texto explicativo a las dos descripciones existentes.</label>
+        <label><input type="radio" name="mc1" value="B"> B. Renombrar una de las tools y reescribir su descripción para diferenciar el propósito de cada una.</label>
+        <label><input type="radio" name="mc1" value="C"> C. Eliminar <code>input_schema</code> de ambas para simplificar la decisión del modelo.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el solapamiento funcional, no la falta de longitud, es la causa del misrouting; alargar la prosa de dos descripciones ya solapadas no resuelve el problema de fondo."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Define tools</a> detalla la sintaxis de <code>description</code>, <code>input_schema</code> e <code>input_examples</code>; <a href="https://www.anthropic.com/engineering/writing-tools-for-agents" target="_blank" rel="noopener">Writing effective tools for agents</a> desarrolla consolidación, <em>namespacing</em> y el ciclo de iteración con transcripciones reales.</p>
+
+      <hr>
+
+      <h2 id="leccion-3-2">Lección 2 — Errores estructurados en tools MCP: categorización y recuperación</h2>
+
+      <p>MCP (Model Context Protocol) comunica el fallo de una tool al agente mediante el flag <code>isError</code> en el resultado: este es el mecanismo estándar de señalización de errores del protocolo. El task statement 2.2 aborda un problema muy concreto: una respuesta de error genérica ("Operation failed") no le da al agente ninguna base para decidir entre reintentar, escalar o abandonar la tarea. La estructura del error —no solo su presencia— es lo que habilita recuperación inteligente.</p>
+
+      <p>Un resultado de error MCP lleva <code>isError: true</code>, un <code>content</code> legible para humanos, y metadatos (<code>_metadata</code>) que categorizan el fallo en cuatro clases: <strong>transient</strong> (timeouts, servicio no disponible — reintentable), <strong>validation</strong> (input inválido — no reintentable), <strong>business</strong> (violación de reglas de negocio — no reintentable) y <strong>permission</strong> (acceso denegado — no reintentable). El campo <code>isRetryable</code> señala explícitamente si el agente debe reintentar:</p>
+
+      <pre data-lang="json"><code>// Error estructurado con metadata de categorización (esquema base oficial)
+{
+  "isError": true,
+  "content": [
+    { "type": "text", "text": "Human-readable error description" }
+  ],
+  "_metadata": {
+    "errorCategory": "transient|validation|permission|business",
+    "isRetryable": true
+  }
+}</code></pre>
+
+      <p>Para errores de negocio conviene además incluir una explicación orientada al usuario final, para que el agente pueda comunicar el motivo sin reintentar en vano:</p>
+
+      <pre data-lang="text"><code>// Error de negocio: no reintentable, explicación orientada al cliente
+"isRetryable": false,
+"text": "Refund amount $750 exceeds the maximum single-transaction limit of $500.
+         Please contact the customer support team for policy exceptions."</code></pre>
+
+      <p>Dentro de una arquitectura de subagentes, la recuperación de errores transitorios debe resolverse <em>localmente</em> dentro del subagente (reintento con <em>backoff</em>); solo los errores que el subagente no puede resolver se propagan al coordinador, junto con los resultados parciales obtenidos y una descripción de qué se intentó:</p>
+
+      <pre data-lang="json"><code>// Propagación subagente → coordinador: el subagente no pudo resolver
+// el error localmente y escala añadiendo contexto adicional (campos
+// ilustrativos de esta arquitectura, no parte del esquema base oficial)
+{
+  "isError": true,
+  "content": [
+    { "type": "text", "text": "Human-readable error description" }
+  ],
+  "_metadata": {
+    "errorCategory": "transient|validation|permission|business",
+    "isRetryable": true,
+    "originalQuery": "what was attempted",
+    "partialResults": []
+  }
+}</code></pre>
+
+      <p>Un punto de diseño crítico y fácil de pasar por alto: una consulta que se ejecuta con éxito pero no encuentra resultados es un caso de éxito —<code>isError: false</code>, contenido vacío—, completamente distinto de un timeout o un permiso denegado.</p>
+
+      <pre data-lang="json"><code>// Respuesta exitosa (sin error), aunque el contenido esté vacío
+{
+  "isError": false,
+  "content": [
+    { "type": "text", "text": "Response content" }
+  ]
+}</code></pre>
+
+      <pre class="mermaid">flowchart TD
+    E[Tool result] --> Q{isError?}
+    Q -->|false| S[Success: usar content, incluso si está vacío]
+    Q -->|true| C{errorCategory}
+    C -->|transient| R[Reintentar con backoff local en el subagente]
+    C -->|validation or permission or business| N[No reintentar: escalar o comunicar al usuario]
+    R -->|no se resuelve| P[Propagar al coordinador con partialResults]</pre>
+
+      <p>El diagrama muestra que la primera bifurcación es <code>isError</code>, no la ausencia de resultados: un resultado vacío exitoso sigue el camino de éxito, y solo los errores transitorios activan el reintento local antes de escalar al coordinador.</p>
+
+      <p>En producción, el incidente típico ligado a este eje es un sistema de búsqueda MCP que, ante cero coincidencias, devuelve <code>isError: true</code> con el texto "No results found" tratado como fallo: el coordinador, al ver <code>isError: true</code>, dispara reintentos indiscriminados o escala prematuramente a un humano, cuando en realidad la consulta se ejecutó correctamente y simplemente no había nada que devolver. El log muestra reintentos sin sentido y nadie entiende por qué, porque el error de fondo no está en la lógica de negocio sino en la categorización del resultado.</p>
+
+      <p>El anti-patrón narrado inverso es igual de costoso: tratar <em>todos</em> los errores como reintentables. Alguien razonable, al ver que un reintento con <em>backoff</em> resuelve los timeouts, generaliza esa lógica a cualquier fallo —incluidos errores de validación y de permisos, que nunca cambian de resultado por reintentarse—. El agente entra en un bucle de reintentos que consume tiempo y presupuesto sin ninguna posibilidad real de éxito, porque la causa del fallo no es transitoria sino estructural.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> solo <code>transient</code> es reintentable; <code>validation</code>, <code>business</code> y <code>permission</code> nunca lo son. Un resultado vacío legítimo es éxito, no error.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 2.</strong> Una tool MCP ejecuta una consulta con éxito pero no encuentra ninguna coincidencia. ¿Cómo debe reportarse ese resultado?</p>
+        <label><input type="radio" name="mc2" value="A"> A. <code>isError: true</code> con <code>errorCategory: "validation"</code>, porque la búsqueda no produjo datos útiles.</label>
+        <label><input type="radio" name="mc2" value="B"> B. <code>isError: false</code> con <code>content</code> vacío: es un resultado válido, distinto de un fallo de acceso o timeout.</label>
+        <label><input type="radio" name="mc2" value="C"> C. Omitir el campo <code>isError</code> por completo para que el agente decida.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="suprimir la distinción entre &quot;no hay resultados&quot; y &quot;la consulta falló&quot; rompe la capacidad del coordinador de interpretar correctamente qué pasó."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://modelcontextprotocol.io/docs/develop/build-server" target="_blank" rel="noopener">Build an MCP server</a> documenta el esquema base de <code>isError</code> y <code>content</code> en resultados de tool MCP.</p>
+
+      <hr>
+
+      <h2 id="leccion-3-3">Lección 3 — Distribución de tools entre agentes y configuración de tool_choice</h2>
+
+      <p>Dar a un agente acceso a demasiadas tools —18 en vez de 4-5— degrada la fiabilidad de selección, porque el agente tiene más opciones entre las que confundirse. Además, los agentes con tools fuera de su especialización tienden a usarlas mal: un agente de síntesis con acceso a búsqueda web intentará buscar en vez de apoyarse en los datos ya recopilados. El task statement 2.3 trata la distribución del catálogo entre agentes especializados y la configuración de <code>tool_choice</code> como dos palancas del mismo problema: reducir la superficie de decisión a lo estrictamente necesario para cada rol.</p>
+
+      <p>El principio de <strong>scoped tool access</strong> da a cada agente solo las tools de su rol, con tools cruzadas limitadas para necesidades de alta frecuencia específicas —por ejemplo, una tool <code>verify_fact</code> disponible también para el agente de síntesis aunque pertenezca conceptualmente al rol de verificación—:</p>
+
+      <pre data-lang="yaml"><code># Restricción de tools de un subagente en el Agent SDK
+---
+name: "synthesis-agent"
+tools: ["verify_fact", "read_documents"]
+disallowedTools: ["web_search"]
+---</code></pre>
+
+      <p><code>tool_choice</code> tiene tres configuraciones relevantes en este contexto: <code>"auto"</code> (Claude decide si llama a alguna tool; valor por defecto cuando se proveen <code>tools</code>), <code>"any"</code> (Claude debe usar alguna tool, sin especificar cuál; garantiza que se llamará a una) y la selección forzada <code>{"type": "tool", "name": "..."}</code> (garantiza que se llame exactamente a esa tool, útil para forzar un primer paso obligatorio en una secuencia):</p>
+
+      <pre data-lang="json"><code>{ "tool_choice": {"type": "tool", "name": "get_weather"} }</code></pre>
+
+      <p>Combinar <code>tool_choice: "any"</code> con <code>strict: true</code> en la tool garantiza a la vez que se llamará a una tool y que su input cumplirá el schema exactamente. Reducir el número de tools por agente también reduce el overhead de tokens por sesión, porque las tools de cada servidor conectado se cargan en el contexto al inicio de la sesión.</p>
+
+      <p>Un matiz que el examen explota como distractor recurrente: cuando <code>tool_choice</code> es <code>"any"</code> o una tool forzada, la API prefila el mensaje del asistente, por lo que el modelo no emite texto natural antes del <code>tool_use</code> aunque el prompt pida explícitamente un razonamiento previo. Si se necesita tanto contexto conversacional como la garantía de llamada, la combinación correcta es <code>tool_choice: "auto"</code> junto con una instrucción explícita en el prompt, no <code>"any"</code> ni la tool forzada.</p>
+
+      <p>En producción, el patrón que funciona es el <em>role-based tool scoping</em>: un agente de búsqueda web tiene <code>[search_web, fetch_url]</code>, uno de análisis tiene <code>[extract_data, analyze_text]</code>, uno de síntesis tiene <code>[verify_fact, summarize]</code>, y las tools cruzadas se listan explícitamente solo donde se necesitan. Sustituir tools genéricas por alternativas restringidas —<code>fetch_url</code> genérica por <code>load_document</code>, que valida URLs de documentos— reduce además el riesgo de mal uso. Cuando el orden de pasos es crítico (autenticar antes de procesar un reembolso), forzar la tool concreta en el primer paso garantiza la secuencia; los pasos siguientes se gestionan en turnos posteriores con <code>"auto"</code>.</p>
+
+      <p>El anti-patrón narrado más habitual es dar todas las tools a todos los agentes "por si acaso". Alguien razonable piensa que más tools disponibles dan más capacidad, pero el resultado observado es el contrario: el tamaño de contexto por sesión crece y el agente de síntesis, viendo <code>web_search</code> disponible, la usa en vez de apoyarse en los datos ya recopilados por el agente de búsqueda —justo el mal uso que el scoping por rol existe para prevenir—. El anti-patrón simétrico es confiar en exceso en <code>tool_choice: "auto"</code> cuando la secuencia es crítica: el agente puede saltarse un prerrequisito (procesar un reembolso sin autenticar primero) porque nada le impide hacerlo, y ahí se necesita selección forzada para un orden determinista.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Catálogo de tools disponible para un agente de más de 5-6 tools sin relación clara con su rol</td><td>Scoped tool access: recortar al catálogo del rol, con cruces explícitos si hacen falta</td><td>Reduce la superficie de decisión y evita mal uso de tools ajenas al rol</td></tr>
+          <tr><td>Un paso debe ejecutarse siempre primero en una secuencia crítica</td><td>Tool forzada <code>{"type": "tool", "name": "..."}</code> en ese paso</td><td>Garantiza el orden sin depender del razonamiento del modelo en ese turno</td></tr>
+          <tr><td>Se necesita razonamiento en texto Y garantía de llamada a tool</td><td><code>tool_choice: "auto"</code> + instrucción explícita en el prompt</td><td><code>"any"</code> y la tool forzada prefilan la respuesta e impiden texto previo</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="C">
+        <p class="mc-q"><strong>Mini-check 3.</strong> Un flujo necesita que el modelo explique en texto su razonamiento antes de llamar obligatoriamente a una tool de extracción de datos. ¿Qué configuración de <code>tool_choice</code> cumple ambos requisitos?</p>
+        <label><input type="radio" name="mc3" value="A"> A. <code>tool_choice: "any"</code>, porque garantiza la llamada a alguna tool.</label>
+        <label><input type="radio" name="mc3" value="B"> B. Tool forzada <code>{"type": "tool", "name": "extract_data"}</code>, porque fija cuál se llama.</label>
+        <label><input type="radio" name="mc3" value="C"> C. <code>tool_choice: "auto"</code> combinado con una instrucción explícita en el prompt pidiendo el uso de la tool.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="tanto &quot;any&quot; como la tool forzada prefilan el mensaje del asistente y eliminan la posibilidad de texto de razonamiento previo al tool_use; solo &quot;auto&quot; deja ese espacio abierto."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools" target="_blank" rel="noopener">Define tools</a> cubre <code>tool_choice</code> y su combinación con <code>strict</code>; <a href="https://code.claude.com/docs/en/mcp-quickstart" target="_blank" rel="noopener">MCP quickstart</a> ilustra la restricción de tools en configuraciones de subagente.</p>
+
+      <hr>
+
+      <h2 id="leccion-3-4">Lección 4 — Integración de servidores MCP en Claude Code y flujos de agentes</h2>
+
+      <p>MCP (Model Context Protocol) es el mecanismo estándar para conectar herramientas y fuentes de datos externas a Claude Code y a flujos de agentes, evitando reimplementar integraciones ad hoc por cada servicio. El task statement 2.4 es, en el fondo, un problema de alcance y gobernanza: dónde se registra un servidor MCP, cómo se gestionan credenciales sin comprometerlas, y cuándo conviene un servidor comunitario frente a uno propio.</p>
+
+      <p>Hay dos ámbitos de configuración. El <strong>project-level</strong> usa <code>.mcp.json</code>, versionado en el repositorio y disponible para todo el equipo; el primer acceso pide aprobación explícita del usuario antes de conectar, y una vez aprobado queda disponible en todas las sesiones de ese proyecto:</p>
+
+      <pre data-lang="json"><code>// .mcp.json de proyecto: servidor HTTP remoto
+{
+  "mcpServers": {
+    "claude-code-docs": {
+      "type": "http",
+      "url": "https://code.claude.com/docs/mcp"
+    }
+  }
+}</code></pre>
+
+      <pre data-lang="json"><code>// .mcp.json de proyecto: servidor local stdio
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}</code></pre>
+
+      <p>El <strong>user-level</strong> usa <code>~/.claude.json</code>, registrado una sola vez y activo automáticamente en todos los proyectos del usuario, sin aprobación por proyecto: pensado para servidores personales o experimentales. La expansión de variables de entorno dentro de <code>.mcp.json</code> (sintaxis <code>${GITHUB_TOKEN}</code>) permite gestionar credenciales sin comprometerlas en el control de versiones; las variables se resuelven en el momento de la conexión:</p>
+
+      <pre data-lang="json"><code>// Expansión de variable de entorno para credenciales
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://github.com/mcp",
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+    }
+  }
+}</code></pre>
+
+      <pre data-lang="bash"><code># Añadir un servidor MCP vía CLI
+claude mcp add --transport http server-name https://example.com/mcp</code></pre>
+
+      <pre class="mermaid">flowchart LR
+    subgraph Proyecto
+        M1[".mcp.json versionado"] --> A1[Aprobación en primer acceso]
+    end
+    subgraph Usuario
+        M2["~/.claude.json"] --> A2[Activo automáticamente en todos los proyectos]
+    end
+    A1 --> D[Tools de todos los servidores conectados disponibles al agente]
+    A2 --> D</pre>
+
+      <p>El diagrama muestra que ambos ámbitos convergen en el mismo resultado —tools disponibles simultáneamente para el agente desde la conexión—, pero difieren en gobernanza: aprobación explícita por proyecto frente a activación automática por usuario.</p>
+
+      <p>Las tools de todos los servidores MCP configurados se descubren en el momento de la conexión y quedan disponibles simultáneamente para el agente: no existe un paso explícito de selección de servidor, el agente elige entre todas las tools disponibles igual que con cualquier otra tool. Distinto de las tools son los <strong>MCP resources</strong>: exponen catálogos de contenido de solo lectura (resúmenes de issues, jerarquías de documentación, esquemas de base de datos) para que el agente vea qué datos existen sin necesidad de llamadas de tool exploratorias, referenciables desde un prompt con el formato <code>@server:protocol://resource/path</code>:</p>
+
+      <pre data-lang="text"><code># Referencia a un MCP resource dentro de un prompt
+# formato: @server:protocol://resource/path (el componente de protocolo es obligatorio)
+@github:issue://123
+@docs:file://api/authentication</code></pre>
+
+      <p>En producción, el escenario que se repite es un servidor MCP recién conectado cuyas tools el agente ignora sistemáticamente en favor de Grep u otras tools nativas más simples, aunque el servidor MCP sea objetivamente más capaz para esa tarea. La causa casi siempre es la misma que en la Lección 1: descripciones de tool pobres en el servidor MCP por defecto. La solución no es sustituir el servidor, es aplicar el mismo rigor de descripción de 2.1 a sus tools.</p>
+
+      <p>El anti-patrón narrado más grave en este eje es comprometer credenciales directamente en <code>.mcp.json</code> en texto plano, en vez de usar expansión de variables <code>${VAR}</code> —un error que, al estar el fichero versionado, expone el secreto a todo el repositorio—. Un anti-patrón de configuración más sutil, y trampa de examen frecuente: definir un servidor con <code>url</code> pero sin el campo <code>"type"</code>. Alguien razonable asume que Claude Code infiere <code>"http"</code> a partir de la presencia de <code>url</code>, pero no es así: sin <code>"type"</code> explícito el servidor se interpreta como <code>stdio</code> por defecto y la conexión falla. Por último, antes de construir un servidor MCP propio para una integración estándar (Jira, Slack, GitHub) conviene evaluar el directorio de servidores comunitarios existentes; el desarrollo a medida se reserva para flujos específicos del equipo. Como restricción de nomenclatura, nombres reservados como <code>workspace</code>, <code>claude-in-chrome</code>, <code>computer-use</code>, <code>Claude Preview</code> o <code>Claude Browser</code> no pueden reutilizarse para servidores MCP propios.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 4.</strong> Un equipo quiere compartir un servidor MCP con todos los miembros que trabajen en un repositorio concreto, exigiendo aprobación explícita antes de la primera conexión. ¿Dónde debe registrarse?</p>
+        <label><input type="radio" name="mc4" value="A"> A. En <code>~/.claude.json</code>, porque se activa automáticamente en todos los proyectos.</label>
+        <label><input type="radio" name="mc4" value="B"> B. En <code>.mcp.json</code> de proyecto, versionado en el repositorio.</label>
+        <label><input type="radio" name="mc4" value="C"> C. En ambos ficheros simultáneamente, para redundancia.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica=".mcp.json de proyecto es el ámbito que exige aprobación explícita en el primer acceso y queda disponible para todo el equipo tras aprobarse; ~/.claude.json se activa sin aprobación por proyecto."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">Connect Claude Code to tools via MCP</a> detalla <code>.mcp.json</code> frente a <code>~/.claude.json</code>, la expansión de variables y los nombres reservados; <a href="https://code.claude.com/docs/en/mcp-quickstart" target="_blank" rel="noopener">MCP quickstart</a> cubre la conexión inicial vía CLI.</p>
+
+      <hr>
+
+      <h2 id="leccion-3-5">Lección 5 — Tools nativas de Claude Code: Read, Write, Edit, Bash, Grep, Glob</h2>
+
+      <p>Claude Code expone un set nativo de tools de exploración y modificación de ficheros —Read, Write, Edit, Bash, Grep, Glob—, cada una con un propósito y un contrato de permisos distintos. El task statement 2.5 evalúa el criterio para elegir la tool correcta según la tarea —búsqueda de contenido frente a búsqueda de rutas, modificación puntual frente a reescritura completa— y reconocer cuándo el uso incorrecto de una tool nativa produce fallos evitables.</p>
+
+      <p><strong>Read</strong> carga el contenido completo de un fichero con números de línea; si excede el límite de tokens devuelve la primera página con aviso de vista parcial, y soporta <code>offset</code>/<code>limit</code>. Maneja tipos especiales: imágenes PNG/JPG como contenido visual, PDFs completos en documentos cortos o por rangos de páginas (<code>pages: "1-5"</code>, hasta 20 páginas por llamada) en PDFs de más de 10 páginas, y notebooks Jupyter (<code>.ipynb</code>) con todas las celdas y sus outputs. Read es de solo lectura y no requiere permiso por defecto para rutas dentro del directorio de trabajo.</p>
+
+      <p><strong>Write</strong> crea un fichero nuevo o sobrescribe uno existente con el contenido completo, sin <em>append</em> ni <em>merge</em>; si el fichero ya existe, exige que Claude lo haya leído antes en la conversación actual, o la escritura falla —los ficheros nuevos no tienen ese requisito—. Write requiere permiso.</p>
+
+      <p><strong>Edit</strong> realiza reemplazo de cadena exacta: toma <code>old_string</code> y <code>new_string</code> y sustituye la primera coincidencia exacta, sin regex ni <em>fuzzy matching</em>. Para que Edit se aplique deben cumplirse tres condiciones: lectura previa del fichero en la conversación actual (aunque modelos recientes pueden editar ficheros no leídos si la lectura no requeriría permiso), coincidencia exacta de <code>old_string</code>, y unicidad de esa coincidencia —o usar <code>replace_all: true</code>—. Cuando Edit falla por coincidencias no únicas, el patrón de respaldo es Read + Write. Edit requiere permiso, y una regla de permiso de Edit también concede acceso de lectura a la misma ruta.</p>
+
+      <p><strong>Bash</strong> ejecuta comandos de shell; un conjunto de comandos de solo lectura (<code>ls</code>, <code>cat</code>, <code>echo</code>, <code>pwd</code>, <code>head</code>, <code>tail</code>, <code>grep</code>, <code>find</code>, <code>wc</code>, <code>which</code>, <code>diff</code>, <code>stat</code>, <code>du</code>, <code>cd</code>, <code>git</code>) se ejecuta sin <em>prompt</em> de permiso. Las variables de entorno no persisten entre comandos salvo que se fijen con <code>CLAUDE_ENV_FILE</code>, porque cada comando corre en un proceso separado. El <em>timeout</em> por defecto es de 2 minutos (máximo 10, configurable con <code>BASH_DEFAULT_TIMEOUT_MS</code> y <code>BASH_MAX_TIMEOUT_MS</code>); los comandos que superan el <em>timeout</em> pasan a segundo plano automáticamente. Bash requiere permiso.</p>
+
+      <p><strong>Grep</strong> busca patrones en el contenido de ficheros —líneas, no ficheros— y está construido sobre ripgrep, no el <code>grep</code> POSIX estándar, por lo que requiere sintaxis de escape propia de ripgrep (<code>interface\{\}</code> para encontrar <code>interface{}</code> en Go). Tiene tres modos de salida: <code>files_with_matches</code> (rutas de fichero, por defecto), <code>content</code> (líneas con fichero y número de línea) y <code>count</code> (número de coincidencias por fichero y total). Respeta <code>.gitignore</code> por defecto; soporta <code>glob</code> (<code>**/*.tsx</code>) y <code>type</code> (<code>py</code>, <code>rust</code>); el <em>matching</em> es de una sola línea por defecto, y <code>multiline: true</code> habilita patrones que cruzan líneas. Grep es de solo lectura.</p>
+
+      <p><strong>Glob</strong> encuentra ficheros por patrón de nombre, con soporte de <code>**</code> para recursividad (<code>**/*.js</code> en cualquier profundidad, <code>src/**/*.ts</code> bajo <code>src/</code>) y expansión de llaves (<code>*.{json,yaml}</code>). Los resultados se ordenan por fecha de modificación, con un tope de 100 ficheros y un flag de truncamiento que indica que hay que acotar el patrón. Glob no respeta <code>.gitignore</code> por defecto. Glob es de solo lectura.</p>
+
+      <pre data-lang="text"><code>// Patrones típicos de Glob
+**/*.test.tsx        # todos los tests, en cualquier profundidad
+src/**/*.ts          # todo TypeScript bajo src/
+*.{json,yaml}        # cualquier fichero .json o .yaml en el nivel actual</code></pre>
+
+      <p>En producción, el patrón de exploración que funciona es incremental: empezar con Grep para localizar puntos de entrada (todos los llamadores de una función, mensajes de error, imports), y usar Read solo después para seguir esos hallazgos y trazar flujos, en vez de leer todo el repositorio por adelantado. Para rastrear el uso de una función, primero se identifican todos los nombres exportados y luego se usa Grep para cada nombre a través de la base de código, incluyendo módulos <em>wrapper</em>.</p>
+
+      <p>El anti-patrón narrado más costoso es leer bases de código enteras por adelantado "para tener todo el contexto de golpe": alguien razonable piensa que más contexto de partida reduce errores posteriores, pero el resultado es agotar el presupuesto de contexto antes de llegar a la tarea real, eliminando la posibilidad de exploración incremental. El anti-patrón simétrico, más frecuente como distractor de examen, es tratar Grep y Glob como intercambiables: Grep busca contenido —líneas dentro de ficheros—, Glob busca ficheros por patrón de nombre; usar Grep para "encontrar todos los ficheros <code>.test.tsx</code>" o Glob para "encontrar dónde se llama a esta función" es un error de categoría, no de sintaxis. Un tercer distractor habitual distingue dos condiciones distintas de fallo de Edit: "falla por coincidencia no única" (remedio: Read + Write, o <code>replace_all: true</code>) frente a "falla por no haber leído el fichero antes" (remedio: leer el fichero primero); son dos de las tres condiciones que Edit exige, y el remedio de una no resuelve la otra.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Necesito...</th><th>Tool correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Buscar contenido de código (funciones, errores, imports)</td><td>Grep</td><td>Busca líneas dentro de ficheros, no nombres de fichero</td></tr>
+          <tr><td>Buscar ficheros por patrón de nombre o extensión</td><td>Glob</td><td><em>Pattern matching</em> sobre rutas, con soporte de <code>**</code> y expansión de llaves</td></tr>
+          <tr><td>Edit falla por texto no único</td><td>Read + Write (o <code>replace_all: true</code>)</td><td>Edit exige coincidencia única de <code>old_string</code>; Read + Write no tiene esa restricción</td></tr>
+          <tr><td>Crear un fichero nuevo</td><td>Write</td><td>Edit no está pensado para creación; Write es la tool correcta</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 5.</strong> Un intento de Edit falla porque <code>old_string</code> aparece dos veces en el fichero. ¿Cuál es el remedio correcto?</p>
+        <label><input type="radio" name="mc5" value="A"> A. Volver a leer el fichero con Read antes de reintentar el mismo Edit.</label>
+        <label><input type="radio" name="mc5" value="B"> B. Usar Read + Write para reescribir el fichero completo, o repetir Edit con <code>replace_all: true</code>.</label>
+        <label><input type="radio" name="mc5" value="C"> C. Ejecutar <code>sed</code> vía Bash, porque Edit no admite reemplazos múltiples.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="&quot;coincidencia no única&quot; es una condición distinta de &quot;fichero no leído&quot;; volver a leer un fichero ya leído no resuelve la falta de unicidad del old_string."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/tools-reference" target="_blank" rel="noopener">Tools reference</a> documenta el comportamiento, permisos y límites exactos de Read, Write, Edit, Bash, Grep y Glob.</p>
+
+      <hr>
+
+      <h2 id="checklist-de-salida">Checklist de salida</h2>
+
+      <p>Dominas este bloque si puedes, sin mirar la guía:</p>
+
+      <ul>
+        <li>Diagnosticar si un fallo de selección de tool se debe a una <code>description</code> insuficiente (misrouting entre tools parecidas) o a un catálogo con demasiadas tools granulares (complejidad de decisión), y aplicar el remedio correcto en cada caso (2.1).</li>
+        <li>Categorizar un error de tool MCP en <code>transient</code>, <code>validation</code>, <code>business</code> o <code>permission</code>, decidir su <code>isRetryable</code>, y distinguir un resultado vacío legítimo (<code>isError: false</code>) de un fallo real (2.2).</li>
+        <li>Diseñar un reparto de tools por rol de agente (<em>scoped tool access</em>) y elegir entre <code>tool_choice: "auto"</code>, <code>"any"</code> y tool forzada según se necesite flexibilidad, garantía de llamada o determinismo de secuencia (2.3).</li>
+        <li>Configurar un servidor MCP en <code>.mcp.json</code> de proyecto o <code>~/.claude.json</code> de usuario según su alcance, gestionar credenciales con expansión de variables, y decidir cuándo un servidor comunitario basta frente a construir uno propio (2.4).</li>
+        <li>Elegir entre Read, Write, Edit, Bash, Grep y Glob según la tarea de exploración o modificación, reconociendo las tres condiciones que exige Edit y por qué Grep y Glob no son intercambiables (2.5).</li>
+      </ul>
+
+      <h2 id="para-ir-mas-alla">Para ir más allá — referencias anotadas</h2>
+
+      <ul>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools">Define tools</a> — sintaxis de <code>description</code>, <code>input_schema</code>, <code>input_examples</code> y <code>tool_choice</code>; base de las Lecciones 1 y 3.</li>
+        <li><a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a> — consolidación, <em>namespacing</em> y el ciclo iterativo de diseño de tools contra tareas realistas; base de la Lección 1.</li>
+        <li><a href="https://modelcontextprotocol.io/docs/develop/build-server">Build an MCP server</a> — esquema base de <code>isError</code>, <code>content</code> y categorización de errores en resultados de tool MCP; base de la Lección 2.</li>
+        <li><a href="https://code.claude.com/docs/en/mcp-quickstart">MCP quickstart</a> — conexión inicial de servidores MCP vía CLI y restricción de tools en subagentes; complementa las Lecciones 3 y 4.</li>
+        <li><a href="https://code.claude.com/docs/en/mcp">Connect Claude Code to tools via MCP</a> — <code>.mcp.json</code> frente a <code>~/.claude.json</code>, expansión de variables de entorno y nombres reservados; base de la Lección 4.</li>
+        <li><a href="https://code.claude.com/docs/en/tools-reference">Tools reference</a> — comportamiento, permisos y límites de Read, Write, Edit, Bash, Grep y Glob; base de la Lección 5.</li>
+      </ul>
+
+      <p><em>Historial de versiones del curso: <a href="../../changelog.html">changelog</a> — único para todo el material; esta guía no lleva el suyo propio.</em></p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var printMode = /[?&]print=1/.test(location.search);
+  if (printMode) {
+    document.body.classList.add("print-mode");
+    document.documentElement.dataset.lang = "typescript";
+  }
+
+  var darkTheme = document.documentElement.dataset.theme === "dark";
+  if (window.mermaid) mermaid.initialize({
+    startOnLoad: true, securityLevel: "loose", theme: "base",
+    themeVariables: darkTheme ? {
+      primaryColor: "#172230", primaryTextColor: "#E4EDF6", primaryBorderColor: "#3FA9FF",
+      secondaryColor: "#101927", tertiaryColor: "#33260F", lineColor: "#3FA9FF",
+      fontFamily: "Plus Jakarta Sans"
+    } : {
+      primaryColor: "#E2F1FF", primaryTextColor: "#0E1B2C", primaryBorderColor: "#0E82FF",
+      secondaryColor: "#F1F5FA", tertiaryColor: "#FBEFD9", lineColor: "#0E82FF",
+      fontFamily: "Plus Jakarta Sans"
+    }
+  });
+
+  // Build the sidebar TOC from h2/h3 headings.
+  var links = document.getElementById("toc-links");
+  var heads = document.querySelectorAll("#contenido h2, #contenido h3");
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = "sec-" + i;
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    // TOC compacto: "Lección N — Título: subtítulo" -> "LN · Título".
+    var t = h.textContent;
+    var m = t.match(/^Lección\s+(\d+)\s+—\s+(.+)$/);
+    if (m) t = "L" + m[1] + " · " + m[2].split(":")[0].trim();
+    a.textContent = t;
+    a.title = h.textContent;
+    if (h.tagName === "H3") a.className = "l3";
+    links.appendChild(a);
+  });
+  var tocAnchors = links.querySelectorAll("a");
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+    // At the bottom of the page the last headings never cross the 120px line,
+    // so highlight the final one instead of the last one that did. Measure the
+    // viewport with clientHeight as well: mobile browsers report innerHeight as
+    // the *visible* height, shrunk by the retractable URL bar, while the maximum
+    // scroll offset is computed against the layout viewport -- comparing with
+    // innerHeight alone left the bottom unreachable there by the bar's height.
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    if (window.scrollY + viewportH >= docHeight - 24 && heads.length) {
+      cur = heads[heads.length - 1].id;
+    }
+    tocAnchors.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + cur); });
+  }, { passive: true });
+
+  // Wire up mini-checks.
+  document.querySelectorAll(".minicheck").forEach(function (mc) {
+    var correct = (mc.dataset.correct || "").split(",").map(function (s) { return s.trim(); }).sort().join(",");
+    var fb = mc.querySelector(".mc-feedback");
+    var btn = mc.querySelector(".mc-check");
+    if (printMode) { // reveal answers for the PDF export
+      mc.querySelectorAll("label").forEach(function (l) {
+        var v = l.querySelector("input").value;
+        if (correct.split(",").indexOf(v) !== -1) l.classList.add("mc-answer"), l.append(" ✔");
+      });
+      fb.className = "mc-feedback ok";
+      fb.style.opacity = "1";
+      fb.textContent = "Respuesta: " + correct + ". " + (fb.dataset.explica || "");
+      return;
+    }
+    if (btn) btn.addEventListener("click", function () {
+      var sel = Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+      if (!sel) { fb.className = "mc-feedback ko"; fb.textContent = "Selecciona una opción."; return; }
+      var ok = sel === correct;
+      fb.className = "mc-feedback " + (ok ? "ok" : "ko");
+      fb.textContent = (ok ? "✔ Correcto. " : "✘ No exactamente — la respuesta es " + correct + ". ") + (fb.dataset.explica || "");
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var m = location.pathname.match(/bloque-(\d)/);
+  if (!m || !window.localStorage) return;
+  var PKEY = "ccarf-sum-guia-" + m[1];
+  var heads = Array.prototype.slice.call(document.querySelectorAll("#contenido h2"));
+  var mcs = document.querySelectorAll(".minicheck");
+  var st;
+  try { st = JSON.parse(localStorage.getItem(PKEY)) || {}; } catch (e) { st = {}; }
+  st.bloque = m[1];
+  st.visited = st.visited || {};
+  st.mc = st.mc || {};
+  st.mcTry = st.mcTry || {};   // intento por mini-check: {sel, ok}
+  st.totalSections = heads.length;
+  st.mcTotal = mcs.length;
+  // Funcionalidad "Continuar": st.updated hace de timestamp de "último
+  // acceso" a esta guía -- reutiliza el campo ya existente (antes solo se
+  // actualizaba al detectar scroll/mini-check) forzando un guardado aquí, en
+  // cada carga de página, aunque no cambie nada más. El índice del curso
+  // (plantillas/index.template.html) compara este mismo campo con el de
+  // "ccarf-sum-quiz-<bloque>.updated" para decidir a qué recurso apunta el
+  // botón global "Continuar".
+  save();
+  function save() {
+    st.nVisited = Object.keys(st.visited).length;
+    st.mcDone = Object.keys(st.mc).length;
+    st.mcTried = Object.keys(st.mcTry).length;
+    st.updated = Date.now();
+    try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
+  }
+  var t = null;
+  function atBottom() {
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // innerHeight is the *visible* height: mobile browsers shrink it by the
+    // retractable URL bar, but the maximum scroll offset is computed against the
+    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
+    // the document by the bar's height and the bottom was never detected on a
+    // phone or tablet -- which left the closing sections unread for good.
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + viewportH >= docHeight - 24;
+  }
+  // A section counts as read once its heading has scrolled above the middle of
+  // the viewport, and every heading above that line is marked on each sample --
+  // marking only the current one loses the sections the reader scrolled past
+  // between two samples. At the very bottom the trailing headings can never
+  // reach the middle (everything below the fold is already on screen), so they
+  // are marked there; otherwise 100% would be unreachable.
+  function track() {
+    if (t) return;
+    t = setTimeout(function () {
+      t = null;
+      var bottom = atBottom();
+      var middle = window.innerHeight / 2;
+      var was = Object.keys(st.visited).length + "|" + st.lastSection;
+      var cur = null;
+      heads.forEach(function (h) {
+        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+        else if (bottom) { st.visited[h.id] = 1; }
+      });
+      if (bottom && heads.length) cur = heads[heads.length - 1];
+      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+    }, 800);
+  }
+  window.addEventListener("scroll", track, { passive: true });
+  track();
+  function nombreDe(mc) {
+    var inp = mc.querySelector("input");
+    return inp ? inp.name : null;
+  }
+  function seleccion(mc) {
+    return Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+  }
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target;
+    if (!btn.classList || !btn.classList.contains("mc-check")) return;
+    var mc = btn.closest(".minicheck");
+    setTimeout(function () {
+      var fb = mc.querySelector(".mc-feedback");
+      var nombre = nombreDe(mc);
+      if (!fb || !nombre) return;
+      var sel = seleccion(mc);
+      if (!sel) return;                       // "selecciona una opcion" no es un intento
+      st.mcTry[nombre] = { sel: sel, ok: fb.classList.contains("ok") };
+      if (fb.classList.contains("ok")) st.mc[nombre] = 1; else delete st.mc[nombre];
+      save();
+    }, 50);
+  });
+
+  // Al volver a la guia se restaura lo ya respondido: antes se perdia si habias
+  // acertado o fallado, y cada visita empezaba de cero.
+  if (!/[?&]print=1/.test(location.search)) {
+    mcs.forEach(function (mc) {
+      var nombre = nombreDe(mc);
+      var prev = nombre && st.mcTry[nombre];
+      if (!prev || !prev.sel) return;
+      var sel = prev.sel.split(",");
+      Array.prototype.forEach.call(mc.querySelectorAll("input"), function (i) {
+        if (sel.indexOf(i.value) !== -1) i.checked = true;
+      });
+      var btn = mc.querySelector(".mc-check");
+      if (btn) btn.click();                   // reutiliza el mismo render de feedback
+    });
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): salta a la primera
+  // sección (h2) aún no marcada como visitada en st.visited, o a la última
+  // si ya estaban todas leídas. No se activa en modo impresión (el PDF no
+  // tiene JS de scroll con sentido) ni rompe el TOC: se espera a que la
+  // página termine de cargar (mermaid renderiza sus SVGs de forma asíncrona
+  // y puede desplazar alturas justo después del primer pintado).
+  if (/[?&]continue=1/.test(location.search) && !/[?&]print=1/.test(location.search) && heads.length) {
+    var contVisitadas = 0;
+    for (var cv = 0; cv < heads.length; cv++) { if (st.visited[heads[cv].id]) contVisitadas++; }
+    // Sin avance previo (0 secciones visitadas) la guía se abre arriba del todo, sin scroll.
+    if (contVisitadas > 0) {
+      var contTarget = null;
+      for (var ci = 0; ci < heads.length; ci++) {
+        if (!st.visited[heads[ci].id]) { contTarget = heads[ci]; break; }
+      }
+      if (!contTarget) contTarget = heads[heads.length - 1];
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          try { history.replaceState(null, "", "#" + contTarget.id); } catch (e) {}
+          contTarget.scrollIntoView();
+        }, 200);
+      });
+    }
+  }
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  // Solo las guias que traen ambas variantes reciben el switch.
+  if (!document.querySelector(".lang-variant")) return;
+  var NAMES = { python: "Python", typescript: "TypeScript" };
+  var btn = document.createElement("button");
+  btn.className = "lang-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.lang === "python" ? "python" : "typescript"; }
+  function paint() {
+    var other = cur() === "python" ? "typescript" : "python";
+    btn.textContent = NAMES[cur()];
+    btn.title = "Ver los ejemplos de codigo en " + NAMES[other];
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "python" ? "typescript" : "python";
+    document.documentElement.dataset.lang = next;
+    try { localStorage.setItem("ccarf-lang", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+</body>
+</html>

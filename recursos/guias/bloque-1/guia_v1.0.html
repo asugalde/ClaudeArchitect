@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloque 1 — Prompt Engineering y salida estructurada</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{var l=localStorage.getItem("ccarf-lang");document.documentElement.dataset.lang=(l==="python")?"python":"typescript"}catch(e){document.documentElement.dataset.lang="typescript"}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* Design tokens · Volt (copiados de plantillas/volt-style-guide.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  /* Topbar sticky — marca a la izquierda, controles (tema/idioma/pantalla completa) a la derecha. */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
+  .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-5); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
+  .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+    border-right:1px solid var(--border); padding-right:var(--sp-5); }
+  .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
+  .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
+    white-space:normal; transition:color var(--ease),border-color var(--ease); }
+  .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
+  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
+
+  @media (max-width:900px) {
+    .layout { flex-direction:column; gap:var(--sp-4); }
+    .sidebar { position:static; width:100%; flex:0 0 auto; max-height:none; overflow:visible;
+      border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:var(--sp-4); }
+    .content-wrap { max-width:100%; }
+  }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin-top:var(--sp-8); border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin-top:var(--sp-7); }
+  /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
+     (consolidation/namespacing/renaming/splitting) son una sola palabra sin
+     punto de corte y se salian de la caja en movil. Solo parte si desborda. */
+  p, li { max-width:72ch; overflow-wrap:break-word; }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  strong { font-weight:var(--fw-semibold); }
+
+  /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
+     (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
+     de corte que desbordaba el ancho en movil. */
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
+  pre code { background:none; border:none; color:inherit; padding:0; }
+  pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
+  /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
+  pre[data-lang] { position:relative; padding-top:30px; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  /* Referencias oficiales al cierre de cada lección. */
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
+  /* Foco visible (regla de accesibilidad Volt). */
+  :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  tbody tr:hover { background:var(--surface-2); }
+
+  blockquote { border-left:3px solid var(--accent); margin:1.2em 0; padding:8px 18px; color:var(--text-muted); }
+  blockquote p { margin:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:var(--sp-6) 0; }
+
+  .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
+  .minicheck .mc-q { margin-top:0; }
+  .minicheck label { display:block; padding:5px 0; cursor:pointer; }
+  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover { background:var(--accent-hover); }
+  .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
+  .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
+  .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
+  body.print-mode .mc-answer, .mc-answer { font-weight:var(--fw-semibold); color:var(--success); }
+
+  .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .print-only { display:none; }
+  @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; }
+  }
+  @media print {
+    .topbar, .sidebar, .minicheck button { display:none !important; }
+    .wrap, .layout, main { max-width:100%; padding:0; margin:0; border:none; }
+    h2 { break-before:page; }
+    h2:first-of-type { break-before:auto; }
+    pre { white-space:pre-wrap; }
+    a { color:inherit; text-decoration:none; }
+    .print-only { display:block; }
+  }
+  body.print-mode .sidebar, body.print-mode .minicheck button { display:none; }
+  .theme-toggle, .fs-toggle { width:40px; padding-left:0; padding-right:0; text-align:center; }
+  html[data-lang="typescript"] .lang-variant[data-lang="python"],
+  html[data-lang="python"] .lang-variant[data-lang="typescript"] { display:none; }
+  .lang-variant > pre { margin-top:0; }
+  .lang-variant .lang-note { max-width:72ch; margin:8px 0 0; font-size:var(--fs-caption); line-height:1.45; color:var(--text-muted); border-left:3px solid var(--warning); padding-left:10px; }
+  .lang-variant .lang-note code { font-size:.92em; }
+  /* El PDF de estudio no tiene JS ni toggle: imprime siempre TypeScript. */
+  @media print {
+    .lang-variant[data-lang="python"] { display:none !important; }
+    .lang-variant[data-lang="typescript"] { display:block !important; }
+  }
+
+  /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
+  #contenido { counter-reset:sec; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    letter-spacing:.08em; margin-bottom:6px; }
+
+  /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
+  .minicheck button { color:var(--on-accent); }
+
+  /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
+  @media print {
+    .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
+    .eyebrow { color:#0E82FF; }
+    .hero h1 { color:#0E1B2C; }
+    .hero .lead { color:#45536C; }
+    #contenido > h2::before { color:#0E82FF; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="topbar-controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · Guía de estudio</div>
+    <h1>Bloque 1 — Prompt Engineering y salida estructurada</h1>
+    <p class="lead">Peso en el examen: 20% (Dominio D4; segundo dominio de mayor peso tras la arquitectura agéntica) · Escenarios donde cae: pipelines de extracción de datos estructurados y revisión automatizada de código que deben producir salida fiable, consistente y auditable a partir de un modelo probabilístico</p>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <nav id="toc"><div class="eyebrow">Contenido</div><div id="toc-links"></div></nav>
+    </aside>
+    <main class="content-wrap">
+    <div id="contenido">
+<!--__CONTENIDO__-->
+      <h2 id="que-evalua-el-examen">Qué evalúa el examen en este bloque</h2>
+
+      <p>Las preguntas de este dominio giran alrededor de un mismo problema de fondo: convertir la salida probabilística de Claude en algo que un pipeline downstream pueda consumir sin sorpresas. El examen avanza en capas, y la guía sigue ese mismo orden: criterios explícitos (4.1) y few-shot (4.2) atacan la calidad del <em>juicio</em> del modelo — qué reporta y con qué severidad; tool use con JSON schemas (4.3) y validación con retry (4.4) atacan la <em>conformidad estructural</em> de la salida; batch processing (4.5) ataca la <em>economía</em> de ejecutarlo a escala; y multi-instancia/multi-pass review (4.6) ataca la <em>fiabilidad</em> cuando una sola pasada no es suficiente. Un ejemplo típico de enunciado presenta un pipeline de code review con una categoría de hallazgo que genera muchos falsos positivos, o un batch job con un SLA numérico concreto, y pide identificar el mecanismo exacto que corrige el síntoma — no una mejora genérica de "escribir mejor el prompt". El juicio que se mide no es "¿conoces la técnica?" sino "¿sabes cuál de varias técnicas parecidas aplica a este síntoma concreto, y por qué las demás no bastan?".</p>
+
+      <h2 id="antes-de-empezar">Antes de empezar</h2>
+
+      <p>Este bloque asume el ciclo mecánico de tool use del Bloque 0: <code>tool_use</code>/<code>tool_result</code>, <code>stop_reason</code> y la anatomía de <code>input_schema</code>. Los task statements 4.3 y 4.4 no vuelven a explicar esa mecánica — dan por sentado que sabes construir una tool y leer una response, y se centran solo en su aplicación específica a extracción estructurada (<code>strict: true</code>, diseño de campos, retry). Si algo de <code>tool_choice</code> o del ciclo <code>tool_use</code>/<code>tool_result</code> no te resulta inmediato, conviene repasar el Bloque 0 antes de seguir.</p>
+
+      <hr>
+
+      <h2 id="leccion-1-1">Lección 1 — Criterios explícitos: de la confianza vaga a la precisión verificable</h2>
+
+      <p>Pide a Claude que "solo reporte hallazgos de alta confianza" o que "sea conservador" y obtendrás resultados tan inconsistentes como si no hubieras dado ninguna instrucción: "confianza" y "conservador" no son conceptos que el modelo pueda operacionalizar por sí solo, así que cada ejecución los interpreta de forma distinta. El problema que resuelve el task statement 4.1 no es solo de calidad técnica — es de adopción: una categoría de hallazgo con muchos falsos positivos erosiona la confianza del desarrollador incluso en las categorías que sí funcionan bien, y una herramienta en la que no se confía deja de usarse por completo, aunque el resto de su output sea correcto.</p>
+
+      <p>La alternativa que exige el examen es sustituir el filtrado por confianza por <strong>criterios categóricos explícitos</strong>: definir en el prompt, con lenguaje concreto y verificable, qué tipos de problema se reportan y cuáles se omiten deliberadamente.</p>
+
+      <pre data-lang="text"><code>Vago (no mejora precisión):
+"Flag comments only when confidence is high."
+
+Explícito (criterio categórico verificable):
+"Flag a comment only when the claimed behavior contradicts the actual code behavior.
+Do NOT flag: style preferences, comments that are imprecise but not contradictory,
+comments about intent rather than mechanism."</code></pre>
+
+      <p>Para severidad, el patrón que produce clasificación consistente entre ejecuciones no es una etiqueta textual suelta ("alta", "media") sino ejemplos concretos de código por cada nivel, envueltos en tags <code>&lt;example&gt;</code>/<code>&lt;examples&gt;</code> para que el modelo no los confunda con parte de las instrucciones:</p>
+
+      <pre data-lang="xml"><code>&lt;examples&gt;
+  &lt;example&gt;
+    &lt;input&gt;commented_code = true, actual_behavior = true&lt;/input&gt;
+    &lt;classification&gt;NO REPORT&lt;/classification&gt;
+    &lt;reason&gt;El comentario describe con precisión el comportamiento actual&lt;/reason&gt;
+  &lt;/example&gt;
+  &lt;example&gt;
+    &lt;input&gt;commented_code = "close file", actual_behavior = "delete file"&lt;/input&gt;
+    &lt;classification&gt;REPORT&lt;/classification&gt;
+    &lt;reason&gt;El comentario contradice el comportamiento real — crítico encontrar discrepancias&lt;/reason&gt;
+  &lt;/example&gt;
+&lt;/examples&gt;</code></pre>
+
+      <p>En producción, el síntoma que dispara este rediseño suele llegar como una queja concreta de un equipo: "la categoría de seguridad reporta ruido en el 40% de los PRs y ya nadie la mira". La respuesta correcta no es afinar el umbral de confianza ni pedirle al modelo "sé más estricto" — es medir la tasa de falsos positivos por categoría, desactivar temporalmente la peor mientras se reescriben sus criterios con ejemplos concretos, y reactivarla cuando la tasa mejore. El test de humo recomendado por Claude prompting best practices es simple: mostrar el prompt a un colega con contexto mínimo y comprobar si lo entendería sin ambigüedad; si el colega dudaría, el modelo también.</p>
+
+      <p>El anti-patrón más frecuente es doble. El primero es confiar en instrucciones de "conservadurismo" sin definición operativa: parece una mejora razonable, pero no le da al modelo ningún criterio verificable, así que la precisión no mejora frente a la línea base — solo cambia el vocabulario del prompt. El segundo, más sutil, es intentar arreglar el ruido en post-procesamiento, filtrando resultados después de generarlos: el criterio mal definido sigue produciendo el mismo volumen de ruido, solo que ahora se descarta a ciegas en vez de nunca haberse generado, y el coste de generarlo no se recupera.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> cuando el examen contraste "confidence-based filtering" contra "criterios categóricos explícitos" como opciones parecidas, la respuesta correcta es casi siempre la segunda; y cuando aparezca "deshabilitar la categoría" como opción, comprueba si es <em>temporal</em> (correcto) o <em>permanente</em> (distractor).</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 1.</strong> Una categoría de revisión de código tiene una tasa alta de falsos positivos. ¿Cuál es el enfoque correcto según el examen?</p>
+        <label><input type="radio" name="mc1" value="A"> A. Subir el umbral de "confianza" en la instrucción del prompt hasta que el ruido baje.</label>
+        <label><input type="radio" name="mc1" value="B"> B. Definir criterios categóricos explícitos (qué se reporta vs qué se omite, con ejemplos de severidad) y desactivar temporalmente la categoría mientras se refina.</label>
+        <label><input type="radio" name="mc1" value="C"> C. Dejar la categoría activa y filtrar los resultados en post-procesamiento antes de mostrarlos.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="un umbral de confianza no le da al modelo un criterio operativo verificable, y el post-procesamiento no ataca la causa: sigue generando el mismo ruido, solo que se descarta después."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" target="_blank" rel="noopener">Claude prompting best practices</a></p>
+
+      <hr>
+
+      <h2 id="leccion-1-2">Lección 2 — Few-shot prompting: pocos ejemplos, muy dirigidos</h2>
+
+      <p>Cuando las instrucciones detalladas por sí solas producen salida inconsistentemente formateada — un campo unas veces presente y otras ausente, una clasificación que cambia entre ejecuciones idénticas —, el few-shot prompting es la técnica más efectiva para fijar consistencia. Pero el task statement 4.2 va más allá del formato: bien elegidos, los ejemplos enseñan al modelo a generalizar <em>juicio</em> en casos ambiguos o nuevos, no solo a copiar la forma de los casos ya vistos.</p>
+
+      <p>El rango que documenta la fuente es de 2 a 4 ejemplos dirigidos cuando el objetivo es enseñar a manejar ambigüedad (mostrando el razonamiento de por qué se elige una interpretación sobre otra plausible), y de 3 a 5 cuando el objetivo es consistencia de formato general. Los ejemplos se envuelven en <code>&lt;example&gt;</code> (singular) o <code>&lt;examples&gt;</code> (plural), separados de las instrucciones:</p>
+
+      <pre data-lang="xml"><code>&lt;examples&gt;
+  &lt;example&gt;
+    &lt;input&gt;var x = "hello"; console.log(x.toUpperCase())&lt;/input&gt;
+    &lt;output_format&gt;
+      &lt;location&gt;line_5&lt;/location&gt;
+      &lt;issue&gt;potential_type_error&lt;/issue&gt;
+      &lt;severity&gt;medium&lt;/severity&gt;
+      &lt;suggested_fix&gt;ensure variable is string before calling method&lt;/suggested_fix&gt;
+    &lt;/output_format&gt;
+  &lt;/example&gt;
+  &lt;example&gt;
+    &lt;input&gt;// undefined variable used
+result = y + 5&lt;/input&gt;
+    &lt;output_format&gt;
+      &lt;location&gt;line_2&lt;/location&gt;
+      &lt;issue&gt;undefined_variable&lt;/issue&gt;
+      &lt;severity&gt;high&lt;/severity&gt;
+      &lt;suggested_fix&gt;declare y with var/let/const before use&lt;/suggested_fix&gt;
+    &lt;/output_format&gt;
+  &lt;/example&gt;
+&lt;/examples&gt;</code></pre>
+
+      <p>Hay cuatro usos documentados que conviene distinguir: fijar el formato exacto de salida cuando las instrucciones solas producen JSON inconsistente; demostrar el manejo de casos ambiguos incluyendo el razonamiento explícito; distinguir patrones de código aceptables de problemas genuinos mostrando ambos lados; y reducir alucinación en extracción, incluyendo ejemplos con estructuras de documento variadas y, crucialmente, al menos un ejemplo donde un campo está correctamente ausente (<code>null</code>) en vez de inventado.</p>
+
+      <p>En producción, el escenario recurrente es un pipeline de extracción de facturas que, con instrucciones extensas pero sin ejemplos, empieza a rellenar el campo <code>tax_id</code> con valores plausibles cuando el documento simplemente no lo incluye. Añadir un ejemplo few-shot donde ese campo aparece explícitamente como <code>null</code> — con una nota de por qué — resuelve el problema de forma mucho más directa que seguir ampliando las instrucciones textuales sobre "no inventar datos".</p>
+
+      <p>El anti-patrón más común es doble: usar ejemplos genéricos que no reflejan la variabilidad real de los datos de producción, lo que hace que el modelo iguale el patrón superficial del ejemplo en vez del criterio subyacente; y añadir ejemplos de solo input/output sin razonamiento explícito, lo que enseña al modelo a copiar el patrón en vez de decidir en zonas grises nuevas. Añadir más de 5 ejemplos sin ganancia real de claridad, además, infla el <em>context length</em> sin mejora proporcional en consistencia.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> pocos ejemplos muy dirigidos al punto ambiguo real del dominio, con razonamiento explícito, superan a muchos ejemplos genéricos sin razonamiento; para extracción, incluye siempre un ejemplo con campo ausente correctamente marcado <code>null</code>.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 2.</strong> ¿Qué distingue a un buen ejemplo few-shot de uno que no generaliza bien a casos nuevos?</p>
+        <label><input type="radio" name="mc2" value="A"> A. Cuantos más ejemplos, mejor: la cantidad es lo que garantiza consistencia.</label>
+        <label><input type="radio" name="mc2" value="B"> B. Pocos ejemplos (2-4), dirigidos al caso ambiguo real, con el razonamiento explícito de por qué se eligió esa interpretación.</label>
+        <label><input type="radio" name="mc2" value="C"> C. Basta con mostrar el output_format esperado; el razonamiento es redundante si el formato ya está claro.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="los ejemplos sin razonamiento enseñan a copiar el patrón superficial, no a generalizar el criterio; y más de 5 ejemplos sin ganancia de claridad solo infla el contexto."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices" target="_blank" rel="noopener">Claude prompting best practices</a> · <a href="https://github.com/anthropics/prompt-eng-interactive-tutorial" target="_blank" rel="noopener">Interactive Prompt Engineering Tutorial</a></p>
+
+      <hr>
+
+      <h2 id="leccion-1-3">Lección 3 — Tool use y JSON schemas: la garantía que sí da, y la que no</h2>
+
+      <p>Cuando la salida debe conformar exactamente a un schema para alimentar un pipeline downstream sin parseo frágil, tool use con JSON schemas es el enfoque más fiable: elimina por completo los errores de <em>sintaxis</em> JSON. Pero el límite exacto de esa garantía es el punto que el examen explota con más insistencia en este task statement: <code>strict: true</code> valida estructura y tipos mediante <em>grammar-constrained sampling</em> (muestreo restringido por gramática), no valida semántica. Un line item que no suma al total declarado, o un valor colocado en el campo equivocado, pasan el schema sin ningún problema — el JSON tiene la forma correcta, aunque el contenido esté mal.</p>
+
+      <pre data-lang="typescript"><code>{
+  name: "extract_data",
+  description: "Extract structured data from document",
+  strict: true,
+  input_schema: {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      amount: { type: "number" },
+      date: { type: "string", format: "date" },
+      category: {
+        type: "string",
+        enum: ["positive", "negative", "neutral", "other"]
+      },
+      category_details: {
+        type: "string",
+        description: "Use when category is 'other'"
+      }
+    },
+    required: ["title", "amount"],
+    additionalProperties: false
+  }
+}</code></pre>
+
+      <p>El diseño de campos es la palanca principal contra la alucinación: solo deben marcarse <code>required</code> los campos que existen siempre en los documentos de origen; el resto se deja opcional o nullable, para que el modelo no fabrique valores con tal de satisfacer el schema. Para categorías extensibles, el patrón es un <code>enum</code> con un valor <code>"other"</code> acompañado de un campo de detalle en string (y valores como <code>"unclear"</code> para casos genuinamente ambiguos). En strict mode están soportados los tipos básicos (<code>object</code>, <code>array</code>, <code>string</code>, <code>integer</code>, <code>number</code>, <code>boolean</code>, <code>null</code>), <code>enum</code>, <code>anyOf</code>, <code>allOf</code>, <code>$ref</code>/<code>definitions</code>, los formatos de string <code>date-time</code>, <code>date</code>, <code>email</code>, <code>uri</code>, <code>uuid</code>, <code>required</code> y <code>additionalProperties: false</code>; NO están soportados los schemas recursivos, las restricciones numéricas (<code>minimum</code>/<code>maximum</code>), las de string (<code>minLength</code>/<code>maxLength</code>) ni <code>additionalProperties: true</code>. Esta lista no es exhaustiva — la referencia completa vive en la página oficial de structured outputs.</p>
+
+      <p><code>tool_choice</code> completa el cuadro: <code>"auto"</code> permite texto en vez de tool use (no garantiza la llamada), <code>"any"</code> obliga a llamar a alguna tool pero deja elegir cuál — útil cuando hay varios schemas de extracción y el tipo de documento es incierto —, y la selección forzada (<code>{"type": "tool", "name": "extract_metadata"}</code>) asegura que una tool concreta corre antes de pasos de enriquecimiento posteriores. Y aunque el schema sea estricto, sigue haciendo falta normalización en el prompt para formatos de origen inconsistentes — fechas en múltiples formatos que deben convertirse a <code>YYYY-MM-DD</code>, por ejemplo — porque el schema valida forma, no homogeneidad de contenido.</p>
+
+      <p>En producción, el incidente típico es una extracción de facturas que "pasa todos los tests de schema" pero cuyo <code>calculated_total</code> nunca coincide con el <code>stated_total</code> del documento: el equipo confió en <code>strict: true</code> como garantía de calidad completa, y descubre semanas después que el schema nunca estaba diseñado para detectar ese tipo de error. El anti-patrón de fondo es exactamente esa confusión entre sintaxis y semántica, y su síntoma gemelo es marcar todos los campos como <code>required</code>: eso no evita que el documento fuente esté incompleto, solo garantiza que el modelo alucinará algo para rellenar el hueco.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> <code>strict: true</code> = forma correcta garantizada; nunca = contenido correcto garantizado. <code>"auto"</code> no garantiza llamada; <code>"any"</code> garantiza llamada con tool libre; forzada garantiza llamada con tool fija.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 3.</strong> Tienes una tool con <code>strict: true</code> y el modelo decide llamarla. ¿Qué te garantiza exactamente esa configuración?</p>
+        <label><input type="radio" name="mc3" value="A"> A. Que el <code>input</code> cumple el schema en forma Y que los valores son semánticamente correctos (p. ej. que un total cuadra).</label>
+        <label><input type="radio" name="mc3" value="B"> B. Que el <code>input</code> cumple el schema en forma y tipos (grammar-constrained sampling); nada sobre si los valores tienen sentido semántico.</label>
+        <label><input type="radio" name="mc3" value="C"> C. Nada, salvo que además se combine con <code>tool_choice: "any"</code>.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="strict mode elimina errores de sintaxis JSON, no errores semánticos; confundir ambos es el distractor central de este task statement."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use" target="_blank" rel="noopener">Strict tool use</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs" target="_blank" rel="noopener">Structured outputs</a></p>
+
+      <hr>
+
+      <h2 id="leccion-1-4">Lección 4 — Validación, retry y feedback loops: cuándo reintentar y cuándo no</h2>
+
+      <p>Tool use elimina errores de sintaxis, pero no los semánticos (Lección 3); este task statement cubre el mecanismo que sí ataca esos errores: reintentar con feedback específico de qué falló exactamente. El matiz que el examen espera que domines es distinguir cuándo un retry puede funcionar (errores de formato o estructura recuperables) de cuándo es estructuralmente inútil (la información simplemente no está en el documento de origen, y ningún número de reintentos la va a producir).</p>
+
+      <p>El patrón de retry-con-error-feedback consiste en anexar al prompt de reintento los errores de validación exactos —nunca un mensaje genérico— junto con el documento original y la extracción fallida completa, de modo que el modelo tenga todo el contexto necesario para autocorregirse:</p>
+
+      <pre data-lang="text"><code>Prompt inicial: "Extract invoice data as JSON"
+Respuesta: { "items": [...], "total": 1500 }  ← validación falla
+
+Follow-up: "The extraction failed validation:
+- Sum of item amounts ($1000) != stated total ($1500)
+- Fix the discrepancy by re-examining the document.
+Provide the corrected extraction."</code></pre>
+
+      <p>Dos diseños de campo habilitan este patrón en la práctica. El primero es <code>detected_pattern</code>, que etiqueta qué construcción de código disparó cada hallazgo — no como dato decorativo, sino porque permite después correlacionar categorías con tasas de descarte por parte de los desarrolladores:</p>
+
+      <pre data-lang="json"><code>{
+  "finding": "potential null pointer dereference",
+  "location": "line 42",
+  "detected_pattern": "variable_accessed_without_null_check",
+  "confidence": 0.85
+}</code></pre>
+
+      <p>El segundo es el par <code>calculated_total</code>/<code>stated_total</code> con un booleano <code>conflict_detected</code>, que expone de forma explícita cuándo el dato derivado y el dato declarado en el documento no coinciden, en vez de escoger uno de los dos en silencio:</p>
+
+      <pre data-lang="json"><code>{
+  "stated_total": 1500,
+  "calculated_total": 1000,
+  "conflict_detected": true,
+  "conflict_description": "Sum of items does not match stated total"
+}</code></pre>
+
+      <p>En producción, el escenario que distingue a quien domina este task statement es reconocer el límite del retry a tiempo: un pipeline de extracción de contratos empieza a reintentar automáticamente cuando un campo <code>signing_date</code> sale vacío, sin comprobar antes si ese contrato en concreto simplemente no lleva fecha de firma en el documento origen. El resultado es un bucle de reintentos que quema tokens y latencia sin ninguna posibilidad de éxito, porque el problema nunca fue de formato.</p>
+
+      <p>El anti-patrón más costoso, además del bucle sin salida anterior, es reintentar con un mensaje genérico como "try again": sin el error específico, el modelo no tiene información accionable sobre qué corregir, y el resultado suele repetir exactamente el mismo fallo. Y no instrumentar <code>detected_pattern</code> desde el diseño inicial del schema de hallazgos —parece un campo prescindible al principio— impide después cualquier análisis sistemático de por qué ciertas categorías se descartan de forma recurrente.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> retry solo si el fallo es de formato/estructura (recuperable); si el dato no existe en la fuente, no hay número de reintentos que lo genere — la salida correcta es aceptar el vacío o cambiar de fuente.</p>
+
+      <pre class="mermaid">flowchart TD
+    A[Extraccion inicial] --> B{Pasa validacion?}
+    B -->|Si| C[Salida final]
+    B -->|No: error de formato/estructura| D[Retry con error especifico + documento original]
+    D --> B
+    B -->|No: dato ausente en la fuente| E[No reintentar: aceptar vacio o cambiar fuente]</pre>
+
+      <p>El diagrama muestra que un fallo de validación no dispara automáticamente un retry: solo los errores de formato o estructura se benefician del bucle de feedback; si la causa es información ausente en el documento fuente, el diseño correcto es salir del bucle y tratarlo como un vacío legítimo.</p>
+
+      <div class="minicheck" data-correct="C">
+        <p class="mc-q"><strong>Mini-check 4.</strong> Una extracción de contratos falla porque el campo <code>signing_date</code> sale vacío, y el documento original nunca incluyó esa fecha. ¿Cuál es la acción correcta?</p>
+        <label><input type="radio" name="mc4" value="A"> A. Reintentar con un mensaje de error genérico ("the date is missing, try again") hasta que aparezca.</label>
+        <label><input type="radio" name="mc4" value="B"> B. Reintentar subiendo la temperatura del modelo para forzar variabilidad en la respuesta.</label>
+        <label><input type="radio" name="mc4" value="C"> C. No reintentar: aceptar el campo vacío o buscar la fecha en otra fuente, porque el retry no puede generar un dato que no está en el documento.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el retry solo ayuda ante errores de formato o estructura; cuando la causa es información ausente en el origen, es un bucle sin salida."></div>
+      </div>
+
+<!-- HUECO: 4.1/4.4 — implementación detallada de evals/graders. Las fuentes procesadas para este bloque referencian "Define success criteria & evals" para métricas de precisión/falsos positivos, pero no cubren notebooks o graders específicos para precisión de clasificación o tasa de falso positivo; se deja como hueco para verificación posterior. -->
+
+      <p class="doc-link">📖 Documentación oficial: Claude prompting best practices (ver Lección 1) · <a href="https://platform.claude.com/docs/en/docs/test-and-evaluate/develop-tests" target="_blank" rel="noopener">Define success criteria and evals</a></p>
+
+      <hr>
+
+      <h2 id="leccion-1-5">Lección 5 — Batch processing: cuándo el ahorro de coste compensa la espera</h2>
+
+      <p>No todo procesamiento a escala necesita respuesta inmediata. Cuando el workload es no bloqueante y tolera latencia — reportes overnight, auditorías semanales, generación nocturna de tests —, la Message Batches API ofrece un 50% de ahorro de coste a cambio de una ventana de procesamiento de hasta 24 horas, sin SLA de latencia garantizado. La decisión de diseño central de este task statement es reconocer cuándo ese trade-off es aceptable y cuándo no.</p>
+
+      <p>Cada request de un batch lleva un <code>custom_id</code> que correlaciona la petición con su respuesta correspondiente — indispensable porque las respuestas no llegan necesariamente en el mismo orden ni de forma síncrona. El formato exigido es una cadena de 1 a 64 caracteres que cumpla el patrón <code>^[a-zA-Z0-9_-]{1,64}$</code> (letras, dígitos, guion y guion bajo); un <code>custom_id</code> con espacios, puntos o más de 64 caracteres es una request inválida, y es un distractor de examen habitual presentarlo como si fuera válido.</p>
+
+      <pre data-lang="python"><code>requests = [
+    {
+        "custom_id": "invoice-001",
+        "params": {
+            "model": "claude-opus-5",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Extract invoice data..."}]
+        }
+    },
+    {
+        "custom_id": "invoice-002",
+        "params": {
+            "model": "claude-opus-5",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Extract invoice data..."}]
+        }
+    }
+]
+
+batch = client.messages.batches.create(requests=requests)</code></pre>
+
+      <p>El límite de un batch es 100.000 requests o 256 MB de tamaño total, lo que se alcance primero; la mayoría se completan en menos de una hora, con un máximo de 24 horas antes de expirar, y los resultados quedan accesibles durante 29 días. La limitación arquitectónica más importante para el examen es que el batch API <strong>no soporta multi-turn tool calling</strong> dentro de una misma request: no se puede ejecutar una tool a mitad de proceso y devolver el resultado dentro del mismo request batcheado, porque cada request se procesa de forma independiente y sin estado compartido. Tampoco están soportados <code>stream: true</code>, <code>speed</code> (fast mode), <code>store</code>/<code>previous_thread_event_id</code> (threads), <code>cache_hint</code>/<code>context_hint</code>, ni <code>max_tokens: 0</code>.</p>
+
+      <p>En producción, el ejercicio que el examen plantea con más frecuencia es un cálculo directo: dado un SLA numérico —por ejemplo, garantizar que los resultados estén disponibles en un máximo de 30 horas— y el límite de 24 horas del batch, ¿con qué frecuencia hay que enviar lotes? La respuesta es cada 4 horas: el peor caso es un lote enviado justo antes de la siguiente ventana de envío, que tiene hasta 24 horas para completarse, más las 4 horas de margen entre envíos, que en total no debe superar las 30 horas del SLA. Antes de lanzar un batch masivo conviene además refinar el prompt sobre una muestra pequeña, para maximizar la tasa de éxito en el primer intento y no desperdiciar coste en reenvíos evitables; y ante fallos, reenviar solo los documentos identificados por su <code>custom_id</code>, con las modificaciones apropiadas (por ejemplo, <em>chunking</em> de documentos que excedieron el límite de contexto).</p>
+
+      <p>El anti-patrón más costoso es usar batch para un flujo que necesita respuesta en minutos —pre-merge checks, feedback en tiempo real—: el máximo de 24 horas lo hace inadecuado de fondo para cualquier caso bloqueante, sin importar cuánto se optimice el resto del pipeline. Un segundo anti-patrón, más silencioso, es esperar poder ejecutar tool calling multi-turno dentro de un batch: ignora que cada request se procesa de forma completamente independiente, sin estado compartido entre pasos.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Workload tolera latencia (reportes overnight, auditorías)</td><td>Message Batches API</td><td>50% de ahorro de coste a cambio de hasta 24h de ventana, sin SLA garantizado</td></tr>
+          <tr><td>Workload bloqueante (pre-merge checks, feedback en vivo)</td><td>API síncrona</td><td>El batch no garantiza latencia y puede tardar hasta 24h</td></tr>
+          <tr><td>SLA de X horas con el límite de 24h del batch</td><td>Enviar lotes cada (X − 24) horas</td><td>El peor caso (lote justo antes del siguiente envío) debe seguir cumpliendo el SLA</td></tr>
+          <tr><td>Necesitas tool calling multi-turno dentro de la misma request</td><td>No usar batch: usar la API síncrona</td><td>El batch procesa cada request de forma independiente, sin estado compartido</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 5.</strong> Necesitas garantizar un SLA de 30 horas para un pipeline de auditoría que usa la Message Batches API (ventana máxima de 24 horas). ¿Con qué frecuencia debes enviar los lotes?</p>
+        <label><input type="radio" name="mc5" value="A"> A. Cada 24 horas, justo al límite de la ventana del batch.</label>
+        <label><input type="radio" name="mc5" value="B"> B. Cada 4 horas, para que el peor caso (batch enviado justo antes del siguiente envío) siga cumpliendo el SLA de 30 horas.</label>
+        <label><input type="radio" name="mc5" value="C"> C. Cada 30 horas, coincidiendo directamente con el SLA.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el margen disponible es SLA (30h) menos ventana máxima del batch (24h) = 6h, pero la frecuencia de envío debe ser menor que ese margen para cubrir el peor caso; la fuente fija ese cálculo en enviar cada 4 horas."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing" target="_blank" rel="noopener">Batch processing / Message Batches API</a></p>
+
+      <hr>
+
+      <h2 id="leccion-1-6">Lección 6 — Multi-instancia y multi-pass review: separar quien genera de quien revisa</h2>
+
+      <p>Un modelo que acaba de generar código retiene en su contexto el razonamiento que usó para producirlo, lo que lo hace menos propenso a cuestionar sus propias decisiones si se le pide revisarlas en la misma sesión — ni instrucciones de auto-revisión ni extended thinking dentro de la misma sesión igualan la efectividad de un revisor sin ese contexto previo. El task statement 4.6 cubre el diseño arquitectónico que corrige esa limitación: separar generación y revisión en instancias independientes, y separar el volumen de revisión en pasadas con foco distinto para no diluir la atención del modelo.</p>
+
+      <pre data-lang="python"><code># Generator instance
+generated_code = generator_claude.generate_code(prompt)
+
+# Independent reviewer instance (different context, no knowledge of generator's reasoning)
+review = reviewer_claude.review_code(
+    code=generated_code,
+    criteria=review_criteria
+    # NO incluir razonamiento del generador
+)</code></pre>
+
+      <p>Para reviews de múltiples archivos, el patrón correcto divide el trabajo en dos pasadas de <em>tipo</em> de análisis distinto, no en fragmentos del mismo tipo: un <em>local analysis pass</em> por archivo (problemas locales, patrones directos, sintaxis) y un <em>cross-file integration pass</em> (flujo de datos entre archivos, dependencias, contradicciones). Hacerlo en una sola pasada combinada diluye la atención del modelo y produce hallazgos contradictorios entre ambos tipos de análisis.</p>
+
+      <pre data-lang="python"><code># Pass 1: Local file analysis
+local_findings = []
+for file in files:
+    findings = claude.analyze_file(
+        file=file,
+        focus="local issues, syntax, direct patterns"
+    )
+    findings = [{**f, "confidence": ...} for f in findings]
+    local_findings.extend(findings)
+
+# Pass 2: Integration analysis (cross-file)
+integration_findings = claude.analyze_integration(
+    files=files,
+    local_findings=local_findings,
+    focus="data flow, dependencies, contradictions"
+)</code></pre>
+
+      <p>Hay todavía una tercera variante arquitectónica que el examen distingue explícitamente de las dos pasadas anteriores: una <strong>pasada de verificación independiente</strong>, ejecutada por una instancia separada <em>después</em> de que el resultado local y el de integración ya se han combinado. Su única función es revisar ese resultado ya integrado y reportar su propia confianza sobre si es correcto — no vuelve a analizar el código desde cero ni sustituye a las pasadas local/integration, sino que añade una comprobación final de extremo a extremo con su propio <em>confidence self-report</em>, independiente del de los hallazgos individuales. Ese self-report de confianza, tanto en hallazgos individuales como en la pasada de verificación, habilita <em>calibrated review routing</em>: lo de alta confianza se acepta directamente, y lo de baja confianza se enruta a revisión manual.</p>
+
+      <pre class="mermaid">flowchart LR
+    G[Generator Claude] -->|codigo generado| R[Reviewer Claude independiente]
+    R --> P1[Pass 1: local por archivo]
+    R --> P2[Pass 2: integracion cross-archivo]
+    P1 --> F[Resultado integrado]
+    P2 --> F
+    F --> V[Pass 3: verificacion independiente + confidence self-report]
+    V --> Route{confidence alta?}
+    Route -->|Si| Auto[Aceptar automaticamente]
+    Route -->|No| Manual[Revision manual]</pre>
+
+      <p>El diagrama muestra que la instancia revisora es independiente del generador (sin su contexto de razonamiento), que la revisión se divide en dos pasadas de foco distinto (local e integración) y que una tercera pasada de verificación independiente revisa el resultado ya integrado y aporta su propio confidence self-report antes de enrutar según confianza.</p>
+
+      <p>En producción, el escenario que más se repite es un equipo que, para "ahorrar una llamada", pide a la misma instancia que generó el código que lo revise a continuación en la misma conversación, confiando en instrucciones tipo "sé crítico con tu propio código" o en activar extended thinking para forzar más autocuestionamiento. El resultado es sistemáticamente menos efectivo que una instancia nueva: el modelo tiende a confirmar su razonamiento previo, no a cuestionarlo, precisamente porque ese razonamiento sigue en su contexto.</p>
+
+      <p>El anti-patrón gemelo aparece al escalar a multi-archivo: dividir el trabajo por <em>volumen</em> —varios chunks del mismo tipo de análisis repartidos entre instancias— en vez de por <em>tipo de análisis</em> (local vs integración), que es la distinción real que exige la fuente. Y no instrumentar confianza por hallazgo elimina la posibilidad de enrutar selectivamente: obliga a revisar todo con el mismo nivel de escrutinio manual, sin priorización posible.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> genera y revisa siempre en instancias distintas; divide la revisión multi-archivo por tipo de análisis (local vs integración), no por volumen; y si hace falta una comprobación final, añade una tercera pasada de verificación independiente sobre el resultado ya integrado, no una repetición de las dos anteriores.</p>
+
+<!-- HUECO: 4.6 — implementación práctica con el Agent SDK (subagentes independientes concretos, mecanismo de confidence routing en código). La guía oficial es breve en este task statement y las fuentes procesadas para este bloque no cubren ese detalle de implementación; se espera resolver en el Bloque 4 (Agent SDK). -->
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 6.</strong> Un equipo revisa código multi-archivo dividiendo el trabajo en varios chunks, cada uno analizando tanto problemas locales como de integración entre archivos. ¿Qué distinción está ignorando respecto al patrón correcto?</p>
+        <label><input type="radio" name="mc6" value="A"> A. Ninguna: dividir por chunks es equivalente a dividir por tipo de análisis.</label>
+        <label><input type="radio" name="mc6" value="B"> B. Debería dividir por <em>tipo de análisis</em> (local por archivo vs integración cross-archivo), no por volumen de chunks del mismo tipo combinado.</label>
+        <label><input type="radio" name="mc6" value="C"> C. El problema es no usar extended thinking en cada chunk.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="mezclar ambos focos en la misma pasada diluye la atención y produce hallazgos contradictorios; la fuente exige separar por tipo de análisis, no por volumen de trabajo."></div>
+      </div>
+
+      <p class="doc-link">📖 Documentación oficial: la guía oficial es breve en este task statement · <a href="https://github.com/anthropics/claude-cookbooks" target="_blank" rel="noopener">Claude Cookbooks (GitHub)</a></p>
+
+      <hr>
+
+      <h2 id="checklist-de-salida">Checklist de salida</h2>
+
+      <p>Dominas este bloque si puedes, sin mirar la guía:</p>
+
+      <ul>
+        <li>Sustituir un filtro por confianza vago por criterios categóricos explícitos y ejemplos de severidad por código, y saber cuándo desactivar temporalmente una categoría ruidosa (4.1).</li>
+        <li>Diseñar few-shot con 2-4 ejemplos dirigidos y razonamiento explícito, incluyendo casos de campo ausente en extracción, sin caer en "más ejemplos siempre ayuda" (4.2).</li>
+        <li>Explicar el límite exacto de <code>strict: true</code> (sintaxis, no semántica), diseñar campos <code>required</code>/opcional para evitar alucinación, y elegir entre <code>"auto"</code>, <code>"any"</code> y tool forzada según el caso (4.3).</li>
+        <li>Distinguir un fallo recuperable con retry-y-feedback-específico de uno no recuperable por ausencia de dato en la fuente, e instrumentar campos como <code>detected_pattern</code> o <code>conflict_detected</code> (4.4).</li>
+        <li>Decidir cuándo un workload cabe en Message Batches API frente a la API síncrona, calcular la frecuencia de envío para un SLA dado, y conocer los límites y funcionalidades no soportadas en batch (4.5).</li>
+        <li>Diseñar una arquitectura de revisión con instancia independiente del generador, pasadas separadas por tipo de análisis (local vs integración) y, si aplica, una pasada de verificación final con confidence self-report (4.6).</li>
+      </ul>
+
+      <h2 id="para-ir-mas-alla">Para ir más allá — referencias anotadas</h2>
+
+      <ul>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices">Claude prompting best practices</a> — base de las Lecciones 1 y 2: criterios explícitos, severidad por ejemplos y few-shot con razonamiento.</li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a> — base de la Lección 3: mecanismos de salida estructurada más allá de tool use.</li>
+        <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use">Strict tool use</a> — base de la Lección 3: grammar-constrained sampling y la lista de tipos/keywords soportados en strict mode.</li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Batch processing (Message Batches API)</a> — base de la Lección 5: <code>custom_id</code>, límites de tamaño y funcionalidades no soportadas en batch.</li>
+        <li><a href="https://platform.claude.com/docs/en/docs/test-and-evaluate/develop-tests">Define success criteria y evals</a> — complementa las Lecciones 1 y 4: cómo definir criterios de éxito medibles para precisión y calidad de extracción; no cubre graders específicos de falsos positivos (ver Deuda conocida en el corpus).</li>
+        <li><a href="https://github.com/anthropics/prompt-eng-interactive-tutorial">Interactive Prompt Engineering Tutorial</a> — práctica guiada de las técnicas de las Lecciones 1 y 2 (criterios explícitos, few-shot) con ejercicios paso a paso.</li>
+        <li><a href="https://github.com/anthropics/claude-cookbooks">Claude Cookbooks (GitHub)</a> — ejemplos de código de extracción estructurada, batch processing y patrones multi-agente que ilustran varias lecciones de este bloque, especialmente la 5 y la 6.</li>
+      </ul>
+
+      <p><em>Historial de versiones del curso: <a href="../../changelog.html">changelog</a> — único para todo el material; esta guía no lleva el suyo propio.</em></p>
+<!--__FIN_CONTENIDO__-->
+    </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var printMode = /[?&]print=1/.test(location.search);
+  if (printMode) {
+    document.body.classList.add("print-mode");
+    document.documentElement.dataset.lang = "typescript";
+  }
+
+  var darkTheme = document.documentElement.dataset.theme === "dark";
+  if (window.mermaid) mermaid.initialize({
+    startOnLoad: true, securityLevel: "loose", theme: "base",
+    themeVariables: darkTheme ? {
+      primaryColor: "#172230", primaryTextColor: "#E4EDF6", primaryBorderColor: "#3FA9FF",
+      secondaryColor: "#101927", tertiaryColor: "#33260F", lineColor: "#3FA9FF",
+      fontFamily: "Plus Jakarta Sans"
+    } : {
+      primaryColor: "#E2F1FF", primaryTextColor: "#0E1B2C", primaryBorderColor: "#0E82FF",
+      secondaryColor: "#F1F5FA", tertiaryColor: "#FBEFD9", lineColor: "#0E82FF",
+      fontFamily: "Plus Jakarta Sans"
+    }
+  });
+
+  // Build the sidebar TOC from h2/h3 headings.
+  var links = document.getElementById("toc-links");
+  var heads = document.querySelectorAll("#contenido h2, #contenido h3");
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = "sec-" + i;
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    // TOC compacto: "Lección N — Título: subtítulo" -> "LN · Título".
+    var t = h.textContent;
+    var m = t.match(/^Lección\s+(\d+)\s+—\s+(.+)$/);
+    if (m) t = "L" + m[1] + " · " + m[2].split(":")[0].trim();
+    a.textContent = t;
+    a.title = h.textContent;
+    if (h.tagName === "H3") a.className = "l3";
+    links.appendChild(a);
+  });
+  var tocAnchors = links.querySelectorAll("a");
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+    // At the bottom of the page the last headings never cross the 120px line,
+    // so highlight the final one instead of the last one that did. Measure the
+    // viewport with clientHeight as well: mobile browsers report innerHeight as
+    // the *visible* height, shrunk by the retractable URL bar, while the maximum
+    // scroll offset is computed against the layout viewport -- comparing with
+    // innerHeight alone left the bottom unreachable there by the bar's height.
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    if (window.scrollY + viewportH >= docHeight - 24 && heads.length) {
+      cur = heads[heads.length - 1].id;
+    }
+    tocAnchors.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + cur); });
+  }, { passive: true });
+
+  // Wire up mini-checks.
+  document.querySelectorAll(".minicheck").forEach(function (mc) {
+    var correct = (mc.dataset.correct || "").split(",").map(function (s) { return s.trim(); }).sort().join(",");
+    var fb = mc.querySelector(".mc-feedback");
+    var btn = mc.querySelector(".mc-check");
+    if (printMode) { // reveal answers for the PDF export
+      mc.querySelectorAll("label").forEach(function (l) {
+        var v = l.querySelector("input").value;
+        if (correct.split(",").indexOf(v) !== -1) l.classList.add("mc-answer"), l.append(" ✔");
+      });
+      fb.className = "mc-feedback ok";
+      fb.style.opacity = "1";
+      fb.textContent = "Respuesta: " + correct + ". " + (fb.dataset.explica || "");
+      return;
+    }
+    if (btn) btn.addEventListener("click", function () {
+      var sel = Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+      if (!sel) { fb.className = "mc-feedback ko"; fb.textContent = "Selecciona una opción."; return; }
+      var ok = sel === correct;
+      fb.className = "mc-feedback " + (ok ? "ok" : "ko");
+      fb.textContent = (ok ? "✔ Correcto. " : "✘ No exactamente — la respuesta es " + correct + ". ") + (fb.dataset.explica || "");
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var m = location.pathname.match(/bloque-(\d)/);
+  if (!m || !window.localStorage) return;
+  var PKEY = "ccarf-sum-guia-" + m[1];
+  var heads = Array.prototype.slice.call(document.querySelectorAll("#contenido h2"));
+  var mcs = document.querySelectorAll(".minicheck");
+  var st;
+  try { st = JSON.parse(localStorage.getItem(PKEY)) || {}; } catch (e) { st = {}; }
+  st.bloque = m[1];
+  st.visited = st.visited || {};
+  st.mc = st.mc || {};
+  st.mcTry = st.mcTry || {};   // intento por mini-check: {sel, ok}
+  st.totalSections = heads.length;
+  st.mcTotal = mcs.length;
+  // Funcionalidad "Continuar": st.updated hace de timestamp de "último
+  // acceso" a esta guía -- reutiliza el campo ya existente (antes solo se
+  // actualizaba al detectar scroll/mini-check) forzando un guardado aquí, en
+  // cada carga de página, aunque no cambie nada más. El índice del curso
+  // (plantillas/index.template.html) compara este mismo campo con el de
+  // "ccarf-sum-quiz-<bloque>.updated" para decidir a qué recurso apunta el
+  // botón global "Continuar".
+  save();
+  function save() {
+    st.nVisited = Object.keys(st.visited).length;
+    st.mcDone = Object.keys(st.mc).length;
+    st.mcTried = Object.keys(st.mcTry).length;
+    st.updated = Date.now();
+    try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
+  }
+  var t = null;
+  function atBottom() {
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // innerHeight is the *visible* height: mobile browsers shrink it by the
+    // retractable URL bar, but the maximum scroll offset is computed against the
+    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
+    // the document by the bar's height and the bottom was never detected on a
+    // phone or tablet -- which left the closing sections unread for good.
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + viewportH >= docHeight - 24;
+  }
+  // A section counts as read once its heading has scrolled above the middle of
+  // the viewport, and every heading above that line is marked on each sample --
+  // marking only the current one loses the sections the reader scrolled past
+  // between two samples. At the very bottom the trailing headings can never
+  // reach the middle (everything below the fold is already on screen), so they
+  // are marked there; otherwise 100% would be unreachable.
+  function track() {
+    if (t) return;
+    t = setTimeout(function () {
+      t = null;
+      var bottom = atBottom();
+      var middle = window.innerHeight / 2;
+      var was = Object.keys(st.visited).length + "|" + st.lastSection;
+      var cur = null;
+      heads.forEach(function (h) {
+        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+        else if (bottom) { st.visited[h.id] = 1; }
+      });
+      if (bottom && heads.length) cur = heads[heads.length - 1];
+      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+    }, 800);
+  }
+  window.addEventListener("scroll", track, { passive: true });
+  track();
+  function nombreDe(mc) {
+    var inp = mc.querySelector("input");
+    return inp ? inp.name : null;
+  }
+  function seleccion(mc) {
+    return Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+  }
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target;
+    if (!btn.classList || !btn.classList.contains("mc-check")) return;
+    var mc = btn.closest(".minicheck");
+    setTimeout(function () {
+      var fb = mc.querySelector(".mc-feedback");
+      var nombre = nombreDe(mc);
+      if (!fb || !nombre) return;
+      var sel = seleccion(mc);
+      if (!sel) return;                       // "selecciona una opcion" no es un intento
+      st.mcTry[nombre] = { sel: sel, ok: fb.classList.contains("ok") };
+      if (fb.classList.contains("ok")) st.mc[nombre] = 1; else delete st.mc[nombre];
+      save();
+    }, 50);
+  });
+
+  // Al volver a la guia se restaura lo ya respondido: antes se perdia si habias
+  // acertado o fallado, y cada visita empezaba de cero.
+  if (!/[?&]print=1/.test(location.search)) {
+    mcs.forEach(function (mc) {
+      var nombre = nombreDe(mc);
+      var prev = nombre && st.mcTry[nombre];
+      if (!prev || !prev.sel) return;
+      var sel = prev.sel.split(",");
+      Array.prototype.forEach.call(mc.querySelectorAll("input"), function (i) {
+        if (sel.indexOf(i.value) !== -1) i.checked = true;
+      });
+      var btn = mc.querySelector(".mc-check");
+      if (btn) btn.click();                   // reutiliza el mismo render de feedback
+    });
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): salta a la primera
+  // sección (h2) aún no marcada como visitada en st.visited, o a la última
+  // si ya estaban todas leídas. No se activa en modo impresión (el PDF no
+  // tiene JS de scroll con sentido) ni rompe el TOC: se espera a que la
+  // página termine de cargar (mermaid renderiza sus SVGs de forma asíncrona
+  // y puede desplazar alturas justo después del primer pintado).
+  if (/[?&]continue=1/.test(location.search) && !/[?&]print=1/.test(location.search) && heads.length) {
+    var contVisitadas = 0;
+    for (var cv = 0; cv < heads.length; cv++) { if (st.visited[heads[cv].id]) contVisitadas++; }
+    // Sin avance previo (0 secciones visitadas) la guía se abre arriba del todo, sin scroll.
+    if (contVisitadas > 0) {
+      var contTarget = null;
+      for (var ci = 0; ci < heads.length; ci++) {
+        if (!st.visited[heads[ci].id]) { contTarget = heads[ci]; break; }
+      }
+      if (!contTarget) contTarget = heads[heads.length - 1];
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          try { history.replaceState(null, "", "#" + contTarget.id); } catch (e) {}
+          contTarget.scrollIntoView();
+        }, 200);
+      });
+    }
+  }
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  // Solo las guias que traen ambas variantes reciben el switch.
+  if (!document.querySelector(".lang-variant")) return;
+  var NAMES = { python: "Python", typescript: "TypeScript" };
+  var btn = document.createElement("button");
+  btn.className = "lang-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.lang === "python" ? "python" : "typescript"; }
+  function paint() {
+    var other = cur() === "python" ? "typescript" : "python";
+    btn.textContent = NAMES[cur()];
+    btn.title = "Ver los ejemplos de codigo en " + NAMES[other];
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "python" ? "typescript" : "python";
+    document.documentElement.dataset.lang = next;
+    try { localStorage.setItem("ccarf-lang", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloque 2 — Claude Code: configuración y flujos</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{var l=localStorage.getItem("ccarf-lang");document.documentElement.dataset.lang=(l==="python")?"python":"typescript"}catch(e){document.documentElement.dataset.lang="typescript"}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* Design tokens · Volt (copiados de plantillas/volt-style-guide.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  /* Topbar sticky — marca a la izquierda, controles (tema/idioma/pantalla completa) a la derecha. */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
+  .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-5); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
+  .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+    border-right:1px solid var(--border); padding-right:var(--sp-5); }
+  .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
+  .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
+    white-space:normal; transition:color var(--ease),border-color var(--ease); }
+  .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
+  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
+
+  @media (max-width:900px) {
+    .layout { flex-direction:column; gap:var(--sp-4); }
+    .sidebar { position:static; width:100%; flex:0 0 auto; max-height:none; overflow:visible;
+      border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:var(--sp-4); }
+    .content-wrap { max-width:100%; }
+  }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin-top:var(--sp-8); border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin-top:var(--sp-7); }
+  /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
+     (consolidation/namespacing/renaming/splitting) son una sola palabra sin
+     punto de corte y se salian de la caja en movil. Solo parte si desborda. */
+  p, li { max-width:72ch; overflow-wrap:break-word; }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  strong { font-weight:var(--fw-semibold); }
+
+  /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
+     (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
+     de corte que desbordaba el ancho en movil. */
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
+  pre code { background:none; border:none; color:inherit; padding:0; }
+  pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
+  /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
+  pre[data-lang] { position:relative; padding-top:30px; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  /* Referencias oficiales al cierre de cada lección. */
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
+  /* Foco visible (regla de accesibilidad Volt). */
+  :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  tbody tr:hover { background:var(--surface-2); }
+
+  blockquote { border-left:3px solid var(--accent); margin:1.2em 0; padding:8px 18px; color:var(--text-muted); }
+  blockquote p { margin:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:var(--sp-6) 0; }
+
+  .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
+  .minicheck .mc-q { margin-top:0; }
+  .minicheck label { display:block; padding:5px 0; cursor:pointer; }
+  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover { background:var(--accent-hover); }
+  .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
+  .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
+  .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
+  body.print-mode .mc-answer, .mc-answer { font-weight:var(--fw-semibold); color:var(--success); }
+
+  .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .print-only { display:none; }
+  @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; }
+  }
+  @media print {
+    .topbar, .sidebar, .minicheck button { display:none !important; }
+    .wrap, .layout, main { max-width:100%; padding:0; margin:0; border:none; }
+    h2 { break-before:page; }
+    h2:first-of-type { break-before:auto; }
+    pre { white-space:pre-wrap; }
+    a { color:inherit; text-decoration:none; }
+    .print-only { display:block; }
+  }
+  body.print-mode .sidebar, body.print-mode .minicheck button { display:none; }
+  .theme-toggle, .fs-toggle { width:40px; padding-left:0; padding-right:0; text-align:center; }
+  html[data-lang="typescript"] .lang-variant[data-lang="python"],
+  html[data-lang="python"] .lang-variant[data-lang="typescript"] { display:none; }
+  .lang-variant > pre { margin-top:0; }
+  .lang-variant .lang-note { max-width:72ch; margin:8px 0 0; font-size:var(--fs-caption); line-height:1.45; color:var(--text-muted); border-left:3px solid var(--warning); padding-left:10px; }
+  .lang-variant .lang-note code { font-size:.92em; }
+  /* El PDF de estudio no tiene JS ni toggle: imprime siempre TypeScript. */
+  @media print {
+    .lang-variant[data-lang="python"] { display:none !important; }
+    .lang-variant[data-lang="typescript"] { display:block !important; }
+  }
+
+  /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
+  #contenido { counter-reset:sec; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    letter-spacing:.08em; margin-bottom:6px; }
+
+  /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
+  .minicheck button { color:var(--on-accent); }
+
+  /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
+  @media print {
+    .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
+    .eyebrow { color:#0E82FF; }
+    .hero h1 { color:#0E1B2C; }
+    .hero .lead { color:#45536C; }
+    #contenido > h2::before { color:#0E82FF; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="topbar-controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · Guía de estudio</div>
+    <h1>Bloque 2 — Claude Code: configuración y flujos</h1>
+    <p class="lead">Peso en el examen: 20% (dominio oficial D3 — Claude Code Configuration &amp; Workflows) · Escenarios donde cae: task statements 3.1 a 3.6, con preguntas de diagnóstico de jerarquía de configuración, elección del mecanismo correcto (CLAUDE.md vs skill vs rule vs hook) y criterio para decidir entre plan mode, ejecución directa e integración en CI/CD</p>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <nav id="toc"><div class="eyebrow">Contenido</div><div id="toc-links"></div></nav>
+    </aside>
+    <main class="content-wrap">
+      <div id="contenido">
+      <h2 id="que-evalua-el-examen">Qué evalúa el examen en este bloque</h2>
+
+      <p>Este bloque cubre Claude Code como herramienta de desarrollo, no la mecánica de la Messages API: cómo se configura su memoria persistente, cómo se extiende con comandos y skills, cómo se acotan convenciones a subconjuntos de archivos, cuándo conviene planificar antes de ejecutar, cómo se refina iterativamente una solución y cómo se integra en pipelines automatizados. El examen mezcla dos tipos de pregunta: conocimiento declarativo puro (sintaxis exacta de un frontmatter, jerarquía de carga de un archivo, nombre literal de un flag de CLI) y criterio de aplicación (dado un escenario de equipo o de CI, qué mecanismo es el correcto entre varios plausibles). Un ejemplo típico de enunciado: se describe un <code>CLAUDE.md</code> de 250 líneas que un nuevo miembro del equipo dice no estar recibiendo, y se pregunta cuál de varias causas explica el síntoma —de las cuales solo una es correcta y las demás son variaciones plausibles de jerarquía o de scoping—. La guía recorre, en orden, los seis task statements del dominio D3: <code>CLAUDE.md</code> (3.1), comandos y skills (3.2), path-specific rules (3.3), plan mode (3.4), refinamiento iterativo (3.5) y CI/CD (3.6).</p>
+
+      <h2 id="antes-de-empezar">Antes de empezar</h2>
+
+      <p>No hace falta haber completado ningún bloque previo para seguir este: los seis ejes son autocontenidos y giran alrededor del uso cotidiano de Claude Code como CLI, no de la Messages API subyacente. Sí conviene llegar con experiencia mínima usando Claude Code en un proyecto real —haber abierto una sesión, editado archivos, ejecutado algún comando— porque la guía no explica qué es Claude Code desde cero, sino cómo configurarlo y operarlo con criterio. Si vienes de un bloque centrado en arquitectura de agentes, aquí encontrarás la misma tensión entre flexibilidad y determinismo aplicada a un contexto distinto: cuándo confiar en que Claude decida (plan mode, auto-invocación de skills) y cuándo forzar un mecanismo que garantice comportamiento (hooks, workflows CI con código de salida verificable).</p>
+
+      <hr>
+
+      <h2 id="leccion-2-1">Lección 1 — Configuración de CLAUDE.md: jerarquía, scoping y organización modular</h2>
+
+      <p><code>CLAUDE.md</code> es un archivo markdown que Claude Code lee al inicio de cada sesión para obtener instrucciones persistentes: convenciones de código, comandos de build, decisiones arquitectónicas del proyecto. Existe para resolver un problema muy concreto: sin él, cada sesión nueva empieza desde cero y Claude repite exactamente los mismos errores que ya se corrigieron en la sesión anterior. La alternativa —explicar el proyecto de memoria cada vez— no escala ni para una persona ni, mucho menos, para un equipo.</p>
+
+      <p>La jerarquía de carga va de más general a más específico: managed policy (nivel organización, no excluible por configuración individual) → user-level (<code>~/.claude/CLAUDE.md</code>, personal, no se comparte por control de versiones) → project-level (<code>./CLAUDE.md</code> o <code>./.claude/CLAUDE.md</code>, compartido con el equipo vía version control) → local (<code>./.claude.local.md</code>, personal y específico del proyecto, pensado para <code>.gitignore</code>) → subdirectorios, que cargan <strong>on-demand</strong> cuando Claude lee archivos dentro de ellos, no al inicio de sesión. Los archivos no se sobrescriben entre sí, se <strong>concatenan</strong> en el contexto:</p>
+
+      <pre class="mermaid">flowchart TD
+    M["Managed policy (organización)"] --> U["User-level (~/.claude/CLAUDE.md)"]
+    U --> P["Project-level (./CLAUDE.md)"]
+    P --> L["Local (.claude.local.md)"]
+    L --> S["Subdirectorios (on-demand)"]</pre>
+
+      <p>El diagrama muestra el orden de carga, de más general a más específico; los archivos se concatenan (no se sobrescriben) y los subdirectorios solo cargan cuando Claude lee archivos dentro de ellos, nunca al arrancar la sesión.</p>
+
+      <p>El objetivo de tamaño es <strong>menos de 200 líneas</strong>: por encima de ese umbral, las instrucciones importantes se diluyen en el ruido y la adherencia baja. La herramienta para modularizar sin fragmentar en archivos inconexos es <code>@import</code>, que referencia otro archivo markdown y admite anidamiento recursivo hasta una profundidad máxima de <strong>4 saltos</strong>. El detalle que el examen explota sin piedad es la diferencia entre una referencia real y una literal:</p>
+
+      <pre data-lang="markdown"><code># Import de archivo externo (@import real, sin backticks)
+@docs/testing-standards.md
+
+# Esto NO se importa: se trata como texto literal
+`@docs/testing-standards.md`</code></pre>
+
+      <p>En producción, el síntoma más frecuente de una jerarquía mal entendida es un nuevo miembro del equipo que "no recibe" ciertas convenciones aunque el resto del equipo asegura que "siempre están ahí": la causa casi siempre es que esas instrucciones viven en <code>~/.claude/CLAUDE.md</code> de quien las escribió —personal, nunca versionado— en vez de en el <code>CLAUDE.md</code> del proyecto. El comando <code>/memory</code> lista todas las ubicaciones de memoria y permite editarlas; <code>/context</code> muestra bajo <strong>Memory files</strong> cuáles cargaron realmente en la sesión activa, el primer sitio donde mirar ante este síntoma.</p>
+
+      <p>El anti-patrón más costoso, sin embargo, no es de jerarquía sino de expectativa: tratar <code>CLAUDE.md</code> como si formara parte del <em>system prompt</em> y por tanto garantizara cumplimiento estricto. En realidad se entrega como <strong>mensaje de usuario posterior al system prompt</strong>, así que es guía de contexto, no configuración forzada; alguien razonable que necesite bloquear de verdad una acción ("nunca hacer push a main") y confíe solo en una línea de <code>CLAUDE.md</code> para lograrlo se lleva una sorpresa cuando Claude, en un caso límite, no la sigue. El mecanismo que sí garantiza el bloqueo es un hook <code>PreToolUse</code>, no una instrucción de memoria.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> los archivos de memoria se concatenan, no se sobrescriben; el orden es managed → user → project → local → subdirectorio (on-demand); <code>@import</code> sin backticks importa, con backticks es texto literal; y ninguna instrucción de <code>CLAUDE.md</code> es vinculante por sí sola —solo un hook lo es—.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 1.</strong> Un desarrollador añade una convención de estilo en <code>~/.claude/CLAUDE.md</code> esperando que todo el equipo la reciba automáticamente al clonar el repositorio. ¿Por qué no ocurre así?</p>
+        <label><input type="radio" name="mc1" value="A"> A. Porque <code>~/.claude/CLAUDE.md</code> requiere el flag <code>--include-user-memory</code> para activarse.</label>
+        <label><input type="radio" name="mc1" value="B"> B. Porque <code>~/.claude/CLAUDE.md</code> es user-level, personal, y no se comparte vía control de versiones.</label>
+        <label><input type="radio" name="mc1" value="C"> C. Porque las instrucciones de usuario solo se aplican dentro de subdirectorios.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el nivel user-level vive en la máquina de cada desarrollador; para que llegue a todo el equipo la convención debe estar en ./CLAUDE.md (project-level), versionado junto al código."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Memory (CLAUDE.md)</a> detalla la jerarquía completa de carga, <code>@import</code>, <code>claudeMdExcludes</code> y la auto memory.</p>
+
+      <hr>
+
+      <h2 id="leccion-2-2">Lección 2 — Custom slash commands y skills: frontmatter, scoping y precedencia</h2>
+
+      <p>Los custom slash commands y las skills son, en la implementación actual, el mismo mecanismo bajo dos formas de archivo: <code>.claude/commands/deploy.md</code> y <code>.claude/skills/deploy/SKILL.md</code> crean ambos el comando <code>/deploy</code> y funcionan de forma idéntica. Existen para encapsular procedimientos repetibles —checklists, workflows multi-paso, conocimiento de referencia— que de otro modo habría que reexplicar en cada sesión, exactamente el mismo problema de fondo que resuelve <code>CLAUDE.md</code>, pero para contenido que solo hace falta cargar cuando la tarea lo requiere, no siempre.</p>
+
+      <p><code>SKILL.md</code> es el archivo de entrada obligatorio de una skill: YAML frontmatter más contenido markdown, con archivos adicionales opcionales (plantillas, scripts). A diferencia de <code>CLAUDE.md</code>, el cuerpo de una skill solo carga cuando se invoca o cuando Claude decide que es relevante, así que referencias extensas no cuestan contexto hasta que hacen falta.</p>
+
+      <pre data-lang="markdown"><code># .claude/skills/summarize-changes/SKILL.md
+---
+description: Summarizes uncommitted changes and flags risky patterns. Use when asking about changes.
+---
+
+## Current changes
+!`git diff HEAD`
+
+Summarize above in 2-3 bullets. List risks: missing error handling, hardcoded values, untested changes.</code></pre>
+
+      <p>El frontmatter admite varios campos con propósitos que el examen distingue con precisión: <code>description</code> es el texto que Claude lee para decidir cuándo auto-invocar la skill —se recomienda hacerla explícita, pero omitirla <strong>no desactiva la auto-invocación</strong>: Claude cae de vuelta al primer párrafo del cuerpo markdown, solo que con peor calidad de matching—; <code>context: fork</code> aísla la ejecución en un subagente con contexto separado, para que salidas verbosas no contaminen la conversación principal; <code>allowed-tools</code> preaprueba herramientas concretas para el turno de invocación (el permiso se limpia en el siguiente mensaje); <code>disable-model-invocation: true</code> impide que Claude cargue la skill automáticamente, reservándola para disparo manual (<code>/deploy</code>); y <code>argument-hint</code> es solo una pista de autocompletado (<code>[issue-number]</code>), sin efecto funcional.</p>
+
+      <pre data-lang="yaml"><code>---
+name: my-skill
+description: What this skill does
+disable-model-invocation: true
+allowed-tools: "Read,Grep"
+argument-hint: "[issue-number]"
+context: fork
+---</code></pre>
+
+      <p>En producción, la elección entre skill y <code>CLAUDE.md</code> se resuelve con una pregunta simple: ¿la instrucción aplica a todo el trabajo en este proyecto (va a <code>CLAUDE.md</code>) o solo a una tarea puntual que se repite de vez en cuando (va a una skill)? Un equipo que documenta su procedimiento de deployment en <code>CLAUDE.md</code> —cargado siempre, en cada sesión, aunque el 95% de las sesiones no despliegan nada— está pagando el coste de contexto de una skill sin obtener su beneficio de carga condicional; mover ese procedimiento a <code>.claude/skills/deploy/SKILL.md</code> con <code>disable-model-invocation: true</code> resuelve exactamente ese desajuste.</p>
+
+      <p>El anti-patrón más citado en el examen es asumir que renombrar el campo <code>name</code> de una skill cambia el comando invocable: no es así, <code>name</code> solo afecta la etiqueta mostrada, y el comando real lo determina el nombre del directorio o archivo. Alguien razonable, acostumbrado a que <code>name</code> sea el identificador en otros sistemas de configuración, cae en pensar que basta cambiar ese campo para tener dos variantes del mismo comando bajo distinto nombre — y termina con dos skills que responden al mismo <code>/deploy</code> porque no renombró la carpeta.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Skill y comando con el mismo nombre coexisten</td><td>La skill tiene precedencia</td><td>Comportamiento documentado del resolutor de comandos</td></tr>
+          <tr><td>Procedimiento de tarea puntual (deploy, commit)</td><td>Skill con <code>disable-model-invocation: true</code></td><td>Disparo manual explícito, sin auto-invocación accidental</td></tr>
+          <tr><td>Skill de análisis de solo lectura</td><td><code>allowed-tools: "Read,Grep"</code> sin <code>Write</code>/<code>Bash</code></td><td>Restringe el acceso durante la invocación al mínimo necesario</td></tr>
+          <tr><td>Skill con salida verbosa o exploratoria</td><td><code>context: fork</code></td><td>Aísla el output en un subagente sin contaminar la conversación principal</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 2.</strong> Un desarrollador crea una skill personal en <code>~/.claude/skills/</code> y le cambia el campo <code>name</code> a <code>my-deploy</code> para diferenciarla de la skill <code>deploy</code> del proyecto. ¿Qué ocurre?</p>
+        <label><input type="radio" name="mc2" value="A"> A. El comando invocable pasa a ser <code>/my-deploy</code>.</label>
+        <label><input type="radio" name="mc2" value="B"> B. El comando sigue siendo el que determina el nombre de la carpeta o archivo; <code>name</code> solo cambia la etiqueta mostrada.</label>
+        <label><input type="radio" name="mc2" value="C"> C. Las dos skills se fusionan automáticamente bajo <code>/deploy</code>.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="para cambiar el comando invocado hay que renombrar el directorio o archivo de la skill, no solo el campo name del frontmatter."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/skills" target="_blank" rel="noopener">Extend Claude with skills</a> documenta todos los campos de frontmatter y la precedencia skill/command; <a href="https://code.claude.com/docs/en/claude-directory" target="_blank" rel="noopener">Explore the .claude directory</a> da el mapa completo de convenciones de directorio.</p>
+
+      <hr>
+
+      <h2 id="leccion-2-3">Lección 3 — Path-specific rules: glob patterns y carga condicional</h2>
+
+      <p><code>.claude/rules/</code> organiza instrucciones en archivos markdown por tema, con descubrimiento recursivo de subdirectorios. Resuelve un problema distinto al de <code>CLAUDE.md</code> monolítico o al de una skill de proyecto: aplicar una convención a archivos de un mismo tipo dispersos por todo el codebase —todos los ficheros de test, por ejemplo— sin replicar un <code>CLAUDE.md</code> en cada carpeta donde aparezcan.</p>
+
+      <p>Una rule sin frontmatter <code>paths:</code> carga al inicio de sesión igual que <code>.claude/CLAUDE.md</code>; una rule con <code>paths:</code> carga <strong>on-demand</strong>, solo cuando Claude lee un archivo que matchea alguno de los glob patterns declarados:</p>
+
+      <pre data-lang="markdown"><code>---
+paths:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+---
+
+# Testing Rules
+- Use descriptive test names: "should [expected] when [condition]"
+- Mock external dependencies, not internal modules
+- Clean up side effects in afterEach</code></pre>
+
+      <p>Los patrones siguen sintaxis glob estándar (<code>**/*.ts</code> en cualquier directorio, <code>src/**/*</code> todo dentro de <code>src/</code>, <code>*.md</code> solo en la raíz) y admiten brace expansion para cubrir varias extensiones a la vez (<code>src/**/*.{ts,tsx}</code>), con un presupuesto compartido de <strong>1.000 patrones expandidos y 4 MiB por rule</strong> para los patrones con llaves; los patrones sin llaves no cuentan contra ese límite. Un detalle de sintaxis que el examen usa como trampa: el carácter <code>[</code> abre una bracket expression (<code>[abc]</code>), así que un <code>[</code> literal debe escaparse como <code>\[</code> —un patrón como <code>photos [2024/**</code> no genera error, simplemente no matchea nada—.</p>
+
+      <p>Las rules a nivel de usuario (<code>~/.claude/rules/</code>) aplican a todos los proyectos de la máquina y cargan <strong>antes</strong> que las rules de proyecto, de modo que estas últimas prevalecen ante cualquier conflicto: exactamente el mismo orden de precedencia que ya viste en la Lección 1 para <code>CLAUDE.md</code> (lo más específico gana), aplicado aquí a un mecanismo de carga condicional en vez de siempre-cargado.</p>
+
+      <p>En producción, el escenario donde este eje marca la diferencia es un codebase con tests de integración, unitarios y end-to-end repartidos en media docena de carpetas distintas. Replicar un <code>CLAUDE.md</code> con las convenciones de testing en cada una de esas carpetas es frágil —hay que mantener seis copias sincronizadas— y desperdicia contexto cuando Claude trabaja fuera de esas carpetas. Una única rule con <code>paths: ["**/*.test.ts", "**/*.spec.ts"]</code> resuelve el mismo problema con un solo archivo, cargando solo cuando hace falta.</p>
+
+      <p>El anti-patrón más habitual es un <code>paths</code> con demasiados grupos de llaves que expanden por encima de 1.000 patrones o 4 MiB: alguien razonable que quiere cubrir "todo tipo de archivo de código fuente" añade brace expansions cada vez más amplias sin medir el resultado, y cuando el presupuesto se excede la búsqueda cae de vuelta al patrón sin expandir —que no matchea nada—, con el efecto silencioso de que la rule deja de aplicarse sin ningún error visible.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> rule sin <code>paths</code> = carga siempre, como <code>CLAUDE.md</code>; rule con <code>paths</code> = carga on-demand por glob; user-level carga antes, project-level prevalece; <code>[</code> literal siempre escapado como <code>\[</code>.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 3.</strong> Un equipo tiene tests dispersos en <code>src/</code>, <code>lib/</code> y <code>e2e/</code>, todos con extensión <code>.test.ts</code>. ¿Cuál es la forma correcta de aplicarles una convención común de testing?</p>
+        <label><input type="radio" name="mc3" value="A"> A. Crear un <code>CLAUDE.md</code> idéntico en cada una de las tres carpetas.</label>
+        <label><input type="radio" name="mc3" value="B"> B. Una rule en <code>.claude/rules/testing.md</code> con <code>paths: ["**/*.test.ts"]</code>.</label>
+        <label><input type="radio" name="mc3" value="C"> C. Añadir la convención al <code>CLAUDE.md</code> raíz del proyecto, que ya se carga siempre.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="una path-scoped rule aplica por glob independientemente del directorio, sin replicar CLAUDE.md por carpeta ni cargar la convención en sesiones donde no se trabaja con tests."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/memory" target="_blank" rel="noopener">Memory (CLAUDE.md)</a> cubre <code>.claude/rules/</code>, el presupuesto de brace expansion y la precedencia user/project.</p>
+
+      <hr>
+
+      <h2 id="leccion-2-4">Lección 4 — Plan mode vs ejecución directa: cuándo explorar antes de ejecutar</h2>
+
+      <p>Plan mode existe para separar la fase de exploración y diseño de la fase de cambio efectivo del código: investigar el codebase, evaluar enfoques y comprometerse a una arquitectura antes de que se produzca ninguna modificación. Resuelve el riesgo de reescritura costosa cuando una tarea admite varios enfoques válidos y el primero elegido resulta equivocado —el coste de deshacer trabajo ya escrito suele ser mayor que el de haber planificado antes de escribirlo—.</p>
+
+      <p>Se activa pulsando <code>Shift+Tab</code> hasta que la barra de estado muestre <code>⏸ plan mode on</code> (el ciclo recorre default → acceptEdits → plan), arrancando la sesión con <code>claude --permission-mode plan</code>, o con <code>/plan</code> dentro de una sesión normal:</p>
+
+      <pre data-lang="bash"><code># Arrancar directamente en plan mode
+claude --permission-mode plan</code></pre>
+
+      <p>En plan mode, Claude lee archivos y responde preguntas sin aplicar cambios; las ediciones quedan bloqueadas hasta que el plan se aprueba. Al terminar de planificar, Claude presenta el plan con tres opciones: aprobar y usar auto mode, aprobar y aplicar ediciones manualmente, o seguir planificando. <code>Ctrl+G</code> abre el plan en el editor por defecto para modificarlo directamente. El <strong>Explore subagent</strong> aísla las fases de descubrimiento verboso en un contexto separado y devuelve solo resúmenes, preservando el contexto de la conversación principal durante tareas multi-fase.</p>
+
+      <pre class="mermaid">flowchart LR
+    E["Explore (plan mode)"] --> R{"Revisar plan"}
+    R -->|"Yes, auto mode"| I1["Implementar (auto mode)"]
+    R -->|"Yes, aprobar manual"| I2["Implementar (acceptEdits)"]
+    R -->|"No, seguir planeando"| E
+    I1 --> C["Commit"]
+    I2 --> C</pre>
+
+      <p>El diagrama muestra el workflow Explore → Plan → Implement → Commit: la fase de plan mode no aplica cambios hasta que el plan se aprueba explícitamente, con tres desenlaces posibles tras la revisión.</p>
+
+      <p>El criterio de decisión no es "planificar siempre" ni "planificar nunca", sino el nivel de complejidad de la tarea. Plan mode es la elección correcta ante implicación arquitectónica: reestructuración de microservicios, migraciones de librería que afectan a <strong>45 o más archivos</strong>, o elección entre enfoques de integración con requisitos de infraestructura distintos. La ejecución directa se reserva para cambios bien entendidos y de alcance claro: un bug fix de un solo archivo con stack trace evidente, o añadir una condición de validación de fecha. La recomendación explícita para tareas cortas es tajante: "si puedes describir el diff en una frase, sáltate el plan".</p>
+
+      <p>En producción, el escenario que el examen repite con variaciones es un equipo que decide migrar una librería usada en decenas de archivos y salta directo a editar sin explorar primero el alcance real del cambio: a mitad de la migración descubren un patrón de uso que no habían anticipado en un subconjunto de archivos, y tienen que revertir y volver a empezar con un enfoque distinto. El plan mode existe precisamente para detectar ese patrón de uso divergente <strong>antes</strong> de tocar el primer archivo.</p>
+
+      <p>El anti-patrón opuesto, menos comentado pero igual de real, es planificar sistemáticamente incluso ediciones triviales de un solo archivo: introduce overhead de aprobación en cada turno sin que la tarea lo necesite, ralentizando un flujo de trabajo que no tenía ningún riesgo de reescritura que mitigar.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> plan mode y ejecución directa no son mutuamente excluyentes: se puede planificar la investigación de una migración compleja y ejecutar el enfoque aprobado en modo directo dentro de la misma tarea.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 4.</strong> Un equipo necesita migrar una librería usada en 60 archivos con dos enfoques de integración posibles, cada uno con requisitos de infraestructura distintos. ¿Qué recomienda el criterio del examen?</p>
+        <label><input type="radio" name="mc4" value="A"> A. Ejecución directa: cualquier migración de librería es un cambio mecánico y repetitivo.</label>
+        <label><input type="radio" name="mc4" value="B"> B. Plan mode: la escala (60 archivos) y los múltiples enfoques válidos son señal de complejidad arquitectónica.</label>
+        <label><input type="radio" name="mc4" value="C"> C. Ninguno de los dos: delegar toda la tarea a un hook <code>PreToolUse</code>.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el umbral de archivos afectados y la existencia de varios enfoques válidos con implicaciones de infraestructura distintas son exactamente las señales que el examen usa para marcar una tarea como candidata a plan mode."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/permission-modes" target="_blank" rel="noopener">Permission modes</a> documenta la mecánica exacta de plan mode y el ciclo de <code>Shift+Tab</code>; <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener">Best practices</a> sitúa plan mode dentro del workflow Explore → Plan → Implement → Commit.</p>
+
+      <hr>
+
+      <h2 id="leccion-2-5">Lección 5 — Refinamiento iterativo: ejemplos concretos, TDD, interview pattern y verificación</h2>
+
+      <p>Cuando una descripción en prosa se interpreta de forma inconsistente, existen técnicas concretas para converger más rápido hacia el resultado esperado en vez de iterar a ciegas con correcciones sucesivas. Estas técnicas existen porque el coste de una mala especificación inicial —sesiones largas acumulando correcciones fallidas— suele superar el coste de invertir tiempo en clarificar antes de implementar.</p>
+
+      <p>Los ejemplos concretos de entrada/salida son la forma más efectiva de comunicar transformaciones esperadas:</p>
+
+      <pre data-lang="text"><code>"write a validateEmail function.
+example test cases:
+- user@example.com → true
+- invalid@.com → false
+- user@test.co.uk → true
+
+run tests after implementing"</code></pre>
+
+      <p>La iteración dirigida por tests (<em>test-driven iteration</em>, iteración dirigida por tests) consiste en escribir primero la suite que cubre comportamiento esperado, casos límite y rendimiento, y luego iterar compartiendo los fallos de test para guiar la mejora progresiva. El <em>interview pattern</em> (patrón de entrevista) pide a Claude que haga preguntas antes de implementar, especialmente útil en dominios poco familiares donde el propio desarrollador no ha anticipado todas las consideraciones relevantes (estrategias de invalidación de caché, modos de fallo):</p>
+
+      <pre data-lang="text"><code>"I want to build [feature]. Interview me in detail using AskUserQuestion.
+
+Ask about technical implementation, UI/UX, edge cases, concerns, tradeoffs.
+
+Keep interviewing until we've covered everything, then write spec to SPEC.md"</code></pre>
+
+      <p>Sobre cuándo agrupar correcciones, el criterio es simple pero se olvida con facilidad bajo presión: los problemas que interactúan entre sí se comunican en un único mensaje detallado, porque corregir uno sin considerar el otro puede producir soluciones incompatibles; los problemas independientes se corrigen de forma secuencial, porque mezclarlos en un solo mensaje diluye la señal de cada corrección. Dar a Claude evidencia —salida de tests, resultado de un comando, una captura de pantalla— en vez de solo aserciones ("ya funciona") es lo que distingue una sesión que se puede dejar desatendida de una que exige supervisión constante.</p>
+
+      <p>En producción, la señal de que algo va mal no es "el problema persiste" sino "Claude corrige el mismo problema más de dos veces en la misma sesión": el contexto queda contaminado de enfoques fallidos, y seguir iterando sobre esa base suele rendir peor que empezar de cero. La recomendación en ese punto es <code>/clear</code> y escribir un prompt inicial mejor que incorpore lo aprendido en la sesión fallida, en vez de seguir acumulando correcciones sobre un historial ya viciado.</p>
+
+      <p>El anti-patrón más citado por el examen es confundir <code>/clear</code> con <code>/compact</code>: son mecanismos distintos para escenarios distintos. <code>/clear</code> borra el contexto por completo —la sesión empieza de cero— y es la opción correcta cuando el contexto está contaminado de enfoques fallidos; <code>/compact</code> resume el contexto conservando lo esencial, y es la opción correcta cuando solo hace falta liberar espacio sin perder el hilo de la tarea en curso. Alguien razonable que solo conoce <code>/compact</code> como "el comando que limpia contexto" lo usa también en el escenario de contaminación, y arrastra sin darse cuenta el mismo enfoque fallido resumido en vez de eliminado.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Descripción en prosa se interpreta de forma inconsistente</td><td>2-3 ejemplos concretos de entrada/salida</td><td>Elimina la ambigüedad que la prosa por sí sola no resuelve</td></tr>
+          <tr><td>Dominio poco familiar, consideraciones no anticipadas</td><td>Interview pattern antes de implementar</td><td>Saca a la luz edge cases y tradeoffs antes de escribir código</td></tr>
+          <tr><td>Problemas de una revisión que interactúan entre sí</td><td>Un único mensaje detallado</td><td>Corregir uno sin el otro puede producir soluciones incompatibles</td></tr>
+          <tr><td>Mismo problema corregido más de dos veces en la sesión</td><td><code>/clear</code> + prompt inicial mejor</td><td>El contexto contaminado de enfoques fallidos rinde peor que empezar limpio</td></tr>
+          <tr><td>Solo hace falta liberar espacio de contexto</td><td><code>/compact</code></td><td>Resume conservando el hilo de la tarea, sin perder lo esencial</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 5.</strong> Claude ha corregido el mismo bug de validación tres veces en la misma sesión sin resolverlo del todo. ¿Cuál es la acción recomendada?</p>
+        <label><input type="radio" name="mc5" value="A"> A. Usar <code>/compact</code> para resumir el contexto y seguir en la misma sesión.</label>
+        <label><input type="radio" name="mc5" value="B"> B. Usar <code>/clear</code> y escribir un prompt inicial mejor que incorpore lo aprendido.</label>
+        <label><input type="radio" name="mc5" value="C"> C. Repetir la misma corrección una cuarta vez con más detalle.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="más de dos correcciones fallidas sobre el mismo problema es la señal de que el contexto está contaminado; /clear empieza de cero, mientras /compact solo resumiría (y arrastraría) el mismo enfoque fallido."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener">Best practices</a> documenta ejemplos concretos, TDD iteration, interview pattern y la diferencia <code>/clear</code> vs <code>/compact</code>.</p>
+
+      <hr>
+
+      <h2 id="leccion-2-6">Lección 6 — Integración de Claude Code en pipelines CI/CD</h2>
+
+      <p>Claude Code puede ejecutarse en modo no interactivo dentro de pipelines automatizados, lo que permite usarlo como linter, revisor de código o generador de tests dentro de CI/CD. Este modo existe porque un pipeline no puede esperar entrada interactiva del usuario ni interpretar salida en prosa libre: necesita ejecución determinista, con código de salida verificable y, cuando aplica, salida estructurada parseable por máquina.</p>
+
+      <p>El flag <code>-p</code> (o <code>--print</code>) ejecuta Claude Code en modo no interactivo, evitando que el pipeline se quede colgado esperando entrada:</p>
+
+      <pre data-lang="bash"><code># Modo no interactivo básico, con herramientas pre-aprobadas
+claude -p "Run the test suite and fix any failures" \
+  --allowedTools "Bash,Read,Edit"</code></pre>
+
+      <p><code>--output-format json</code> devuelve un JSON estructurado con el resultado, el ID de sesión y metadatos, incluyendo <code>total_cost_usd</code> para llevar seguimiento de gasto. <code>--json-schema</code> fuerza que la salida cumpla un JSON Schema dado, devolviendo además el campo <code>structured_output</code> conforme a ese schema —dos garantías distintas y combinables, no intercambiables—:</p>
+
+      <pre data-lang="bash"><code>claude -p "Extract the main function names from auth.py" \
+  --output-format json \
+  --json-schema '{"type":"object","properties":{"functions":{"type":"array","items":{"type":"string"}}},"required":["functions"]}'</code></pre>
+
+      <p><code>--bare</code> reduce el tiempo de arranque saltando el auto-descubrimiento de hooks, skills, plugins, servidores MCP, auto memory y <code>CLAUDE.md</code> —útil en CI, donde importa la consistencia de resultados por encima de la personalización—; en ese modo no se leen credenciales OAuth ni el keychain del sistema, así que para la API de Anthropic hay que fijar <code>ANTHROPIC_API_KEY</code> en el entorno. Claude Code sale con código 0 en éxito y no-cero en fallo, permitiendo que los scripts ramifiquen según el estado de salida; la entrada por stdin está limitada a <strong>10 MB</strong>, y si se excede, Claude termina con error y estado no-cero.</p>
+
+      <p>Un principio clave del bloque es el aislamiento de contexto de sesión: la misma sesión de Claude que generó el código es menos efectiva revisando sus propios cambios que una instancia de revisión independiente, porque el contexto acumulado sesga la revisión hacia la propia implementación. Para GitHub, el workflow básico <code>@claude</code> se dispara con los eventos <code>issue_comment</code> y <code>pull_request_review_comment</code> —responde cuando alguien menciona <code>@claude</code> en un comentario de PR o issue—; distinta de ambas es <strong>GitHub Code Review</strong>, que provee revisión automática de PRs sin mención explícita, como capacidad propia de la integración:</p>
+
+      <pre data-lang="yaml"><code># GitHub Actions — workflow v1.0 (GA)
+- uses: anthropics/claude-code-action@v1
+  with:
+    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    prompt: "Review this PR for security issues"
+    claude_args: |
+      --append-system-prompt "Follow our coding standards"
+      --max-turns 10
+      --model claude-sonnet-5</code></pre>
+
+      <p>En producción, un patrón habitual es envolver la llamada no interactiva en un script para usar Claude como linter específico del proyecto —<code>"lint:claude": "git diff main | claude -p \"you are typo linter. report filename:line and issue.\""</code>— o como auditor de seguridad, canalizando un diff y pidiendo una revisión de inyección, autenticación y secretos hardcodeados. Documentar en <code>CLAUDE.md</code> los estándares de testing y los fixtures disponibles mejora la calidad de la generación de tests dentro de ese pipeline, exactamente el mismo mecanismo de la Lección 1 aplicado ahora a un contexto de CI.</p>
+
+      <p>El anti-patrón más grave de este eje, y el que el examen documenta explícitamente como error, es usar la misma sesión de Claude para generar código y revisarlo en el mismo pipeline: parece eficiente reutilizar el contexto ya cargado, pero produce una revisión sesgada hacia la propia implementación en vez de una evaluación independiente. El anti-patrón más silencioso es olvidar aportar el contexto de tests existentes al generar tests nuevos: sin esa referencia, Claude propone escenarios ya cubiertos, desperdiciando tokens y tiempo de CI en duplicados.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> <code>-p</code> evita cuelgues por entrada interactiva; <code>--bare</code> salta auto-discovery no determinista (y exige <code>ANTHROPIC_API_KEY</code> explícita); <code>--output-format json</code> da metadatos y coste; <code>--json-schema</code> fuerza conformidad estricta en <code>structured_output</code>; revisar con una sesión distinta a la que generó el código, siempre.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 6.</strong> Un pipeline de CI invoca a Claude Code para revisar el mismo PR que otra invocación de Claude Code acaba de generar, reutilizando el <code>session_id</code> de la generación para "ahorrar contexto". ¿Qué señala el examen sobre este patrón?</p>
+        <label><input type="radio" name="mc6" value="A"> A. Es la práctica recomendada: reutilizar la sesión reduce coste sin perder calidad.</label>
+        <label><input type="radio" name="mc6" value="B"> B. Es un anti-patrón: la misma sesión que generó el código revisa con sesgo hacia su propia implementación; se necesita una instancia independiente.</label>
+        <label><input type="radio" name="mc6" value="C"> C. Solo es un problema si no se usa <code>--bare</code> en la invocación de revisión.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="el aislamiento de contexto de sesión es un principio documentado del bloque: revisar con la misma sesión que generó el código da peor resultado que una instancia de revisión independiente."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener">Headless mode</a> documenta todos los flags de modo no interactivo; <a href="https://code.claude.com/docs/en/github-actions" target="_blank" rel="noopener">GitHub Actions</a> y <a href="https://code.claude.com/docs/en/code-review" target="_blank" rel="noopener">GitHub Code Review</a> cubren la integración específica con GitHub.</p>
+
+      <hr>
+
+      <h2 id="checklist-de-salida">Checklist de salida</h2>
+
+      <p>Dominas este bloque si puedes, sin mirar la guía:</p>
+
+      <ul>
+        <li>Explicar la jerarquía de carga de <code>CLAUDE.md</code> (managed → user → project → local → subdirectorio on-demand), diagnosticar por qué una instrucción no llega a un miembro del equipo, y distinguir <code>@import</code> real de una referencia entre backticks.</li>
+        <li>Elegir entre <code>CLAUDE.md</code>, una skill y un comando según si la instrucción es universal o específica de tarea, y explicar la precedencia skill/command y el efecto real (o nulo) del campo <code>name</code>.</li>
+        <li>Decidir cuándo una convención dispersa por tipo de archivo requiere una path-scoped rule con <code>paths:</code> en vez de replicar <code>CLAUDE.md</code> por carpeta, y reconocer un glob pattern mal formado.</li>
+        <li>Aplicar el criterio de complejidad (escala, múltiples enfoques válidos, implicación arquitectónica) para decidir entre plan mode y ejecución directa, y describir el workflow Explore → Plan → Implement → Commit.</li>
+        <li>Aplicar ejemplos concretos, TDD iteration e interview pattern para converger más rápido, y distinguir cuándo usar <code>/clear</code> frente a <code>/compact</code>.</li>
+        <li>Configurar una invocación de Claude Code en CI con los flags correctos (<code>-p</code>, <code>--output-format json</code>, <code>--json-schema</code>, <code>--bare</code>) y explicar por qué la revisión de código generado exige una sesión independiente.</li>
+      </ul>
+
+      <h2 id="para-ir-mas-alla">Para ir más allá — referencias anotadas</h2>
+
+      <ul>
+        <li><a href="https://code.claude.com/docs/en/memory">Memory (CLAUDE.md)</a> — jerarquía completa de carga, <code>@import</code>, <code>.claude/rules/</code> y auto memory; base de las Lecciones 1 y 3.</li>
+        <li><a href="https://code.claude.com/docs/en/skills">Extend Claude with skills</a> — todos los campos de frontmatter de una skill y su interacción; base de la Lección 2.</li>
+        <li><a href="https://code.claude.com/docs/en/claude-directory">Explore the .claude directory</a> — mapa completo de convenciones de directorio (<code>commands/</code>, <code>skills/</code>, <code>rules/</code>); complementa la Lección 2.</li>
+        <li><a href="https://code.claude.com/docs/en/permission-modes">Permission modes</a> — mecánica exacta de plan mode, <code>Shift+Tab</code> y auto mode; base de la Lección 4.</li>
+        <li><a href="https://code.claude.com/docs/en/best-practices">Best practices</a> — workflow Explore → Plan → Implement → Commit y técnicas de refinamiento iterativo; base de las Lecciones 4 y 5.</li>
+        <li><a href="https://code.claude.com/docs/en/headless">Headless mode</a> — flags de modo no interactivo (<code>-p</code>, <code>--output-format</code>, <code>--json-schema</code>, <code>--bare</code>); base de la Lección 6.</li>
+        <li><a href="https://code.claude.com/docs/en/github-actions">GitHub Actions</a> — configuración del workflow <code>@claude</code> y <code>claude_args</code>; complementa la Lección 6.</li>
+        <li><a href="https://code.claude.com/docs/en/code-review">GitHub Code Review</a> — revisión automática de PRs sin mención <code>@claude</code>; complementa la Lección 6.</li>
+      </ul>
+
+      <p><em>Historial de versiones del curso: <a href="../../changelog.html">changelog</a> — único para todo el material; esta guía no lleva el suyo propio.</em></p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var printMode = /[?&]print=1/.test(location.search);
+  if (printMode) {
+    document.body.classList.add("print-mode");
+    document.documentElement.dataset.lang = "typescript";
+  }
+
+  var darkTheme = document.documentElement.dataset.theme === "dark";
+  if (window.mermaid) mermaid.initialize({
+    startOnLoad: true, securityLevel: "loose", theme: "base",
+    themeVariables: darkTheme ? {
+      primaryColor: "#172230", primaryTextColor: "#E4EDF6", primaryBorderColor: "#3FA9FF",
+      secondaryColor: "#101927", tertiaryColor: "#33260F", lineColor: "#3FA9FF",
+      fontFamily: "Plus Jakarta Sans"
+    } : {
+      primaryColor: "#E2F1FF", primaryTextColor: "#0E1B2C", primaryBorderColor: "#0E82FF",
+      secondaryColor: "#F1F5FA", tertiaryColor: "#FBEFD9", lineColor: "#0E82FF",
+      fontFamily: "Plus Jakarta Sans"
+    }
+  });
+
+  // Build the sidebar TOC from h2/h3 headings.
+  var links = document.getElementById("toc-links");
+  var heads = document.querySelectorAll("#contenido h2, #contenido h3");
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = "sec-" + i;
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    // TOC compacto: "Lección N — Título: subtítulo" -> "LN · Título".
+    var t = h.textContent;
+    var m = t.match(/^Lección\s+(\d+)\s+—\s+(.+)$/);
+    if (m) t = "L" + m[1] + " · " + m[2].split(":")[0].trim();
+    a.textContent = t;
+    a.title = h.textContent;
+    if (h.tagName === "H3") a.className = "l3";
+    links.appendChild(a);
+  });
+  var tocAnchors = links.querySelectorAll("a");
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+    // At the bottom of the page the last headings never cross the 120px line,
+    // so highlight the final one instead of the last one that did. Measure the
+    // viewport with clientHeight as well: mobile browsers report innerHeight as
+    // the *visible* height, shrunk by the retractable URL bar, while the maximum
+    // scroll offset is computed against the layout viewport -- comparing with
+    // innerHeight alone left the bottom unreachable there by the bar's height.
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    if (window.scrollY + viewportH >= docHeight - 24 && heads.length) {
+      cur = heads[heads.length - 1].id;
+    }
+    tocAnchors.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + cur); });
+  }, { passive: true });
+
+  // Wire up mini-checks.
+  document.querySelectorAll(".minicheck").forEach(function (mc) {
+    var correct = (mc.dataset.correct || "").split(",").map(function (s) { return s.trim(); }).sort().join(",");
+    var fb = mc.querySelector(".mc-feedback");
+    var btn = mc.querySelector(".mc-check");
+    if (printMode) { // reveal answers for the PDF export
+      mc.querySelectorAll("label").forEach(function (l) {
+        var v = l.querySelector("input").value;
+        if (correct.split(",").indexOf(v) !== -1) l.classList.add("mc-answer"), l.append(" ✔");
+      });
+      fb.className = "mc-feedback ok";
+      fb.style.opacity = "1";
+      fb.textContent = "Respuesta: " + correct + ". " + (fb.dataset.explica || "");
+      return;
+    }
+    if (btn) btn.addEventListener("click", function () {
+      var sel = Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+      if (!sel) { fb.className = "mc-feedback ko"; fb.textContent = "Selecciona una opción."; return; }
+      var ok = sel === correct;
+      fb.className = "mc-feedback " + (ok ? "ok" : "ko");
+      fb.textContent = (ok ? "✔ Correcto. " : "✘ No exactamente — la respuesta es " + correct + ". ") + (fb.dataset.explica || "");
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var m = location.pathname.match(/bloque-(\d)/);
+  if (!m || !window.localStorage) return;
+  var PKEY = "ccarf-sum-guia-" + m[1];
+  var heads = Array.prototype.slice.call(document.querySelectorAll("#contenido h2"));
+  var mcs = document.querySelectorAll(".minicheck");
+  var st;
+  try { st = JSON.parse(localStorage.getItem(PKEY)) || {}; } catch (e) { st = {}; }
+  st.bloque = m[1];
+  st.visited = st.visited || {};
+  st.mc = st.mc || {};
+  st.mcTry = st.mcTry || {};   // intento por mini-check: {sel, ok}
+  st.totalSections = heads.length;
+  st.mcTotal = mcs.length;
+  // Funcionalidad "Continuar": st.updated hace de timestamp de "último
+  // acceso" a esta guía -- reutiliza el campo ya existente (antes solo se
+  // actualizaba al detectar scroll/mini-check) forzando un guardado aquí, en
+  // cada carga de página, aunque no cambie nada más. El índice del curso
+  // (plantillas/index.template.html) compara este mismo campo con el de
+  // "ccarf-sum-quiz-<bloque>.updated" para decidir a qué recurso apunta el
+  // botón global "Continuar".
+  save();
+  function save() {
+    st.nVisited = Object.keys(st.visited).length;
+    st.mcDone = Object.keys(st.mc).length;
+    st.mcTried = Object.keys(st.mcTry).length;
+    st.updated = Date.now();
+    try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
+  }
+  var t = null;
+  function atBottom() {
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // innerHeight is the *visible* height: mobile browsers shrink it by the
+    // retractable URL bar, but the maximum scroll offset is computed against the
+    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
+    // the document by the bar's height and the bottom was never detected on a
+    // phone or tablet -- which left the closing sections unread for good.
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + viewportH >= docHeight - 24;
+  }
+  // A section counts as read once its heading has scrolled above the middle of
+  // the viewport, and every heading above that line is marked on each sample --
+  // marking only the current one loses the sections the reader scrolled past
+  // between two samples. At the very bottom the trailing headings can never
+  // reach the middle (everything below the fold is already on screen), so they
+  // are marked there; otherwise 100% would be unreachable.
+  function track() {
+    if (t) return;
+    t = setTimeout(function () {
+      t = null;
+      var bottom = atBottom();
+      var middle = window.innerHeight / 2;
+      var was = Object.keys(st.visited).length + "|" + st.lastSection;
+      var cur = null;
+      heads.forEach(function (h) {
+        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+        else if (bottom) { st.visited[h.id] = 1; }
+      });
+      if (bottom && heads.length) cur = heads[heads.length - 1];
+      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+    }, 800);
+  }
+  window.addEventListener("scroll", track, { passive: true });
+  track();
+  function nombreDe(mc) {
+    var inp = mc.querySelector("input");
+    return inp ? inp.name : null;
+  }
+  function seleccion(mc) {
+    return Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+  }
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target;
+    if (!btn.classList || !btn.classList.contains("mc-check")) return;
+    var mc = btn.closest(".minicheck");
+    setTimeout(function () {
+      var fb = mc.querySelector(".mc-feedback");
+      var nombre = nombreDe(mc);
+      if (!fb || !nombre) return;
+      var sel = seleccion(mc);
+      if (!sel) return;                       // "selecciona una opcion" no es un intento
+      st.mcTry[nombre] = { sel: sel, ok: fb.classList.contains("ok") };
+      if (fb.classList.contains("ok")) st.mc[nombre] = 1; else delete st.mc[nombre];
+      save();
+    }, 50);
+  });
+
+  // Al volver a la guia se restaura lo ya respondido: antes se perdia si habias
+  // acertado o fallado, y cada visita empezaba de cero.
+  if (!/[?&]print=1/.test(location.search)) {
+    mcs.forEach(function (mc) {
+      var nombre = nombreDe(mc);
+      var prev = nombre && st.mcTry[nombre];
+      if (!prev || !prev.sel) return;
+      var sel = prev.sel.split(",");
+      Array.prototype.forEach.call(mc.querySelectorAll("input"), function (i) {
+        if (sel.indexOf(i.value) !== -1) i.checked = true;
+      });
+      var btn = mc.querySelector(".mc-check");
+      if (btn) btn.click();                   // reutiliza el mismo render de feedback
+    });
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): salta a la primera
+  // sección (h2) aún no marcada como visitada en st.visited, o a la última
+  // si ya estaban todas leídas. No se activa en modo impresión (el PDF no
+  // tiene JS de scroll con sentido) ni rompe el TOC: se espera a que la
+  // página termine de cargar (mermaid renderiza sus SVGs de forma asíncrona
+  // y puede desplazar alturas justo después del primer pintado).
+  if (/[?&]continue=1/.test(location.search) && !/[?&]print=1/.test(location.search) && heads.length) {
+    var contVisitadas = 0;
+    for (var cv = 0; cv < heads.length; cv++) { if (st.visited[heads[cv].id]) contVisitadas++; }
+    // Sin avance previo (0 secciones visitadas) la guía se abre arriba del todo, sin scroll.
+    if (contVisitadas > 0) {
+      var contTarget = null;
+      for (var ci = 0; ci < heads.length; ci++) {
+        if (!st.visited[heads[ci].id]) { contTarget = heads[ci]; break; }
+      }
+      if (!contTarget) contTarget = heads[heads.length - 1];
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          try { history.replaceState(null, "", "#" + contTarget.id); } catch (e) {}
+          contTarget.scrollIntoView();
+        }, 200);
+      });
+    }
+  }
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "☀" : "🌙";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  // Solo las guias que traen ambas variantes reciben el switch.
+  if (!document.querySelector(".lang-variant")) return;
+  var NAMES = { python: "Python", typescript: "TypeScript" };
+  var btn = document.createElement("button");
+  btn.className = "lang-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.lang === "python" ? "python" : "typescript"; }
+  function paint() {
+    var other = cur() === "python" ? "typescript" : "python";
+    btn.textContent = NAMES[cur()];
+    btn.title = "Ver los ejemplos de codigo en " + NAMES[other];
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "python" ? "typescript" : "python";
+    document.documentElement.dataset.lang = next;
+    try { localStorage.setItem("ccarf-lang", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "⤡" : "⤢";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+</body>
+</html>

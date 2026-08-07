@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz CCAR-F · Bloque 4 — Agentic Architecture &amp; Orchestration: Agent SDK y orquestación multi-agente</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<!--
+  PLANTILLA DE QUIZ CCAR-F (autocontenida, sin dependencias).
+  INSTRUCCIONES DE GENERACIÓN (fase2-bloque):
+  - Sustituir TODO el bloque comprendido entre las líneas
+      // __PREGUNTAS_JSON_START__   y   // __PREGUNTAS_JSON_END__
+    por:  const DATA = <contenido de preguntas_vX.Y.json>;
+  - No editar preguntas aquí: el JSON es la fuente única.
+  - El objeto DATA sigue plantillas/esquema-pregunta.schema.json (config + preguntas).
+-->
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — Volt (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+
+    /* Texto sobre fondo --accent: casi blanco en ambos temas (no --accent-contrast). */
+    --on-accent:#F7FBFF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6;
+    background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease); }
+  .wrap { max-width:960px; margin:0 auto; padding:40px 24px 90px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:var(--sp-5); margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm); }
+  h1 { font-size:var(--fs-h1); margin:0 0 var(--sp-1); font-weight:var(--fw-extra); letter-spacing:-.025em; color:var(--text); }
+  .display { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.05; }
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); letter-spacing:-.02em; color:var(--text); margin:0 0 var(--sp-3); }
+  .muted { color:var(--text-muted); font-size:var(--fs-sm); }
+  button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); border-radius:var(--r-md); padding:6px 12px; cursor:pointer;
+    transition:background var(--ease),border-color var(--ease),color var(--ease); }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); color:var(--on-accent); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  /* CTA principal de portada (elección de modo): un punto mayor que el resto de botones de acción. */
+  #m-estudio, #m-examen { font-size:var(--fs-sm); padding:8px 14px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--border); border-radius:var(--r-md);
+    padding:10px 12px; margin:8px 0; cursor:pointer; transition:border-color var(--ease),background var(--ease); }
+  .opt input { margin-top:4px; }
+  .opt.sel { border-color:var(--accent); background:var(--accent-weak); }
+  .opt.ok { border-color:var(--success); background:var(--success-weak); }
+  .opt.ko { border-color:var(--danger); background:var(--danger-weak); }
+  .creditos { margin:24px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .rationale { font-size:var(--fs-sm); color:var(--text-muted); margin-top:6px; display:none; }
+  .revealed .rationale { display:block; }
+  .repasa { font-size:var(--fs-sm); color:var(--text-muted); margin:6px 0 10px; }
+  .repasa a { color:var(--accent); font-weight:var(--fw-medium); }
+  .scenario { background:var(--surface-2); border-left:3px solid var(--accent); padding:10px 14px;
+    border-radius:0 var(--r-md) var(--r-md) 0; font-size:var(--fs-sm); margin-bottom:12px; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .timer { font-variant-numeric:tabular-nums; font-weight:var(--fw-semibold); font-family:var(--font-mono); }
+  .timer.low { color:var(--danger); }
+  .navgrid { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .navgrid button { width:38px; height:32px; padding:0; font-size:var(--fs-caption); }
+  .navgrid .answered { background:var(--success-weak); border-color:var(--success); }
+  .navgrid .flagged { outline:2px solid var(--warning); }
+  .navgrid .current { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .pill { display:inline-block; font-size:var(--fs-caption); font-weight:var(--fw-medium); border:1px solid var(--border); background:var(--surface-2);
+    border-radius:var(--r-pill); padding:1px 10px; margin-right:6px; color:var(--text-muted); }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  th,td { border-bottom:1px solid var(--border); padding:10px 12px; text-align:left; }
+  th { font-weight:var(--fw-semibold); font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-muted); border-bottom:2px solid var(--border-strong); }
+  tbody tr:hover { background:var(--surface-2); }
+  .big { font-size:2rem; font-weight:var(--fw-bold); }
+  .ok-t { color:var(--success); } .ko-t { color:var(--danger); }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  /* =====================================================================
+     CABECERA — topbar sticky + hero limpio (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  header.topbar { position:sticky; top:0; z-index:30; display:flex; justify-content:space-between;
+    align-items:center; gap:var(--sp-4); padding:14px 24px; margin:0;
+    background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border); }
+  header.topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold);
+    letter-spacing:-.01em; color:var(--text); white-space:nowrap; }
+  header.topbar .brand .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  header.topbar .controls { display:flex; gap:8px; align-items:center; }
+  .toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1; transition:border-color var(--ease),color var(--ease); }
+  .toggle:hover { border-color:var(--accent); color:var(--accent); }
+  @media print { header.topbar .controls { display:none !important; } }
+
+  .hero { padding:var(--sp-7) 0 var(--sp-2); }
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--sp-2); }
+  @media (max-width:700px) { .hero h1 { font-size:var(--fs-h2); } header.topbar { padding:12px 16px; } .wrap { padding-left:16px; padding-right:16px; } }
+  @media print { header.topbar { position:static; background:none; backdrop-filter:none; border-bottom:2px solid var(--accent); }
+    .hero { padding:var(--sp-4) 0 var(--sp-2); } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow" id="q-eyebrow">CCAR-F · QUIZ</div>
+    <h1 class="display" id="q-title">Quiz</h1>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// __PREGUNTAS_JSON_START__
+const DATA = {"config":{"titulo":"Bloque 4 — Agentic Architecture & Orchestration: Agent SDK y orquestación multi-agente","version":"1.0","bloque":4,"modo_defecto":"estudio","solo_examen":false,"generado_desde_corpus":"bloque-4-agent-sdk.md v1.0","fecha":"2026-08-07"},"preguntas":[{"id":"b4-q01","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.1","escenario":"Your team built a custom wrapper around the Agent SDK's query() generator. The wrapper treats the agentic loop as finished as soon as an AssistantMessage contains any text block, even when that same message also contains tool_use blocks in its content array. QA reports the wrapper exits mid-task in roughly 15% of runs while Claude is still mid-investigation.","enunciado":"What is the root cause of this premature termination, and the correct fix?","opciones":[{"id":"A","texto":"The wrapper conflates presence of text with completion; Claude can return text and tool calls in the same turn. The correct signal is the absence of tool calls in the response, not the presence of text, so the wrapper should check whether the content array contains any tool_use blocks.","correcta":true,"justificacion":"The loop continues while Claude's response includes tool calls and ends only when it doesn't; treating any text as a completion signal ignores that Claude frequently returns text alongside tool calls in the same turn."},{"id":"B","texto":"Increase maxTurns so the wrapper has more turns available before it decides to stop.","correcta":false,"justificacion":"maxTurns is a safety net against runaway loops, not the mechanism that determines whether a given turn is finished; raising it doesn't fix a flawed per-turn completion check."},{"id":"C","texto":"Parse the assistant's text for completion phrases like \"I'm done\" or \"finished\" before deciding to stop.","correcta":false,"justificacion":"Parsing natural-language signals to infer loop termination is a documented anti-pattern: an agent doesn't reliably produce those explicit phrases."},{"id":"D","texto":"Treat every AssistantMessage as complete once its content array is non-empty, since an empty array indicates the loop hasn't started.","correcta":false,"justificacion":"Content array emptiness doesn't distinguish a finished turn from one still requesting tool calls; the correct check is specifically for the presence or absence of tool_use blocks."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-4-1","fuentes":["https://code.claude.com/docs/en/agent-sdk/agent-loop"]},{"id":"b4-q02","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.1","escenario":"Your production agent enforces maxBudgetUsd: 2.00 to control cost. In one session, cumulative spend — including delegated subagent calls — crosses that ceiling mid-task. The application's result handler only branches on subtype === \"success\" vs. everything else, logging every non-success ResultMessage as \"hit turn limit, resume from session_id\" regardless of which limit was actually exceeded.","enunciado":"What is incorrect about this handling, and what is the correct fix?","opciones":[{"id":"A","texto":"The handler mislabels every non-success termination as a turn-limit event; it should branch explicitly on ResultMessage.subtype, since error_max_budget_usd (a cost ceiling that includes subagent spend) is a distinct condition from error_max_turns and warrants a different operator response.","correcta":true,"justificacion":"The SDK documents distinct subtype values (success, error_max_turns, error_max_budget_usd, error_during_execution, error_max_structured_output_retries); collapsing them into a single generic branch loses the information needed to react correctly."},{"id":"B","texto":"maxTurns should be removed entirely, since maxBudgetUsd already guards against runaway cost.","correcta":false,"justificacion":"maxTurns and maxBudgetUsd are independent safety nets covering different concerns (turn count vs. estimated spend); removing one doesn't address the handler's real bug, which is not distinguishing subtypes."},{"id":"C","texto":"Subagent spend should be excluded from the parent's budget so only the top-level agent's turns count against maxBudgetUsd.","correcta":false,"justificacion":"Subagent spend counts against the same total budget as the parent by design; excluding it would contradict the documented behavior, not fix the handler."},{"id":"D","texto":"Increase maxTurns so that subagent tool calls fit comfortably under the turn cap.","correcta":false,"justificacion":"The scenario's limit that was exceeded is the cost ceiling (maxBudgetUsd), not the turn cap; raising maxTurns doesn't address a budget-related termination or the handler's failure to distinguish subtypes."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-1","fuentes":["https://code.claude.com/docs/en/agent-sdk/agent-loop"]},{"id":"b4-q03","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.1","escenario":"In a single AssistantMessage, Claude requests four tool calls in the same turn: two Read calls, one Grep call, and one Edit call targeting the same file. An engineer assumes the SDK executes all four concurrently to save latency, and separately assumes that because two different tool categories (read vs. write) were exercised, this counts as two separate turns.","enunciado":"Select TWO corrections to these assumptions, per the documented lifecycle.","opciones":[{"id":"A","texto":"The SDK executes the two Read calls and the Grep call concurrently since they are read-only, but runs the Edit call sequentially relative to the others, since it modifies state and could conflict with reads of the same file — not all four run concurrently.","correcta":true,"justificacion":"The SDK executes read-only tool calls (Read, Glob, Grep, read-only MCP) concurrently within a turn but serializes state-modifying calls (Edit, Write, Bash) to avoid write conflicts."},{"id":"B","texto":"All four tool calls, their execution, and the resulting tool results returned to Claude constitute a single turn, regardless of how many distinct tool types were involved.","correcta":true,"justificacion":"A turn is one full round — response with tool calls, execution, and results returned — without the application ceding control; the number of distinct tool categories exercised inside it doesn't split it into multiple turns."},{"id":"C","texto":"Because Edit modifies state, the SDK executes all four tool calls sequentially, one at a time, to guarantee no conflicts of any kind.","correcta":false,"justificacion":"This over-serializes: the SDK still runs the read-only calls concurrently with each other; only the state-modifying call is handled sequentially relative to the batch, not the entire set one-at-a-time."},{"id":"D","texto":"Because three of the four calls are read-only, the SDK treats the entire batch as read-only and executes all four concurrently, including the Edit call.","correcta":false,"justificacion":"This is the documented anti-pattern of assuming full-batch concurrency; state-modifying calls are always serialized regardless of how many read-only calls accompany them."},{"id":"E","texto":"This is two turns, since the read-only tool calls and the state-modifying tool call are dispatched in separate lifecycle phases.","correcta":false,"justificacion":"Concurrent vs. sequential execution within a turn is an internal scheduling detail; it doesn't split the turn, which is defined by one full response-execute-return cycle."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-4-1","fuentes":["https://code.claude.com/docs/en/agent-sdk/agent-loop"]},{"id":"b4-q04","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.2","escenario":"A coordinator agent spawns three subagents to investigate a corporate merger. To \"save a round trip,\" one subagent is configured to forward its intermediate findings directly to a second subagent, without passing back through the coordinator first.","enunciado":"What is wrong with this design per the documented coordinator-subagent pattern?","opciones":[{"id":"A","texto":"The coordinator-subagent pattern is hub-and-spoke: all communication must flow through the coordinator; subagents communicating directly breaks the centralized routing, error handling, and observability the pattern relies on.","correcta":true,"justificacion":"Subagents never communicate directly with each other by design; routing everything through the coordinator is what keeps the system observable and gives it consistent error handling."},{"id":"B","texto":"There is no issue; direct subagent-to-subagent communication is more efficient and doesn't affect the pattern's guarantees.","correcta":false,"justificacion":"This contradicts the hub-and-spoke definition of the pattern, which requires all routing to pass through the coordinator regardless of perceived efficiency gains."},{"id":"C","texto":"The real problem is having only two subagents involved in the exchange instead of the documented range of 3–5 concurrent subagents.","correcta":false,"justificacion":"The 3–5 concurrent subagent range describes lead-agent spawning for investigation breadth; it has nothing to do with whether two already-spawned subagents may talk directly to each other."},{"id":"D","texto":"The fix is to insert a routing classifier between the two subagents to manage their direct exchange more reliably.","correcta":false,"justificacion":"Adding a classifier layer to manage an exchange that shouldn't exist in the first place is over-engineering; the documented fix is simply routing the exchange back through the coordinator."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-4-2","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents"]},{"id":"b4-q05","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.2","escenario":"Your research coordinator always invokes all five available subagents (search, analysis, synthesis, fact-check, formatting) for every incoming query, including simple ones like \"what is the capital of France,\" which needs only a single lookup.","enunciado":"What change best aligns with the documented coordinator responsibilities?","opciones":[{"id":"A","texto":"Have the coordinator perform dynamic subagent selection, invoking only the subagents warranted by the query's actual complexity, reserving the full pipeline for genuinely complex queries.","correcta":true,"justificacion":"Dynamic subagent selection based on complexity is one of the coordinator's four core responsibilities; always routing through the full pipeline regardless of complexity is the documented anti-pattern of unnecessary cost and latency."},{"id":"B","texto":"Increase the concurrency limit so all five subagents complete faster in parallel.","correcta":false,"justificacion":"Running the unnecessary subagents faster doesn't address the actual problem: they shouldn't be invoked at all for a trivial single-lookup query."},{"id":"C","texto":"Consolidate the five subagents into a single subagent with an internal action parameter it selects itself.","correcta":false,"justificacion":"This solves a tool-selection ambiguity problem; it doesn't address the coordinator's failure to scale subagent invocation to query complexity."},{"id":"D","texto":"Cap the number of subagents that can be invoked per query at two, regardless of complexity.","correcta":false,"justificacion":"An arbitrary fixed cap is the same category of anti-pattern as an iteration cap used as a primary control mechanism; it doesn't adapt to actual query complexity in either direction."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-2","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents","https://www.anthropic.com/engineering/built-multi-agent-research-system"]},{"id":"b4-q06","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.2","escenario":"A coordinator delegates \"research this\" to three subagents with no further detail, hoping they'll divide the work themselves. Logs show significant overlap: two of the three subagents independently gather nearly identical sources.","enunciado":"What is the most effective fix for this duplication?","opciones":[{"id":"A","texto":"Give each subagent an explicit, partitioned research objective, output format, and tool guidance up front, dividing the query's scope by subtopic or source type before delegation rather than leaving it to each subagent to interpret independently.","correcta":true,"justificacion":"Vague delegation instructions are the documented root cause of duplicated work between subagents; explicit objectives, format, and boundaries are what let the coordinator partition scope correctly."},{"id":"B","texto":"Increase the number of subagents from three to five so more ground is covered overall.","correcta":false,"justificacion":"Adding more subagents without clearer delegation would likely increase overlap rather than fix it, since the root cause is vague instructions, not insufficient subagent count."},{"id":"C","texto":"Add a post-hoc deduplication step that removes repeated sources after synthesis.","correcta":false,"justificacion":"This treats a symptom after the fact instead of the root cause; the documented fix is clearer upfront delegation that prevents the duplication of effort in the first place."},{"id":"D","texto":"Restrict each subagent's tool access so that only one of them can use WebSearch.","correcta":false,"justificacion":"Removing capability from subagents doesn't clarify scope; it risks under-covering the topic instead of resolving the ambiguity that caused the overlap."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-2","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents"]},{"id":"b4-q07","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.3","escenario":"A team upgraded their Agent SDK from an older version to 2.1.63+. After the upgrade, their coordinator's calls to spawn subagents silently stop working; the coordinator's allowedTools list still contains only \"Task\", unchanged since before the upgrade.","enunciado":"What is the correct fix?","opciones":[{"id":"A","texto":"In SDK 2.1.63+ the subagent-spawning tool was renamed from \"Task\" to \"Agent\"; allowedTools must include \"Agent\" for the coordinator to invoke subagents (SDKs prior to 2.1.63 use \"Task\" instead — both names refer to the same tool depending on version).","correcta":true,"justificacion":"The Agent tool was renamed from \"Task\" in SDK version 2.1.63; allowedTools must reference the name matching the installed SDK version for subagent spawning to work."},{"id":"B","texto":"\"Task\" was deprecated with no replacement; subagents must now be spawned exclusively via AgentDefinition.initialPrompt.","correcta":false,"justificacion":"initialPrompt auto-sends a first user turn only when an agent runs as the primary agent of a thread; it is ignored when that agent is invoked as a subagent, and is not a subagent-spawning mechanism."},{"id":"C","texto":"allowedTools no longer governs the Agent tool since 2.1.63; it must instead be listed under mcpServers.","correcta":false,"justificacion":"The Agent tool is still gated by allowedTools like any other tool; mcpServers configures MCP server connections, an unrelated mechanism."},{"id":"D","texto":"The coordinator must set permissionMode instead of allowedTools to enable subagent spawning.","correcta":false,"justificacion":"permissionMode configures the permission mode for tool execution within an agent; it doesn't control whether the Agent/Task tool itself is available to be called."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-3","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents"]},{"id":"b4-q08","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.3","escenario":"A synthesis subagent is invoked with a prompt that says only \"synthesize the research findings into a report.\" It has no access to the coordinator's earlier conversation turns, so it produces a generic report with no actual findings. The engineer assumed the subagent would automatically see the coordinator's conversation history.","enunciado":"What is the correct fix?","opciones":[{"id":"A","texto":"Explicitly inject the full findings from the earlier subagents into the synthesis subagent's prompt text (e.g., the search results and document analysis output), since subagents have isolated context and never automatically inherit the coordinator's conversation history or prior tool results.","correcta":true,"justificacion":"Subagents operate with isolated context by design; assuming automatic inheritance of the coordinator's history is a documented anti-pattern, and the correct pattern is explicit injection of prior findings into the prompt."},{"id":"B","texto":"Set AgentDefinition.memory to 'project' so the subagent reads the coordinator's conversation history from shared project memory.","correcta":false,"justificacion":"memory configures the subagent's own memory scope; it is not the documented mechanism for passing a coordinator's conversation history into a subagent invocation."},{"id":"C","texto":"Set forkSession: true on the synthesis subagent invocation so it forks the coordinator's session and inherits the history.","correcta":false,"justificacion":"forkSession creates an independent branch of a session's conversation history for exploring divergent approaches; it is not the documented mechanism for passing context into an Agent tool invocation."},{"id":"D","texto":"List \"conversationHistory\" in the subagent's skills array so it precedes the invocation with the coordinator's context.","correcta":false,"justificacion":"skills preloads named skill content into a subagent's context; there is no documented \"conversationHistory\" skill or equivalent feature for inheriting the parent's conversation."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-3","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents"]},{"id":"b4-q09","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.3","escenario":"A team defines a review-agent AgentDefinition without a tools field, expecting it to be restricted to read-only access. Separately, to spawn three subagents for a research task, the coordinator's code issues three separate query() calls across three consecutive turns, one per subagent, waiting for each ResultMessage before issuing the next Agent tool call.","enunciado":"Select TWO corrections needed here, per the documented Agent SDK configuration rules.","opciones":[{"id":"A","texto":"Omitting tools in AgentDefinition doesn't restrict the subagent to read-only access — it inherits all tools available to subagents; to enforce read-only, tools must explicitly list only read-only tools, or disallowedTools must remove the state-modifying ones.","correcta":true,"justificacion":"tools is optional and, if omitted, the subagent inherits all tools available to subagents rather than defaulting to a restricted set; read-only enforcement requires an explicit tools list or disallowedTools."},{"id":"B","texto":"To spawn subagents in parallel, the coordinator must emit multiple Agent tool calls within a single response (same turn), not issue them across separate sequential turns, which is effectively sequential execution.","correcta":true,"justificacion":"Parallel spawning requires multiple Agent tool calls in one response; issuing them across separate turns, each waiting for the prior ResultMessage, is sequential in practice regardless of intent."},{"id":"C","texto":"disallowedTools cannot be used to remove MCP server tools; only tools can whitelist them.","correcta":false,"justificacion":"disallowedTools explicitly accepts MCP patterns such as mcp__server, mcp__server__*, and mcp__* to remove tools from a specific server or all MCP servers."},{"id":"D","texto":"forkSession: true must be set on each subagent invocation to enable concurrent spawning.","correcta":false,"justificacion":"forkSession branches a session's conversation history for divergent exploration; it is unrelated to whether Agent tool calls are dispatched concurrently within a turn."},{"id":"E","texto":"Setting background: true on each AgentDefinition is required for subagents to run in parallel within the same turn.","correcta":false,"justificacion":"background runs an agent as a non-blocking background task when invoked; the documented mechanism for parallel subagent spawning is multiple Agent tool calls in a single response, not the background flag."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-4-3","fuentes":["https://code.claude.com/docs/en/agent-sdk/subagents"]},{"id":"b4-q10","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.4","escenario":"Production logs for your refund workflow show that in 12% of cases the agent calls process_refund without having first called get_customer to verify identity, occasionally causing refunds against unverified accounts. The current system prompt already states \"always verify the customer before issuing a refund.\"","enunciado":"What is the most effective fix for this reliability issue?","opciones":[{"id":"A","texto":"Add a programmatic prerequisite gate that blocks process_refund until get_customer has returned a verified customer ID, since prompt-based instructions alone have a documented non-zero failure rate for exactly this kind of critical ordering requirement.","correcta":true,"justificacion":"This is a financially consequential step where the documented 12% skip rate shows prompt-only guidance is insufficient; programmatic enforcement provides the deterministic guarantee prompting cannot."},{"id":"B","texto":"Rewrite the system prompt sentence more emphatically (\"ALWAYS verify before refunding, no exceptions\").","correcta":false,"justificacion":"This still relies on probabilistic prompt compliance for a non-negotiable ordering requirement — the exact anti-pattern documented to fail in a meaningful fraction of cases regardless of phrasing."},{"id":"C","texto":"Add several few-shot examples demonstrating the correct call order.","correcta":false,"justificacion":"Few-shot examples still leave compliance probabilistic; they don't provide the deterministic guarantee needed when the protected step has financial consequences."},{"id":"D","texto":"Force tool_choice to \"any\" so the agent must call some tool every turn.","correcta":false,"justificacion":"\"any\" only guarantees that some tool is called, not which one or in what order; it does nothing to prevent process_refund from being called before get_customer."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-4-decision","fuentes":["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]},{"id":"b4-q11","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.4","escenario":"A customer message mixes three concerns: a billing dispute, a shipping complaint, and a product defect report. The agent currently treats it as a single monolithic request and produces one long combined resolution, missing the shipping complaint entirely in its final response.","enunciado":"What is the correct approach per the documented multi-step workflow pattern?","opciones":[{"id":"A","texto":"Decompose the request into separate items (billing, shipping, defect), investigate each with shared context, and synthesize a single unified resolution that explicitly addresses all three.","correcta":true,"justificacion":"The documented pattern for multi-concern requests is exactly this: decompose into items, investigate in parallel sharing context, then synthesize one unified resolution, which prevents concerns like the shipping complaint from being dropped."},{"id":"B","texto":"Escalate the entire message to a human agent, since it mixes multiple concerns.","correcta":false,"justificacion":"Mixing concerns doesn't by itself require human escalation; the documented pattern is decomposition and synthesis, reserving escalation for cases with financial or security consequences or unresolved gaps."},{"id":"C","texto":"Process only the first concern mentioned and ask the customer to submit separate messages for the others.","correcta":false,"justificacion":"This isn't the documented pattern and creates poor customer experience by ignoring concerns that could be resolved in one pass with shared context."},{"id":"D","texto":"Route the whole message to a single specialized billing subagent, since billing was mentioned first.","correcta":false,"justificacion":"This ignores the shipping and defect concerns entirely instead of decomposing the request into separate items to be investigated and synthesized."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-4","fuentes":["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]},{"id":"b4-q12","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.4","escenario":"An agent escalates a case to a human agent by pasting the raw conversation transcript with no summary, forcing the human to re-read the entire exchange to find the customer ID, root cause, and refund amount before acting.","enunciado":"What is the correct fix per the documented handoff pattern?","opciones":[{"id":"A","texto":"Compile a structured handoff summary (customer ID, root cause, amount, recommended action, plus relevant context) instead of forwarding raw prose, so the human agent has sufficient context without needing the full transcript.","correcta":true,"justificacion":"The documented handoff protocol is a structured summary with exactly these fields, designed so the human agent doesn't need access to the full transcript to act."},{"id":"B","texto":"Increase max_turns so the agent has more turns available to summarize on its own before escalating.","correcta":false,"justificacion":"max_turns bounds the loop's turn budget; it has no bearing on whether the escalation content is structured or raw prose."},{"id":"C","texto":"Add a hook that truncates the transcript to the last five messages before forwarding.","correcta":false,"justificacion":"Truncated raw prose still isn't a structured summary and may omit the very fields (customer ID, root cause, amount) the human needs; it doesn't guarantee the required information is present."},{"id":"D","texto":"Have the agent apologize more explicitly in the transcript before forwarding.","correcta":false,"justificacion":"This doesn't address the actual problem, which is the lack of structured, extractable information in the handoff content."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-4-4","fuentes":["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]},{"id":"b4-q13","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.5","escenario":"An engineer registers a PostToolUse hook intended to block any process_refund call over $500 by returning permissionDecision: \"deny\" in hookSpecificOutput. Separately, the matcher for this hook is set to the string \"mcp__memory\", intending to catch every tool exposed by the \"memory\" MCP server.","enunciado":"Select TWO corrections needed here, per the documented hook mechanics.","opciones":[{"id":"A","texto":"permissionDecision has no effect in PostToolUse — blocking a tool call before execution requires a PreToolUse hook; PostToolUse can only transform the already-executed result via additionalContext or updatedToolOutput.","correcta":true,"justificacion":"PreToolUse is the event that can set permissionDecision to allow, deny, ask, or defer before execution; PostToolUse runs after execution and only exposes additionalContext or updatedToolOutput, not permissionDecision."},{"id":"B","texto":"The matcher \"mcp__memory\" contains only exact-match characters, so it matches only a tool literally named \"mcp__memory\", not the server's other tools; matching every tool of that MCP server requires a regex like \"mcp__memory__.*\".","correcta":true,"justificacion":"A matcher string made only of letters, digits, _, -, spaces, \",\", and \"|\" is treated as an exact-match list; any other character (like the dot and asterisk in \"mcp__memory__.*\") makes it a regex, which is required to match all tools of a given MCP server."},{"id":"C","texto":"PostToolUse hooks consume the agent's context window, so this hook should be replaced with a PreToolUse hook purely to avoid that cost.","correcta":false,"justificacion":"Hooks of any type run outside the agent's context window, in the application process; context window consumption is not a reason to prefer PreToolUse over PostToolUse here."},{"id":"D","texto":"Since the matcher field accepts only exact tool names, wildcarding for a whole MCP server isn't possible; the hook must be duplicated once per individual tool name of the memory server.","correcta":false,"justificacion":"This is incorrect: a regex matcher such as \"mcp__memory__.*\" is exactly the documented way to match all tools of one MCP server without duplicating the hook per tool."},{"id":"E","texto":"The correct fix is to leave the matcher empty (\"\") so it applies only to memory-server tools by default.","correcta":false,"justificacion":"An empty matcher (or \"*\") matches every occurrence of the event across all tools, not a specific MCP server; this would over-apply the hook rather than scope it correctly."}],"seleccionar":2,"dificultad":"media","refSeccion":"#ts-4-5","fuentes":["https://code.claude.com/docs/en/agent-sdk/hooks"]},{"id":"b4-q14","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.5","escenario":"Multiple MCP tools return timestamps in inconsistent formats — some as Unix epoch integers, others as ISO 8601 strings — before Claude ever sees them. An engineer wants every timestamp normalized to ISO 8601 before the model processes the tool's output, without asking Claude to do the conversion itself.","enunciado":"What is the correct implementation for this normalization requirement?","opciones":[{"id":"A","texto":"Register a PostToolUse hook that inspects the raw tool output and returns hookSpecificOutput.updatedToolOutput with the normalized ISO 8601 value, replacing the output before Claude receives it.","correcta":true,"justificacion":"PostToolUse runs after the tool returns and updatedToolOutput is exactly the documented field for replacing the tool's output before the model processes it, matching the normalization use case."},{"id":"B","texto":"Register a PreToolUse hook that rewrites tool_input before execution to request pre-formatted timestamps.","correcta":false,"justificacion":"The timestamps to normalize appear in the tool's output, not its input; PreToolUse runs before execution and cannot see a result that doesn't exist yet."},{"id":"C","texto":"Add updatedInput to a PreToolUse hook's hookSpecificOutput to reformat the expected output ahead of time.","correcta":false,"justificacion":"updatedInput modifies the tool's input before execution, not its output; it cannot be used to reformat a result that hasn't been produced yet."},{"id":"D","texto":"Instruct Claude via the system prompt to always convert timestamps to ISO 8601 before using them in reasoning.","correcta":false,"justificacion":"This is a prompt-based, probabilistic approach to a deterministic normalization need that a PostToolUse hook can guarantee outside the model's reasoning entirely."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-5","fuentes":["https://code.claude.com/docs/en/agent-sdk/hooks"]},{"id":"b4-q15","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.6","escenario":"You need to run a standard code review across 40 files, checking each individually for bugs and security issues, followed by a cross-file integration pass — a review structure your team runs the same way every sprint.","enunciado":"Which decomposition strategy fits this task, per the documented selection criteria?","opciones":[{"id":"A","texto":"Prompt chaining — a fixed sequence of a per-file analysis pass followed by a separate integration pass — since this is a predictable, multi-aspect review, not open-ended investigation.","correcta":true,"justificacion":"Prompt chaining is reserved for predictable, multi-aspect reviews; splitting into a local per-file pass and a separate cross-file integration pass is the documented fix for the attention dilution of a single monolithic pass."},{"id":"B","texto":"Dynamic adaptive decomposition, since the plan should adapt as file dependencies are discovered.","correcta":false,"justificacion":"Dynamic decomposition is reserved for open-ended tasks; this recurring, predictable review structure is exactly the case where a fixed prompt-chaining sequence is the documented correct choice."},{"id":"C","texto":"A single monolithic pass across all 40 files at once to save tool calls.","correcta":false,"justificacion":"A monolithic single pass over a whole codebase is the documented anti-pattern that produces attention dilution and inconsistent findings."},{"id":"D","texto":"Coordinator-subagent orchestration with one subagent spawned per file in parallel.","correcta":false,"justificacion":"This addresses multi-agent orchestration, a different mechanism than the task decomposition strategy (sequencing analysis into per-file and integration passes) the scenario calls for."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-4-6","fuentes":["exam-guide-oficial-v1.0.txt (Task Statement 1.6)"]},{"id":"b4-q16","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.6","escenario":"You're asked to \"add exhaustive tests to this legacy codebase\" with no existing coverage data, no known priority order, and undocumented cross-module dependencies that only emerge as you look deeper into the code.","enunciado":"What is the correct decomposition strategy here?","opciones":[{"id":"A","texto":"Dynamic adaptive decomposition — first map the codebase structure and identify high-impact untested areas, generate a prioritized plan, and adapt that plan as previously unknown dependencies are discovered.","correcta":true,"justificacion":"This open-ended task is exactly the documented case for dynamic decomposition: mapping structure, prioritizing high-impact areas, and adapting the plan as dependencies emerge, since they can't be anticipated upfront."},{"id":"B","texto":"Prompt chaining with a fixed per-module test-writing sequence decided entirely upfront.","correcta":false,"justificacion":"Fixing the decomposition rigidly for an open-ended task fails because findings discovered during the work can reveal needs not anticipated at the start."},{"id":"C","texto":"A single pass instructing the agent to \"write tests for the whole codebase\" in one shot.","correcta":false,"justificacion":"A monolithic single pass produces the documented attention dilution problem and inconsistent, incomplete coverage on a task of this scope."},{"id":"D","texto":"Fix the test-writing order strictly by alphabetical file name to keep the plan deterministic.","correcta":false,"justificacion":"An arbitrary ordering ignores actual impact and discovered dependencies, which is precisely what dynamic decomposition is meant to prioritize instead."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-6","fuentes":["exam-guide-oficial-v1.0.txt (Task Statement 1.6)"]},{"id":"b4-q17","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.7","escenario":"You have three previous sessions from earlier this week in the same project directory. You want to return specifically to the session where you were comparing pagination strategies, not the most recent one, which was about an unrelated logging bug.","enunciado":"Which mechanism is correct for returning to that specific session?","opciones":[{"id":"A","texto":"resume with that session's specific session ID (or --resume <session-name> if it was given a name), since continue would only pick up the most recent session, and this isn't it.","correcta":true,"justificacion":"resume is documented specifically for returning to a session ID that is not the most recent, exactly this situation; continue always finds the most recent session in the directory instead."},{"id":"B","texto":"continue, since it will find the correct session automatically among the three.","correcta":false,"justificacion":"continue locates only the most recent session in the current directory, which in this scenario is the unrelated logging-bug session, not the pagination one."},{"id":"C","texto":"forkSession, since it will create a new branch of the pagination session while leaving the current one untouched.","correcta":false,"justificacion":"forkSession is documented for branching an existing session to explore a divergent approach, not for retrieving and returning directly to a specific prior session by identity; resume is the documented mechanism for that."},{"id":"D","texto":"Start a brand-new session and paste in a summary of the pagination discussion so far.","correcta":false,"justificacion":"This discards the actual persisted session state unnecessarily when resume can retrieve that exact session directly by ID."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-4-7","fuentes":["https://code.claude.com/docs/en/agent-sdk/sessions"]},{"id":"b4-q18","bloque":4,"dominio":"Agentic Architecture & Orchestration","taskStatement":"1.7","escenario":"An engineer forks a session with fork_session=True to explore an OAuth2 alternative to an already-implemented JWT approach. The forked agent edits several files in the project directory to prototype the OAuth2 flow. Meanwhile, someone else resumes the original, non-forked session in the same directory and is surprised to see the OAuth2 file edits already present, since they expected the fork to be fully isolated.","enunciado":"What is the correct explanation for this behavior?","opciones":[{"id":"A","texto":"Forking branches only the conversation history into an independent copy; it does not fork the filesystem — file edits made by the forked agent are real, on-disk changes visible to any other session working in the same directory, including the original.","correcta":true,"justificacion":"Fork branches the conversation history, not the filesystem; achieving filesystem isolation as well would require separate file checkpointing, which is documented as a distinct, additional mechanism."},{"id":"B","texto":"This is a bug; fork_session=True should have prevented any filesystem changes from being visible outside the forked session.","correcta":false,"justificacion":"This is documented, expected behavior, not a bug: fork only branches conversation history, and full isolation of file changes needs separate file checkpointing."},{"id":"C","texto":"The original session's session_id must have been reused for the fork instead of getting an independent ID, causing the file changes to bleed through.","correcta":false,"justificacion":"Forking produces two independent session IDs; the file visibility issue is about the shared filesystem between sessions, not about session ID reuse."},{"id":"D","texto":"continue_conversation=True was set instead of fork_session=True, which shares state fully.","correcta":false,"justificacion":"The scenario explicitly used fork_session=True; continue is an unrelated mechanism for finding the most recent session and isn't what caused the shared file visibility here."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-4-7","fuentes":["https://code.claude.com/docs/en/agent-sdk/sessions"]}]};
+// __PREGUNTAS_JSON_END__
+
+(function () {
+  "use strict";
+  const cfg = DATA.config, bank = DATA.preguntas;
+  const KEY = "ccarf-quiz-" + cfg.titulo + "-v" + cfg.version;
+  const app = document.getElementById("app");
+  document.getElementById("q-title").textContent = cfg.titulo;
+  document.getElementById("q-eyebrow").textContent = "CCAR-F · BLOQUE " + String(cfg.bloque).toUpperCase();
+  document.title = cfg.solo_examen ? "Simulacro de examen CCAR-F" : "Quiz CCAR-F · " + cfg.titulo;
+
+  let S = null; // state: {mode, order[], optOrder{}, answers{}, flags[], idx, remaining, finished, revealed{}}
+
+  // Funcionalidad "Continuar": marca "ccarf-sum-quiz-<bloque>.updated" como
+  // timestamp de último acceso a este quiz en CADA carga de página, aunque
+  // no se responda nada (syncSummary() ya lo actualiza al interactuar, pero
+  // solo abrir la portada no la llama). Se fusiona con el resumen existente
+  // -- nunca lo reemplaza -- para no perder "best"/"hits"/etc. de intentos
+  // previos. El índice del curso compara este campo con el equivalente de
+  // "ccarf-sum-guia-<bloque>.updated" para el botón global "Continuar".
+  (function touchAccess() {
+    try {
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      prev.bloque = cfg.bloque; prev.titulo = cfg.titulo; prev.version = cfg.version;
+      prev.updated = Date.now();
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(prev));
+    } catch (e) {}
+  })();
+
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const byId = id => bank.find(q => q.id === id);
+  const save = () => { localStorage.setItem(KEY, JSON.stringify(S)); syncSummary(); };
+  // Progress summary consumed by the course index (dist/index.html).
+  function syncSummary() {
+    if (S && S.subset) return;   // un repaso parcial no pisa la nota del intento completo
+    try {
+      const answered = Object.keys(S.answers).filter(k => (S.answers[k] || []).length).length;
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      const sum = { bloque: cfg.bloque, titulo: cfg.titulo, version: cfg.version, mode: S.mode,
+        answered, total: bank.length, finished: !!S.finished, best: prev.best || 0, updated: Date.now() };
+      if (S.finished) {
+        const hits = S.order.filter(id => isCorrect(byId(id))).length;
+        sum.hits = hits;
+        sum.scaled = Math.round(100 + hits / bank.length * 900);
+        sum.best = Math.max(sum.best, sum.scaled);
+      }
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(sum));
+    } catch (e) {}
+  }
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  // refSeccion apunta al documento de referencia, que no se publica. Se traduce
+  // a la leccion equivalente de la guia del bloque, que si esta en el sitio.
+  function leccionDe(q) {
+    const m = /^#cap-(\d+)-ts-(\d+)$/.exec(q.refSeccion || "");
+    if (!m) return null;
+    return { href: "../bloque-" + m[1] + "/guia_v1.2.html#leccion-" + m[2],
+             texto: "Bloque " + m[1] + ", Lección " + m[2] };
+  }
+  const isCorrect = q => {
+    const sel = (S.answers[q.id] || []).slice().sort().join(",");
+    const ok = q.opciones.filter(o => o.correcta).map(o => o.id).sort().join(",");
+    return sel === ok && sel !== "";
+  };
+
+  function startScreen() {
+    const saved = load();
+    let html = '<div class="card"><h2>Configuración</h2>';
+    if (saved && !saved.finished) html += '<p>Hay un intento guardado (' + (saved.mode === "examen" ? "modo examen" : "modo estudio") + ', pregunta ' + (saved.idx + 1) + '). </p><div class="actions"><button class="primary" id="resume">Reanudar intento</button></div><hr>';
+    html += '<p>Elige modo:</p><div class="actions">';
+    if (!cfg.solo_examen) html += '<button class="primary" id="m-estudio">Modo estudio</button>';
+    html += '<button ' + (cfg.solo_examen ? 'class="primary"' : '') + ' id="m-examen">Modo examen</button></div>';
+    html += '<p class="muted">Estudio: corrección y justificación inmediatas. Examen: temporizador de ' + examMinutes() + ' min, resultados al final con desglose por dominio.</p></div>';
+    app.innerHTML = html;
+    const r = document.getElementById("resume");
+    if (r) r.onclick = () => { S = saved; render(); };
+    const e1 = document.getElementById("m-estudio");
+    if (e1) e1.onclick = () => init("estudio");
+    document.getElementById("m-examen").onclick = () => init("examen");
+  }
+
+  function examMinutes() { return cfg.duracion_examen_min || Math.ceil(bank.length * 2); }
+
+  function init(mode, ids) {
+    // ids: subconjunto (repaso de falladas). Un repaso no es un intento puntuable.
+    const lista = ids && ids.length ? ids : bank.map(q => q.id);
+    S = { mode, order: shuffle(lista), subset: !!(ids && ids.length), optOrder: {}, answers: {}, flags: [], idx: 0, remaining: examMinutes() * 60, finished: false, revealed: {} };
+    bank.forEach(q => S.optOrder[q.id] = shuffle(q.opciones.map(o => o.id)));
+    save(); render();
+  }
+
+  let tick = null;
+  function startTimer(el) {
+    clearInterval(tick);
+    tick = setInterval(() => {
+      S.remaining--; save();
+      if (el.isConnected) { el.textContent = fmt(S.remaining); el.classList.toggle("low", S.remaining < 300); }
+      if (S.remaining <= 0) { clearInterval(tick); finishExam(); }
+    }, 1000);
+  }
+
+  function render() {
+    if (S.finished) return results();
+    const q = byId(S.order[S.idx]);
+    const multi = q.seleccionar > 1, type = multi ? "checkbox" : "radio";
+    const sel = S.answers[q.id] || [];
+    const revealed = S.mode === "estudio" && S.revealed[q.id];
+
+    let html = '<div class="card' + (revealed ? " revealed" : "") + '">';
+    html += '<div class="topbar"><div><span class="pill">' + (S.idx + 1) + " / " + S.order.length + '</span><span class="pill">' + esc(q.dominio || "Transversal") + '</span><span class="pill">TS ' + esc(q.taskStatement) + '</span></div>';
+    if (S.mode === "examen") html += '<div class="timer" id="timer">' + fmt(S.remaining) + "</div>";
+    html += "</div>";
+    if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+    html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+    S.optOrder[q.id].forEach(oid => {
+      const o = q.opciones.find(x => x.id === oid);
+      const chosen = sel.includes(oid);
+      let cls = chosen ? " sel" : "";
+      if (revealed) { if (o.correcta) cls = " ok"; else if (chosen) cls = " ko"; }
+      html += '<label class="opt' + cls + '"><input type="' + type + '" name="opt" value="' + oid + '"' + (chosen ? " checked" : "") + (revealed ? " disabled" : "") + "><div>" + esc(o.texto) + '<div class="rationale"><strong>' + (o.correcta ? "✔" : "✘") + "</strong> " + esc(o.justificacion) + "</div></div></label>";
+    });
+    html += '<div class="actions">';
+    if (S.mode === "estudio") {
+      html += revealed
+        ? '<button class="primary" id="next">' + (S.idx + 1 < S.order.length ? "Siguiente" : "Ver resultado") + "</button>"
+        : '<button class="primary" id="check" ' + (sel.length ? "" : "disabled") + ">Comprobar</button>";
+    } else {
+      html += '<button id="prev" ' + (S.idx ? "" : "disabled") + ">← Anterior</button>";
+      html += '<button id="nextq" ' + (S.idx + 1 < S.order.length ? "" : "disabled") + ">Siguiente →</button>";
+      html += '<button id="flag">' + (S.flags.includes(q.id) ? "Desmarcar" : "Marcar 🚩") + "</button>";
+      html += '<button class="primary" id="finish">Finalizar examen</button>';
+    }
+    html += "</div></div>";
+
+    if (S.mode === "examen") {
+      html += '<div class="card"><div class="navgrid">' + S.order.map((id, i) => {
+        let c = [];
+        if ((S.answers[id] || []).length) c.push("answered");
+        if (S.flags.includes(id)) c.push("flagged");
+        if (i === S.idx) c.push("current");
+        return '<button data-i="' + i + '" class="' + c.join(" ") + '">' + (i + 1) + "</button>";
+      }).join("") + '</div><div class="muted">Gris: respondida · Borde ámbar: marcada</div></div>';
+    }
+    app.innerHTML = html;
+
+    app.querySelectorAll('input[name="opt"]').forEach(inp => inp.onchange = () => {
+      let cur = S.answers[q.id] || [];
+      if (multi) {
+        cur = inp.checked ? cur.concat(inp.value) : cur.filter(v => v !== inp.value);
+        if (cur.length > q.seleccionar) { inp.checked = false; cur = cur.filter(v => v !== inp.value); }
+      } else cur = [inp.value];
+      S.answers[q.id] = cur; save(); render();
+    });
+    const $ = id => document.getElementById(id);
+    if ($("check")) $("check").onclick = () => { S.revealed[q.id] = true; save(); render(); };
+    if ($("next")) $("next").onclick = () => { S.idx + 1 < S.order.length ? (S.idx++, save(), render()) : finishExam(); };
+    if ($("prev")) $("prev").onclick = () => { S.idx--; save(); render(); };
+    if ($("nextq")) $("nextq").onclick = () => { S.idx++; save(); render(); };
+    if ($("flag")) $("flag").onclick = () => { S.flags.includes(q.id) ? S.flags = S.flags.filter(f => f !== q.id) : S.flags.push(q.id); save(); render(); };
+    if ($("finish")) $("finish").onclick = () => { const un = S.order.filter(id => !(S.answers[id] || []).length).length; if (!un || confirm("Quedan " + un + " preguntas sin responder. ¿Finalizar igualmente?")) finishExam(); };
+    app.querySelectorAll(".navgrid button").forEach(b => b.onclick = () => { S.idx = +b.dataset.i; save(); render(); });
+    if ($("timer")) startTimer($("timer"));
+  }
+
+  function finishExam() { clearInterval(tick); S.finished = true; save(); results(); }
+
+  function results() {
+    clearInterval(tick);
+    const total = S.order.length, hits = S.order.filter(id => isCorrect(byId(id))).length;
+    const pct = hits / total, scaled = Math.round(100 + pct * 900);
+    const dom = {};
+    S.order.forEach(id => { const q = byId(id), d = q.dominio || "Transversal"; dom[d] = dom[d] || [0, 0]; dom[d][1]++; if (isCorrect(q)) dom[d][0]++; });
+    let html = '<div class="card"><h2>' + (S.subset ? "Repaso de falladas" : "Resultado") + "</h2>";
+    if (S.subset) {
+      html += '<div class="big ' + (hits === total ? "ok-t" : "ko-t") + '">' + hits + " / " + total + "</div>";
+      html += "<p>Repaso de " + total + " pregunta(s) que habías fallado. No cuenta como intento: la nota del bloque sigue siendo la de tu última vuelta completa.</p>";
+    } else {
+      html += '<div class="big ' + (scaled >= 720 ? "ok-t" : "ko-t") + '">' + scaled + ' <span class="muted" style="font-size:1rem">/ 1000 (orientativo·)</span></div>';
+      html += "<p>" + hits + " de " + total + " correctas (" + Math.round(pct * 100) + "%). Corte real del examen: <strong>720</strong>.</p>";
+      html += '<p class="muted">· Aproximación lineal: el examen real usa equating estadístico no público.</p>';
+    }
+    html += "<table><tr><th>Dominio</th><th>Aciertos</th><th>%</th></tr>" + Object.entries(dom).map(([d, v]) => "<tr><td>" + esc(d) + "</td><td>" + v[0] + "/" + v[1] + "</td><td>" + Math.round(v[0] / v[1] * 100) + "%</td></tr>").join("") + "</table>";
+    const fallidas = S.order.filter(id => !isCorrect(byId(id)));
+    html += '<div class="actions"><button class="primary" id="review">Revisar respuestas</button>';
+    if (fallidas.length) {
+      html += '<button id="repasar">Repetir solo las ' + fallidas.length + " fallada(s)</button>";
+    }
+    html += '<button id="restart">' + (S.subset ? "Volver al banco completo" : "Nuevo intento") + "</button></div></div>";
+    app.innerHTML = html;
+    document.getElementById("restart").onclick = () => { localStorage.removeItem(KEY); startScreen(); };
+    document.getElementById("review").onclick = review;
+    const rep = document.getElementById("repasar");
+    if (rep) rep.onclick = () => init(S.mode, fallidas);
+  }
+
+  function review() {
+    let html = "";
+    S.order.forEach((id, i) => {
+      const q = byId(id), ok = isCorrect(q), sel = S.answers[id] || [];
+      html += '<div class="card revealed"><p><span class="pill">' + (i + 1) + '</span><span class="pill">' + esc(q.dominio || "Transversal") + " · TS " + esc(q.taskStatement) + '</span> <strong class="' + (ok ? "ok-t" : "ko-t") + '">' + (ok ? "Correcta" : "Incorrecta") + "</strong></p>";
+      if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+      html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+      const leccion = leccionDe(q);
+      if (leccion) html += '<p class="repasa">Repasa la <a href="' + leccion.href + '">' + esc(leccion.texto) + "</a></p>";
+      q.opciones.forEach(o => {
+        let cls = o.correcta ? " ok" : (sel.includes(o.id) ? " ko" : "");
+        html += '<div class="opt' + cls + '"><div>' + o.id + ". " + esc(o.texto) + '<div class="rationale">' + esc(o.justificacion) + "</div></div></div>";
+      });
+      html += "</div>";
+    });
+    html += '<div class="card"><div class="actions"><button class="primary" id="back">Volver al resultado</button></div></div>';
+    app.innerHTML = html;
+    document.getElementById("back").onclick = results;
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): si hay un intento sin
+  // terminar, lo reanuda directamente en la siguiente pregunta sin responder
+  // -- no necesariamente S.idx, que en modo examen puede quedar en cualquier
+  // pregunta por la navegación libre/el marcado -- sin pasar por la portada.
+  // Reutiliza el mismo S guardado y el mismo render() del botón "Reanudar
+  // intento" existente, no duplica estado. Si no hay intento en curso, cae a
+  // la portada normal (startScreen()).
+  let continued = false;
+  if (/[?&]continue=1/.test(location.search)) {
+    const saved = load();
+    if (saved && !saved.finished) {
+      S = saved;
+      const nextIdx = S.order.findIndex(id => !(S.answers[id] || []).length);
+      if (nextIdx !== -1) S.idx = nextIdx;
+      save();
+      render();
+      continued = true;
+    }
+  }
+  if (!continued) startScreen();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "toggle theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "toggle fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+</body>
+</html>

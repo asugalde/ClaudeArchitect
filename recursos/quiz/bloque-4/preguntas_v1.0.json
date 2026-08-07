@@ -1,0 +1,340 @@
+{
+  "config": {
+    "titulo": "Bloque 4 — Agentic Architecture & Orchestration: Agent SDK y orquestación multi-agente",
+    "version": "1.0",
+    "bloque": 4,
+    "modo_defecto": "estudio",
+    "solo_examen": false,
+    "generado_desde_corpus": "bloque-4-agent-sdk.md v1.0",
+    "fecha": "2026-08-07"
+  },
+  "preguntas": [
+    {
+      "id": "b4-q01",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "Your team built a custom wrapper around the Agent SDK's query() generator. The wrapper treats the agentic loop as finished as soon as an AssistantMessage contains any text block, even when that same message also contains tool_use blocks in its content array. QA reports the wrapper exits mid-task in roughly 15% of runs while Claude is still mid-investigation.",
+      "enunciado": "What is the root cause of this premature termination, and the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "The wrapper conflates presence of text with completion; Claude can return text and tool calls in the same turn. The correct signal is the absence of tool calls in the response, not the presence of text, so the wrapper should check whether the content array contains any tool_use blocks.", "correcta": true, "justificacion": "The loop continues while Claude's response includes tool calls and ends only when it doesn't; treating any text as a completion signal ignores that Claude frequently returns text alongside tool calls in the same turn."},
+        {"id": "B", "texto": "Increase maxTurns so the wrapper has more turns available before it decides to stop.", "correcta": false, "justificacion": "maxTurns is a safety net against runaway loops, not the mechanism that determines whether a given turn is finished; raising it doesn't fix a flawed per-turn completion check."},
+        {"id": "C", "texto": "Parse the assistant's text for completion phrases like \"I'm done\" or \"finished\" before deciding to stop.", "correcta": false, "justificacion": "Parsing natural-language signals to infer loop termination is a documented anti-pattern: an agent doesn't reliably produce those explicit phrases."},
+        {"id": "D", "texto": "Treat every AssistantMessage as complete once its content array is non-empty, since an empty array indicates the loop hasn't started.", "correcta": false, "justificacion": "Content array emptiness doesn't distinguish a finished turn from one still requesting tool calls; the correct check is specifically for the presence or absence of tool_use blocks."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-1",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/agent-loop"]
+    },
+    {
+      "id": "b4-q02",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "Your production agent enforces maxBudgetUsd: 2.00 to control cost. In one session, cumulative spend — including delegated subagent calls — crosses that ceiling mid-task. The application's result handler only branches on subtype === \"success\" vs. everything else, logging every non-success ResultMessage as \"hit turn limit, resume from session_id\" regardless of which limit was actually exceeded.",
+      "enunciado": "What is incorrect about this handling, and what is the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "The handler mislabels every non-success termination as a turn-limit event; it should branch explicitly on ResultMessage.subtype, since error_max_budget_usd (a cost ceiling that includes subagent spend) is a distinct condition from error_max_turns and warrants a different operator response.", "correcta": true, "justificacion": "The SDK documents distinct subtype values (success, error_max_turns, error_max_budget_usd, error_during_execution, error_max_structured_output_retries); collapsing them into a single generic branch loses the information needed to react correctly."},
+        {"id": "B", "texto": "maxTurns should be removed entirely, since maxBudgetUsd already guards against runaway cost.", "correcta": false, "justificacion": "maxTurns and maxBudgetUsd are independent safety nets covering different concerns (turn count vs. estimated spend); removing one doesn't address the handler's real bug, which is not distinguishing subtypes."},
+        {"id": "C", "texto": "Subagent spend should be excluded from the parent's budget so only the top-level agent's turns count against maxBudgetUsd.", "correcta": false, "justificacion": "Subagent spend counts against the same total budget as the parent by design; excluding it would contradict the documented behavior, not fix the handler."},
+        {"id": "D", "texto": "Increase maxTurns so that subagent tool calls fit comfortably under the turn cap.", "correcta": false, "justificacion": "The scenario's limit that was exceeded is the cost ceiling (maxBudgetUsd), not the turn cap; raising maxTurns doesn't address a budget-related termination or the handler's failure to distinguish subtypes."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-1",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/agent-loop"]
+    },
+    {
+      "id": "b4-q03",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "In a single AssistantMessage, Claude requests four tool calls in the same turn: two Read calls, one Grep call, and one Edit call targeting the same file. An engineer assumes the SDK executes all four concurrently to save latency, and separately assumes that because two different tool categories (read vs. write) were exercised, this counts as two separate turns.",
+      "enunciado": "Select TWO corrections to these assumptions, per the documented lifecycle.",
+      "opciones": [
+        {"id": "A", "texto": "The SDK executes the two Read calls and the Grep call concurrently since they are read-only, but runs the Edit call sequentially relative to the others, since it modifies state and could conflict with reads of the same file — not all four run concurrently.", "correcta": true, "justificacion": "The SDK executes read-only tool calls (Read, Glob, Grep, read-only MCP) concurrently within a turn but serializes state-modifying calls (Edit, Write, Bash) to avoid write conflicts."},
+        {"id": "B", "texto": "All four tool calls, their execution, and the resulting tool results returned to Claude constitute a single turn, regardless of how many distinct tool types were involved.", "correcta": true, "justificacion": "A turn is one full round — response with tool calls, execution, and results returned — without the application ceding control; the number of distinct tool categories exercised inside it doesn't split it into multiple turns."},
+        {"id": "C", "texto": "Because Edit modifies state, the SDK executes all four tool calls sequentially, one at a time, to guarantee no conflicts of any kind.", "correcta": false, "justificacion": "This over-serializes: the SDK still runs the read-only calls concurrently with each other; only the state-modifying call is handled sequentially relative to the batch, not the entire set one-at-a-time."},
+        {"id": "D", "texto": "Because three of the four calls are read-only, the SDK treats the entire batch as read-only and executes all four concurrently, including the Edit call.", "correcta": false, "justificacion": "This is the documented anti-pattern of assuming full-batch concurrency; state-modifying calls are always serialized regardless of how many read-only calls accompany them."},
+        {"id": "E", "texto": "This is two turns, since the read-only tool calls and the state-modifying tool call are dispatched in separate lifecycle phases.", "correcta": false, "justificacion": "Concurrent vs. sequential execution within a turn is an internal scheduling detail; it doesn't split the turn, which is defined by one full response-execute-return cycle."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-1",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/agent-loop"]
+    },
+    {
+      "id": "b4-q04",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "A coordinator agent spawns three subagents to investigate a corporate merger. To \"save a round trip,\" one subagent is configured to forward its intermediate findings directly to a second subagent, without passing back through the coordinator first.",
+      "enunciado": "What is wrong with this design per the documented coordinator-subagent pattern?",
+      "opciones": [
+        {"id": "A", "texto": "The coordinator-subagent pattern is hub-and-spoke: all communication must flow through the coordinator; subagents communicating directly breaks the centralized routing, error handling, and observability the pattern relies on.", "correcta": true, "justificacion": "Subagents never communicate directly with each other by design; routing everything through the coordinator is what keeps the system observable and gives it consistent error handling."},
+        {"id": "B", "texto": "There is no issue; direct subagent-to-subagent communication is more efficient and doesn't affect the pattern's guarantees.", "correcta": false, "justificacion": "This contradicts the hub-and-spoke definition of the pattern, which requires all routing to pass through the coordinator regardless of perceived efficiency gains."},
+        {"id": "C", "texto": "The real problem is having only two subagents involved in the exchange instead of the documented range of 3–5 concurrent subagents.", "correcta": false, "justificacion": "The 3–5 concurrent subagent range describes lead-agent spawning for investigation breadth; it has nothing to do with whether two already-spawned subagents may talk directly to each other."},
+        {"id": "D", "texto": "The fix is to insert a routing classifier between the two subagents to manage their direct exchange more reliably.", "correcta": false, "justificacion": "Adding a classifier layer to manage an exchange that shouldn't exist in the first place is over-engineering; the documented fix is simply routing the exchange back through the coordinator."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-2",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents"]
+    },
+    {
+      "id": "b4-q05",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "Your research coordinator always invokes all five available subagents (search, analysis, synthesis, fact-check, formatting) for every incoming query, including simple ones like \"what is the capital of France,\" which needs only a single lookup.",
+      "enunciado": "What change best aligns with the documented coordinator responsibilities?",
+      "opciones": [
+        {"id": "A", "texto": "Have the coordinator perform dynamic subagent selection, invoking only the subagents warranted by the query's actual complexity, reserving the full pipeline for genuinely complex queries.", "correcta": true, "justificacion": "Dynamic subagent selection based on complexity is one of the coordinator's four core responsibilities; always routing through the full pipeline regardless of complexity is the documented anti-pattern of unnecessary cost and latency."},
+        {"id": "B", "texto": "Increase the concurrency limit so all five subagents complete faster in parallel.", "correcta": false, "justificacion": "Running the unnecessary subagents faster doesn't address the actual problem: they shouldn't be invoked at all for a trivial single-lookup query."},
+        {"id": "C", "texto": "Consolidate the five subagents into a single subagent with an internal action parameter it selects itself.", "correcta": false, "justificacion": "This solves a tool-selection ambiguity problem; it doesn't address the coordinator's failure to scale subagent invocation to query complexity."},
+        {"id": "D", "texto": "Cap the number of subagents that can be invoked per query at two, regardless of complexity.", "correcta": false, "justificacion": "An arbitrary fixed cap is the same category of anti-pattern as an iteration cap used as a primary control mechanism; it doesn't adapt to actual query complexity in either direction."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-2",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents", "https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b4-q06",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "A coordinator delegates \"research this\" to three subagents with no further detail, hoping they'll divide the work themselves. Logs show significant overlap: two of the three subagents independently gather nearly identical sources.",
+      "enunciado": "What is the most effective fix for this duplication?",
+      "opciones": [
+        {"id": "A", "texto": "Give each subagent an explicit, partitioned research objective, output format, and tool guidance up front, dividing the query's scope by subtopic or source type before delegation rather than leaving it to each subagent to interpret independently.", "correcta": true, "justificacion": "Vague delegation instructions are the documented root cause of duplicated work between subagents; explicit objectives, format, and boundaries are what let the coordinator partition scope correctly."},
+        {"id": "B", "texto": "Increase the number of subagents from three to five so more ground is covered overall.", "correcta": false, "justificacion": "Adding more subagents without clearer delegation would likely increase overlap rather than fix it, since the root cause is vague instructions, not insufficient subagent count."},
+        {"id": "C", "texto": "Add a post-hoc deduplication step that removes repeated sources after synthesis.", "correcta": false, "justificacion": "This treats a symptom after the fact instead of the root cause; the documented fix is clearer upfront delegation that prevents the duplication of effort in the first place."},
+        {"id": "D", "texto": "Restrict each subagent's tool access so that only one of them can use WebSearch.", "correcta": false, "justificacion": "Removing capability from subagents doesn't clarify scope; it risks under-covering the topic instead of resolving the ambiguity that caused the overlap."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-2",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents"]
+    },
+    {
+      "id": "b4-q07",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.3",
+      "escenario": "A team upgraded their Agent SDK from an older version to 2.1.63+. After the upgrade, their coordinator's calls to spawn subagents silently stop working; the coordinator's allowedTools list still contains only \"Task\", unchanged since before the upgrade.",
+      "enunciado": "What is the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "In SDK 2.1.63+ the subagent-spawning tool was renamed from \"Task\" to \"Agent\"; allowedTools must include \"Agent\" for the coordinator to invoke subagents (SDKs prior to 2.1.63 use \"Task\" instead — both names refer to the same tool depending on version).", "correcta": true, "justificacion": "The Agent tool was renamed from \"Task\" in SDK version 2.1.63; allowedTools must reference the name matching the installed SDK version for subagent spawning to work."},
+        {"id": "B", "texto": "\"Task\" was deprecated with no replacement; subagents must now be spawned exclusively via AgentDefinition.initialPrompt.", "correcta": false, "justificacion": "initialPrompt auto-sends a first user turn only when an agent runs as the primary agent of a thread; it is ignored when that agent is invoked as a subagent, and is not a subagent-spawning mechanism."},
+        {"id": "C", "texto": "allowedTools no longer governs the Agent tool since 2.1.63; it must instead be listed under mcpServers.", "correcta": false, "justificacion": "The Agent tool is still gated by allowedTools like any other tool; mcpServers configures MCP server connections, an unrelated mechanism."},
+        {"id": "D", "texto": "The coordinator must set permissionMode instead of allowedTools to enable subagent spawning.", "correcta": false, "justificacion": "permissionMode configures the permission mode for tool execution within an agent; it doesn't control whether the Agent/Task tool itself is available to be called."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-3",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents"]
+    },
+    {
+      "id": "b4-q08",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.3",
+      "escenario": "A synthesis subagent is invoked with a prompt that says only \"synthesize the research findings into a report.\" It has no access to the coordinator's earlier conversation turns, so it produces a generic report with no actual findings. The engineer assumed the subagent would automatically see the coordinator's conversation history.",
+      "enunciado": "What is the correct fix?",
+      "opciones": [
+        {"id": "A", "texto": "Explicitly inject the full findings from the earlier subagents into the synthesis subagent's prompt text (e.g., the search results and document analysis output), since subagents have isolated context and never automatically inherit the coordinator's conversation history or prior tool results.", "correcta": true, "justificacion": "Subagents operate with isolated context by design; assuming automatic inheritance of the coordinator's history is a documented anti-pattern, and the correct pattern is explicit injection of prior findings into the prompt."},
+        {"id": "B", "texto": "Set AgentDefinition.memory to 'project' so the subagent reads the coordinator's conversation history from shared project memory.", "correcta": false, "justificacion": "memory configures the subagent's own memory scope; it is not the documented mechanism for passing a coordinator's conversation history into a subagent invocation."},
+        {"id": "C", "texto": "Set forkSession: true on the synthesis subagent invocation so it forks the coordinator's session and inherits the history.", "correcta": false, "justificacion": "forkSession creates an independent branch of a session's conversation history for exploring divergent approaches; it is not the documented mechanism for passing context into an Agent tool invocation."},
+        {"id": "D", "texto": "List \"conversationHistory\" in the subagent's skills array so it precedes the invocation with the coordinator's context.", "correcta": false, "justificacion": "skills preloads named skill content into a subagent's context; there is no documented \"conversationHistory\" skill or equivalent feature for inheriting the parent's conversation."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-3",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents"]
+    },
+    {
+      "id": "b4-q09",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.3",
+      "escenario": "A team defines a review-agent AgentDefinition without a tools field, expecting it to be restricted to read-only access. Separately, to spawn three subagents for a research task, the coordinator's code issues three separate query() calls across three consecutive turns, one per subagent, waiting for each ResultMessage before issuing the next Agent tool call.",
+      "enunciado": "Select TWO corrections needed here, per the documented Agent SDK configuration rules.",
+      "opciones": [
+        {"id": "A", "texto": "Omitting tools in AgentDefinition doesn't restrict the subagent to read-only access — it inherits all tools available to subagents; to enforce read-only, tools must explicitly list only read-only tools, or disallowedTools must remove the state-modifying ones.", "correcta": true, "justificacion": "tools is optional and, if omitted, the subagent inherits all tools available to subagents rather than defaulting to a restricted set; read-only enforcement requires an explicit tools list or disallowedTools."},
+        {"id": "B", "texto": "To spawn subagents in parallel, the coordinator must emit multiple Agent tool calls within a single response (same turn), not issue them across separate sequential turns, which is effectively sequential execution.", "correcta": true, "justificacion": "Parallel spawning requires multiple Agent tool calls in one response; issuing them across separate turns, each waiting for the prior ResultMessage, is sequential in practice regardless of intent."},
+        {"id": "C", "texto": "disallowedTools cannot be used to remove MCP server tools; only tools can whitelist them.", "correcta": false, "justificacion": "disallowedTools explicitly accepts MCP patterns such as mcp__server, mcp__server__*, and mcp__* to remove tools from a specific server or all MCP servers."},
+        {"id": "D", "texto": "forkSession: true must be set on each subagent invocation to enable concurrent spawning.", "correcta": false, "justificacion": "forkSession branches a session's conversation history for divergent exploration; it is unrelated to whether Agent tool calls are dispatched concurrently within a turn."},
+        {"id": "E", "texto": "Setting background: true on each AgentDefinition is required for subagents to run in parallel within the same turn.", "correcta": false, "justificacion": "background runs an agent as a non-blocking background task when invoked; the documented mechanism for parallel subagent spawning is multiple Agent tool calls in a single response, not the background flag."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-3",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/subagents"]
+    },
+    {
+      "id": "b4-q10",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "Production logs for your refund workflow show that in 12% of cases the agent calls process_refund without having first called get_customer to verify identity, occasionally causing refunds against unverified accounts. The current system prompt already states \"always verify the customer before issuing a refund.\"",
+      "enunciado": "What is the most effective fix for this reliability issue?",
+      "opciones": [
+        {"id": "A", "texto": "Add a programmatic prerequisite gate that blocks process_refund until get_customer has returned a verified customer ID, since prompt-based instructions alone have a documented non-zero failure rate for exactly this kind of critical ordering requirement.", "correcta": true, "justificacion": "This is a financially consequential step where the documented 12% skip rate shows prompt-only guidance is insufficient; programmatic enforcement provides the deterministic guarantee prompting cannot."},
+        {"id": "B", "texto": "Rewrite the system prompt sentence more emphatically (\"ALWAYS verify before refunding, no exceptions\").", "correcta": false, "justificacion": "This still relies on probabilistic prompt compliance for a non-negotiable ordering requirement — the exact anti-pattern documented to fail in a meaningful fraction of cases regardless of phrasing."},
+        {"id": "C", "texto": "Add several few-shot examples demonstrating the correct call order.", "correcta": false, "justificacion": "Few-shot examples still leave compliance probabilistic; they don't provide the deterministic guarantee needed when the protected step has financial consequences."},
+        {"id": "D", "texto": "Force tool_choice to \"any\" so the agent must call some tool every turn.", "correcta": false, "justificacion": "\"any\" only guarantees that some tool is called, not which one or in what order; it does nothing to prevent process_refund from being called before get_customer."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-decision",
+      "fuentes": ["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]
+    },
+    {
+      "id": "b4-q11",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "A customer message mixes three concerns: a billing dispute, a shipping complaint, and a product defect report. The agent currently treats it as a single monolithic request and produces one long combined resolution, missing the shipping complaint entirely in its final response.",
+      "enunciado": "What is the correct approach per the documented multi-step workflow pattern?",
+      "opciones": [
+        {"id": "A", "texto": "Decompose the request into separate items (billing, shipping, defect), investigate each with shared context, and synthesize a single unified resolution that explicitly addresses all three.", "correcta": true, "justificacion": "The documented pattern for multi-concern requests is exactly this: decompose into items, investigate in parallel sharing context, then synthesize one unified resolution, which prevents concerns like the shipping complaint from being dropped."},
+        {"id": "B", "texto": "Escalate the entire message to a human agent, since it mixes multiple concerns.", "correcta": false, "justificacion": "Mixing concerns doesn't by itself require human escalation; the documented pattern is decomposition and synthesis, reserving escalation for cases with financial or security consequences or unresolved gaps."},
+        {"id": "C", "texto": "Process only the first concern mentioned and ask the customer to submit separate messages for the others.", "correcta": false, "justificacion": "This isn't the documented pattern and creates poor customer experience by ignoring concerns that could be resolved in one pass with shared context."},
+        {"id": "D", "texto": "Route the whole message to a single specialized billing subagent, since billing was mentioned first.", "correcta": false, "justificacion": "This ignores the shipping and defect concerns entirely instead of decomposing the request into separate items to be investigated and synthesized."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-4",
+      "fuentes": ["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]
+    },
+    {
+      "id": "b4-q12",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "An agent escalates a case to a human agent by pasting the raw conversation transcript with no summary, forcing the human to re-read the entire exchange to find the customer ID, root cause, and refund amount before acting.",
+      "enunciado": "What is the correct fix per the documented handoff pattern?",
+      "opciones": [
+        {"id": "A", "texto": "Compile a structured handoff summary (customer ID, root cause, amount, recommended action, plus relevant context) instead of forwarding raw prose, so the human agent has sufficient context without needing the full transcript.", "correcta": true, "justificacion": "The documented handoff protocol is a structured summary with exactly these fields, designed so the human agent doesn't need access to the full transcript to act."},
+        {"id": "B", "texto": "Increase max_turns so the agent has more turns available to summarize on its own before escalating.", "correcta": false, "justificacion": "max_turns bounds the loop's turn budget; it has no bearing on whether the escalation content is structured or raw prose."},
+        {"id": "C", "texto": "Add a hook that truncates the transcript to the last five messages before forwarding.", "correcta": false, "justificacion": "Truncated raw prose still isn't a structured summary and may omit the very fields (customer ID, root cause, amount) the human needs; it doesn't guarantee the required information is present."},
+        {"id": "D", "texto": "Have the agent apologize more explicitly in the transcript before forwarding.", "correcta": false, "justificacion": "This doesn't address the actual problem, which is the lack of structured, extractable information in the handoff content."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-4",
+      "fuentes": ["exam-guide-oficial-v1.0.txt (Task Statement 1.4)"]
+    },
+    {
+      "id": "b4-q13",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.5",
+      "escenario": "An engineer registers a PostToolUse hook intended to block any process_refund call over $500 by returning permissionDecision: \"deny\" in hookSpecificOutput. Separately, the matcher for this hook is set to the string \"mcp__memory\", intending to catch every tool exposed by the \"memory\" MCP server.",
+      "enunciado": "Select TWO corrections needed here, per the documented hook mechanics.",
+      "opciones": [
+        {"id": "A", "texto": "permissionDecision has no effect in PostToolUse — blocking a tool call before execution requires a PreToolUse hook; PostToolUse can only transform the already-executed result via additionalContext or updatedToolOutput.", "correcta": true, "justificacion": "PreToolUse is the event that can set permissionDecision to allow, deny, ask, or defer before execution; PostToolUse runs after execution and only exposes additionalContext or updatedToolOutput, not permissionDecision."},
+        {"id": "B", "texto": "The matcher \"mcp__memory\" contains only exact-match characters, so it matches only a tool literally named \"mcp__memory\", not the server's other tools; matching every tool of that MCP server requires a regex like \"mcp__memory__.*\".", "correcta": true, "justificacion": "A matcher string made only of letters, digits, _, -, spaces, \",\", and \"|\" is treated as an exact-match list; any other character (like the dot and asterisk in \"mcp__memory__.*\") makes it a regex, which is required to match all tools of a given MCP server."},
+        {"id": "C", "texto": "PostToolUse hooks consume the agent's context window, so this hook should be replaced with a PreToolUse hook purely to avoid that cost.", "correcta": false, "justificacion": "Hooks of any type run outside the agent's context window, in the application process; context window consumption is not a reason to prefer PreToolUse over PostToolUse here."},
+        {"id": "D", "texto": "Since the matcher field accepts only exact tool names, wildcarding for a whole MCP server isn't possible; the hook must be duplicated once per individual tool name of the memory server.", "correcta": false, "justificacion": "This is incorrect: a regex matcher such as \"mcp__memory__.*\" is exactly the documented way to match all tools of one MCP server without duplicating the hook per tool."},
+        {"id": "E", "texto": "The correct fix is to leave the matcher empty (\"\") so it applies only to memory-server tools by default.", "correcta": false, "justificacion": "An empty matcher (or \"*\") matches every occurrence of the event across all tools, not a specific MCP server; this would over-apply the hook rather than scope it correctly."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-5",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/hooks"]
+    },
+    {
+      "id": "b4-q14",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.5",
+      "escenario": "Multiple MCP tools return timestamps in inconsistent formats — some as Unix epoch integers, others as ISO 8601 strings — before Claude ever sees them. An engineer wants every timestamp normalized to ISO 8601 before the model processes the tool's output, without asking Claude to do the conversion itself.",
+      "enunciado": "What is the correct implementation for this normalization requirement?",
+      "opciones": [
+        {"id": "A", "texto": "Register a PostToolUse hook that inspects the raw tool output and returns hookSpecificOutput.updatedToolOutput with the normalized ISO 8601 value, replacing the output before Claude receives it.", "correcta": true, "justificacion": "PostToolUse runs after the tool returns and updatedToolOutput is exactly the documented field for replacing the tool's output before the model processes it, matching the normalization use case."},
+        {"id": "B", "texto": "Register a PreToolUse hook that rewrites tool_input before execution to request pre-formatted timestamps.", "correcta": false, "justificacion": "The timestamps to normalize appear in the tool's output, not its input; PreToolUse runs before execution and cannot see a result that doesn't exist yet."},
+        {"id": "C", "texto": "Add updatedInput to a PreToolUse hook's hookSpecificOutput to reformat the expected output ahead of time.", "correcta": false, "justificacion": "updatedInput modifies the tool's input before execution, not its output; it cannot be used to reformat a result that hasn't been produced yet."},
+        {"id": "D", "texto": "Instruct Claude via the system prompt to always convert timestamps to ISO 8601 before using them in reasoning.", "correcta": false, "justificacion": "This is a prompt-based, probabilistic approach to a deterministic normalization need that a PostToolUse hook can guarantee outside the model's reasoning entirely."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-5",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/hooks"]
+    },
+    {
+      "id": "b4-q15",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.6",
+      "escenario": "You need to run a standard code review across 40 files, checking each individually for bugs and security issues, followed by a cross-file integration pass — a review structure your team runs the same way every sprint.",
+      "enunciado": "Which decomposition strategy fits this task, per the documented selection criteria?",
+      "opciones": [
+        {"id": "A", "texto": "Prompt chaining — a fixed sequence of a per-file analysis pass followed by a separate integration pass — since this is a predictable, multi-aspect review, not open-ended investigation.", "correcta": true, "justificacion": "Prompt chaining is reserved for predictable, multi-aspect reviews; splitting into a local per-file pass and a separate cross-file integration pass is the documented fix for the attention dilution of a single monolithic pass."},
+        {"id": "B", "texto": "Dynamic adaptive decomposition, since the plan should adapt as file dependencies are discovered.", "correcta": false, "justificacion": "Dynamic decomposition is reserved for open-ended tasks; this recurring, predictable review structure is exactly the case where a fixed prompt-chaining sequence is the documented correct choice."},
+        {"id": "C", "texto": "A single monolithic pass across all 40 files at once to save tool calls.", "correcta": false, "justificacion": "A monolithic single pass over a whole codebase is the documented anti-pattern that produces attention dilution and inconsistent findings."},
+        {"id": "D", "texto": "Coordinator-subagent orchestration with one subagent spawned per file in parallel.", "correcta": false, "justificacion": "This addresses multi-agent orchestration, a different mechanism than the task decomposition strategy (sequencing analysis into per-file and integration passes) the scenario calls for."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-6",
+      "fuentes": ["exam-guide-oficial-v1.0.txt (Task Statement 1.6)"]
+    },
+    {
+      "id": "b4-q16",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.6",
+      "escenario": "You're asked to \"add exhaustive tests to this legacy codebase\" with no existing coverage data, no known priority order, and undocumented cross-module dependencies that only emerge as you look deeper into the code.",
+      "enunciado": "What is the correct decomposition strategy here?",
+      "opciones": [
+        {"id": "A", "texto": "Dynamic adaptive decomposition — first map the codebase structure and identify high-impact untested areas, generate a prioritized plan, and adapt that plan as previously unknown dependencies are discovered.", "correcta": true, "justificacion": "This open-ended task is exactly the documented case for dynamic decomposition: mapping structure, prioritizing high-impact areas, and adapting the plan as dependencies emerge, since they can't be anticipated upfront."},
+        {"id": "B", "texto": "Prompt chaining with a fixed per-module test-writing sequence decided entirely upfront.", "correcta": false, "justificacion": "Fixing the decomposition rigidly for an open-ended task fails because findings discovered during the work can reveal needs not anticipated at the start."},
+        {"id": "C", "texto": "A single pass instructing the agent to \"write tests for the whole codebase\" in one shot.", "correcta": false, "justificacion": "A monolithic single pass produces the documented attention dilution problem and inconsistent, incomplete coverage on a task of this scope."},
+        {"id": "D", "texto": "Fix the test-writing order strictly by alphabetical file name to keep the plan deterministic.", "correcta": false, "justificacion": "An arbitrary ordering ignores actual impact and discovered dependencies, which is precisely what dynamic decomposition is meant to prioritize instead."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-6",
+      "fuentes": ["exam-guide-oficial-v1.0.txt (Task Statement 1.6)"]
+    },
+    {
+      "id": "b4-q17",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.7",
+      "escenario": "You have three previous sessions from earlier this week in the same project directory. You want to return specifically to the session where you were comparing pagination strategies, not the most recent one, which was about an unrelated logging bug.",
+      "enunciado": "Which mechanism is correct for returning to that specific session?",
+      "opciones": [
+        {"id": "A", "texto": "resume with that session's specific session ID (or --resume <session-name> if it was given a name), since continue would only pick up the most recent session, and this isn't it.", "correcta": true, "justificacion": "resume is documented specifically for returning to a session ID that is not the most recent, exactly this situation; continue always finds the most recent session in the directory instead."},
+        {"id": "B", "texto": "continue, since it will find the correct session automatically among the three.", "correcta": false, "justificacion": "continue locates only the most recent session in the current directory, which in this scenario is the unrelated logging-bug session, not the pagination one."},
+        {"id": "C", "texto": "forkSession, since it will create a new branch of the pagination session while leaving the current one untouched.", "correcta": false, "justificacion": "forkSession is documented for branching an existing session to explore a divergent approach, not for retrieving and returning directly to a specific prior session by identity; resume is the documented mechanism for that."},
+        {"id": "D", "texto": "Start a brand-new session and paste in a summary of the pagination discussion so far.", "correcta": false, "justificacion": "This discards the actual persisted session state unnecessarily when resume can retrieve that exact session directly by ID."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-7",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/sessions"]
+    },
+    {
+      "id": "b4-q18",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.7",
+      "escenario": "An engineer forks a session with fork_session=True to explore an OAuth2 alternative to an already-implemented JWT approach. The forked agent edits several files in the project directory to prototype the OAuth2 flow. Meanwhile, someone else resumes the original, non-forked session in the same directory and is surprised to see the OAuth2 file edits already present, since they expected the fork to be fully isolated.",
+      "enunciado": "What is the correct explanation for this behavior?",
+      "opciones": [
+        {"id": "A", "texto": "Forking branches only the conversation history into an independent copy; it does not fork the filesystem — file edits made by the forked agent are real, on-disk changes visible to any other session working in the same directory, including the original.", "correcta": true, "justificacion": "Fork branches the conversation history, not the filesystem; achieving filesystem isolation as well would require separate file checkpointing, which is documented as a distinct, additional mechanism."},
+        {"id": "B", "texto": "This is a bug; fork_session=True should have prevented any filesystem changes from being visible outside the forked session.", "correcta": false, "justificacion": "This is documented, expected behavior, not a bug: fork only branches conversation history, and full isolation of file changes needs separate file checkpointing."},
+        {"id": "C", "texto": "The original session's session_id must have been reused for the fork instead of getting an independent ID, causing the file changes to bleed through.", "correcta": false, "justificacion": "Forking produces two independent session IDs; the file visibility issue is about the shared filesystem between sessions, not about session ID reuse."},
+        {"id": "D", "texto": "continue_conversation=True was set instead of fork_session=True, which shares state fully.", "correcta": false, "justificacion": "The scenario explicitly used fork_session=True; continue is an unrelated mechanism for finding the most recent session and isn't what caused the shared file visibility here."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-7",
+      "fuentes": ["https://code.claude.com/docs/en/agent-sdk/sessions"]
+    }
+  ]
+}

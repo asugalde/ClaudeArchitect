@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz CCAR-F · Bloque 2 — Claude Code: configuración y flujos</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<!--
+  PLANTILLA DE QUIZ CCAR-F (autocontenida, sin dependencias).
+  INSTRUCCIONES DE GENERACIÓN (fase2-bloque):
+  - Sustituir TODO el bloque comprendido entre las líneas
+      // __PREGUNTAS_JSON_START__   y   // __PREGUNTAS_JSON_END__
+    por:  const DATA = <contenido de preguntas_vX.Y.json>;
+  - No editar preguntas aquí: el JSON es la fuente única.
+  - El objeto DATA sigue plantillas/esquema-pregunta.schema.json (config + preguntas).
+-->
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — Volt (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+
+    /* Texto sobre fondo --accent: casi blanco en ambos temas (no --accent-contrast). */
+    --on-accent:#F7FBFF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6;
+    background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease); }
+  .wrap { max-width:960px; margin:0 auto; padding:40px 24px 90px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:var(--sp-5); margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm); }
+  h1 { font-size:var(--fs-h1); margin:0 0 var(--sp-1); font-weight:var(--fw-extra); letter-spacing:-.025em; color:var(--text); }
+  .display { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.05; }
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); letter-spacing:-.02em; color:var(--text); margin:0 0 var(--sp-3); }
+  .muted { color:var(--text-muted); font-size:var(--fs-sm); }
+  button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); border-radius:var(--r-md); padding:6px 12px; cursor:pointer;
+    transition:background var(--ease),border-color var(--ease),color var(--ease); }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); color:var(--on-accent); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  /* CTA principal de portada (elección de modo): un punto mayor que el resto de botones de acción. */
+  #m-estudio, #m-examen { font-size:var(--fs-sm); padding:8px 14px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--border); border-radius:var(--r-md);
+    padding:10px 12px; margin:8px 0; cursor:pointer; transition:border-color var(--ease),background var(--ease); }
+  .opt input { margin-top:4px; }
+  .opt.sel { border-color:var(--accent); background:var(--accent-weak); }
+  .opt.ok { border-color:var(--success); background:var(--success-weak); }
+  .opt.ko { border-color:var(--danger); background:var(--danger-weak); }
+  .creditos { margin:24px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .rationale { font-size:var(--fs-sm); color:var(--text-muted); margin-top:6px; display:none; }
+  .revealed .rationale { display:block; }
+  .repasa { font-size:var(--fs-sm); color:var(--text-muted); margin:6px 0 10px; }
+  .repasa a { color:var(--accent); font-weight:var(--fw-medium); }
+  .scenario { background:var(--surface-2); border-left:3px solid var(--accent); padding:10px 14px;
+    border-radius:0 var(--r-md) var(--r-md) 0; font-size:var(--fs-sm); margin-bottom:12px; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .timer { font-variant-numeric:tabular-nums; font-weight:var(--fw-semibold); font-family:var(--font-mono); }
+  .timer.low { color:var(--danger); }
+  .navgrid { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .navgrid button { width:38px; height:32px; padding:0; font-size:var(--fs-caption); }
+  .navgrid .answered { background:var(--success-weak); border-color:var(--success); }
+  .navgrid .flagged { outline:2px solid var(--warning); }
+  .navgrid .current { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .pill { display:inline-block; font-size:var(--fs-caption); font-weight:var(--fw-medium); border:1px solid var(--border); background:var(--surface-2);
+    border-radius:var(--r-pill); padding:1px 10px; margin-right:6px; color:var(--text-muted); }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  th,td { border-bottom:1px solid var(--border); padding:10px 12px; text-align:left; }
+  th { font-weight:var(--fw-semibold); font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-muted); border-bottom:2px solid var(--border-strong); }
+  tbody tr:hover { background:var(--surface-2); }
+  .big { font-size:2rem; font-weight:var(--fw-bold); }
+  .ok-t { color:var(--success); } .ko-t { color:var(--danger); }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  /* =====================================================================
+     CABECERA — topbar sticky + hero limpio (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  header.topbar { position:sticky; top:0; z-index:30; display:flex; justify-content:space-between;
+    align-items:center; gap:var(--sp-4); padding:14px 24px; margin:0;
+    background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border); }
+  header.topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold);
+    letter-spacing:-.01em; color:var(--text); white-space:nowrap; }
+  header.topbar .brand .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  header.topbar .controls { display:flex; gap:8px; align-items:center; }
+  .toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1; transition:border-color var(--ease),color var(--ease); }
+  .toggle:hover { border-color:var(--accent); color:var(--accent); }
+  @media print { header.topbar .controls { display:none !important; } }
+
+  .hero { padding:var(--sp-7) 0 var(--sp-2); }
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--sp-2); }
+  @media (max-width:700px) { .hero h1 { font-size:var(--fs-h2); } header.topbar { padding:12px 16px; } .wrap { padding-left:16px; padding-right:16px; } }
+  @media print { header.topbar { position:static; background:none; backdrop-filter:none; border-bottom:2px solid var(--accent); }
+    .hero { padding:var(--sp-4) 0 var(--sp-2); } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow" id="q-eyebrow">CCAR-F · QUIZ</div>
+    <h1 class="display" id="q-title">Quiz</h1>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// __PREGUNTAS_JSON_START__
+const DATA = {"config":{"titulo":"Bloque 2 — Claude Code: configuración y flujos","version":"1.0","bloque":2,"modo_defecto":"estudio","solo_examen":false,"generado_desde_corpus":"bloque-2-claude-code.md v1.0","fecha":"2026-08-07"},"preguntas":[{"id":"b2-q01","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.1","escenario":"A new engineer joins the team and reports that Claude Code doesn't follow the 'always run `make lint` before committing' rule that the rest of the team relies on daily, even though a senior engineer insists they added that instruction to CLAUDE.md months ago.","enunciado":"The senior engineer confirms the instruction lives in `~/.claude/CLAUDE.md` on their own machine. What is the most likely explanation, and the correct fix?","opciones":[{"id":"A","texto":"The instruction was added at user level, which is personal and never shared via version control; moving it into the project's `./CLAUDE.md` makes it load for every team member.","correcta":true,"justificacion":"User-level CLAUDE.md is personal and not shared via version control, while project-level CLAUDE.md is shared with the team; an instruction meant for everyone must live at project level."},{"id":"B","texto":"Claude Code caches CLAUDE.md content across machines via the API, and the cache needs to be cleared for the new engineer.","correcta":false,"justificacion":"There is no cross-machine caching mechanism for CLAUDE.md; it is read from local files at session start, so no cache clearing step exists."},{"id":"C","texto":"The rule exceeded the 200-line guideline and was silently truncated only for the new engineer's sessions.","correcta":false,"justificacion":"Exceeding the line guideline dilutes adherence for everyone equally by adding noise, not something that selectively drops content for one specific team member."},{"id":"D","texto":"The instruction should be moved to `.claude/rules/` with a `paths:` filter matching `**/*` so it applies everywhere.","correcta":false,"justificacion":"This is unnecessary complexity for a universal, always-applicable convention; project-level CLAUDE.md already loads at session start for everyone without needing a path-scoped rule."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-2-1","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q02","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.1","escenario":"The team's project-level CLAUDE.md has grown to 340 lines covering build commands, testing conventions, three different deployment procedures, and API design guidelines. Engineers report that Claude increasingly ignores the deployment section entirely, even though it hasn't changed in months.","enunciado":"What is the most effective fix, per the documented behavior of CLAUDE.md sizing?","opciones":[{"id":"A","texto":"Split the deployment procedures and other topic-specific sections into `@import`-ed files or `.claude/rules/`, reducing the main CLAUDE.md below the ~200-line guideline.","correcta":true,"justificacion":"Files above the ~200-line guideline dilute adherence because important instructions get lost in the noise; the documented fix is modularizing with @import or moving content to .claude/rules/."},{"id":"B","texto":"Rewrite the deployment section in more forceful language (\"YOU MUST always follow these steps exactly\").","correcta":false,"justificacion":"The documented cause here is file length diluting adherence, not phrasing strength; a longer, more emphatic section would make the size problem worse, not better."},{"id":"C","texto":"Move the entire CLAUDE.md to `~/.claude/CLAUDE.md` so it loads earlier in the hierarchy.","correcta":false,"justificacion":"User-level CLAUDE.md is personal and isn't shared via version control, so this would stop the team from receiving the content at all; it also doesn't address the length-dilution problem."},{"id":"D","texto":"Enable `disable-model-invocation: true` on the CLAUDE.md file.","correcta":false,"justificacion":"That frontmatter field is documented for skills, not CLAUDE.md; CLAUDE.md has no such field and always loads at session start."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-1","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q03","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.1","escenario":"An engineer wants to reuse the team's testing standards file across CLAUDE.md without duplicating its content, so they write the reference as `` `@docs/testing-standards.md` `` wrapped in backticks inside CLAUDE.md. In the next session, Claude's behavior shows no sign of having read that file.","enunciado":"What explains this behavior, and what is the correct fix?","opciones":[{"id":"A","texto":"Text wrapped in backticks is treated as literal text, not as an `@import`; removing the backticks so it reads `@docs/testing-standards.md` triggers the actual import.","correcta":true,"justificacion":"A reference between backticks is treated as literal text and is not imported; only an unwrapped `@import` reference actually pulls in the external file's content."},{"id":"B","texto":"The import failed because `@import` recursion exceeded the maximum depth of 4 hops.","correcta":false,"justificacion":"There is no nested chain of imports in this scenario, just a single direct reference, so the recursion depth limit is not the relevant constraint here."},{"id":"C","texto":"`@import` only works inside files under `.claude/rules/`, never directly inside `CLAUDE.md`.","correcta":false,"justificacion":"This reverses the documented scope: `@import` is a CLAUDE.md mechanism for referencing external files, precisely the feature being used here."},{"id":"D","texto":"The referenced file must be listed in `claudeMdExcludes` to be recognized as an import target.","correcta":false,"justificacion":"`claudeMdExcludes` does the opposite: it excludes CLAUDE.md files from loading in monorepos; it has no role in enabling an `@import` reference."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-1","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q04","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.2","escenario":"A project has both a custom slash command at `.claude/commands/deploy.md` and, added later by another engineer, a skill at `.claude/skills/deploy/SKILL.md`. Both are meant to handle the same `/deploy` workflow but now have diverging content.","enunciado":"When a user runs `/deploy`, which one is invoked per documented precedence rules?","opciones":[{"id":"A","texto":"The skill at `.claude/skills/deploy/SKILL.md` takes precedence over the command with the same name.","correcta":true,"justificacion":"When a skill and a command share the same name, the skill has documented precedence over the command."},{"id":"B","texto":"The command takes precedence because commands were introduced before skills.","correcta":false,"justificacion":"No such precedence rule based on introduction order exists; the documented behavior is that the skill wins on a naming collision."},{"id":"C","texto":"Both run, in the order they were created.","correcta":false,"justificacion":"There is no documented stacking behavior where both a command and a same-named skill execute together."},{"id":"D","texto":"Neither runs, and Claude Code raises a naming-conflict error.","correcta":false,"justificacion":"No error is raised for this collision; the skill silently takes precedence over the identically named command."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-2-2","fuentes":["https://code.claude.com/docs/en/skills"]},{"id":"b2-q05","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.2","escenario":"A compliance team builds a `security-audit` skill meant to run only when a developer explicitly types `/security-audit`, never automatically, and that must only ever read code (never edit files or run shell commands) while it executes.","enunciado":"Select TWO frontmatter settings that together enforce both requirements.","opciones":[{"id":"A","texto":"`disable-model-invocation: true`, so Claude never auto-invokes the skill and it isn't preloaded into subagents.","correcta":true,"justificacion":"This flag prevents Claude from loading the skill automatically, reserving it for manual, disable-model-invocation-style trigger workflows, which matches the 'only via explicit /security-audit' requirement."},{"id":"B","texto":"`allowed-tools: \"Read,Grep\"`, so only read-only tools are pre-approved during the invocation, excluding Write, Edit, and Bash.","correcta":true,"justificacion":"allowed-tools preapproves a specific, restricted tool set for the invocation; limiting it to Read and Grep satisfies the read-only-execution requirement."},{"id":"C","texto":"Omit the `description` field entirely, since a skill without a description is never auto-invocable.","correcta":false,"justificacion":"Omitting description does not disable auto-invocation; Claude falls back to the first paragraph of the skill's markdown body as a lower-quality description, so it remains a candidate for auto-invocation."},{"id":"D","texto":"`context: fork`, so the skill's execution is isolated from the main conversation.","correcta":false,"justificacion":"context: fork isolates verbose or exploratory output from contaminating the main conversation; it does not restrict tool access or control automatic invocation, the two stated requirements here."},{"id":"E","texto":"Rename the skill's `name` field to something Claude is unlikely to guess.","correcta":false,"justificacion":"The name field only changes the label displayed for the skill; it has no effect on whether the skill is auto-invoked or on which tools it can access."}],"seleccionar":2,"dificultad":"media","refSeccion":"#ts-2-2","fuentes":["https://code.claude.com/docs/en/skills"]},{"id":"b2-q06","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.2","escenario":"An engineer maintains a personal variant of a project skill in `~/.claude/skills/deploy-personal/SKILL.md` and changes its frontmatter `name: quick-deploy`, expecting the invocable command to become `/quick-deploy` instead of `/deploy-personal`.","enunciado":"After the change, typing `/quick-deploy` does nothing, while `/deploy-personal` still works. What explains this?","opciones":[{"id":"A","texto":"The `name` field only changes the label displayed for the skill; the invocable command is determined by the skill's directory (or file) name, so renaming the directory to `quick-deploy` is required.","correcta":true,"justificacion":"This is the documented anti-pattern: name only changes what's shown, not the invoked command, which is tied to the directory or file name and requires actually renaming it."},{"id":"B","texto":"`disable-model-invocation` was implicitly set to `true` by adding a custom `name`, blocking manual invocation.","correcta":false,"justificacion":"There is no documented interaction between setting name and disable-model-invocation; disable-model-invocation only affects automatic invocation by the model, not manual /command usage."},{"id":"C","texto":"Personal skills under `~/.claude/skills/` cannot define a custom `name` field at all.","correcta":false,"justificacion":"No such restriction exists; name is an ordinary frontmatter field usable regardless of whether the skill is at user or project scope."},{"id":"D","texto":"The skill must also define an `argument-hint` before a renamed command becomes invocable.","correcta":false,"justificacion":"argument-hint only controls the hint shown during autocompletion; it has no bearing on which command name actually triggers the skill."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-2","fuentes":["https://code.claude.com/docs/en/skills","https://code.claude.com/docs/en/claude-directory"]},{"id":"b2-q07","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.3","escenario":"A team's test files (`*.test.ts`) are spread across dozens of directories throughout the codebase with no single common parent folder. They want a consistent testing convention (naming pattern, mocking rules) to apply to every one of them without maintaining a `CLAUDE.md` in every directory that happens to contain a test file.","enunciado":"What is the correct mechanism for this requirement?","opciones":[{"id":"A","texto":"A path-scoped rule in `.claude/rules/` with `paths: [\"**/*.test.ts\"]`, loaded on-demand whenever Claude reads a matching file regardless of its location.","correcta":true,"justificacion":"This is exactly the documented advantage of path-scoped rules over per-directory CLAUDE.md: applying a convention by file type across the whole tree without replicating CLAUDE.md in every folder."},{"id":"B","texto":"A subdirectory `CLAUDE.md` placed at the repository root, since subdirectory files load recursively for every folder below it.","correcta":false,"justificacion":"Subdirectory CLAUDE.md only loads on-demand for the specific subdirectory when Claude reads files there; it does not act as a type-based rule applied broadly across unrelated directories."},{"id":"C","texto":"`claudeMdExcludes` configured to include all test directories.","correcta":false,"justificacion":"claudeMdExcludes is used in monorepos to exclude other teams' CLAUDE.md files from loading; it does not apply or scope any conventions."},{"id":"D","texto":"A single `.claude/rules/testing.md` with no `paths:` frontmatter, so it always loads at session start.","correcta":false,"justificacion":"Loading unconditionally at session start wastes context on files where the rule is irrelevant; on-demand, path-matched loading requires the `paths:` field, which this option omits."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-3","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q08","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.3","escenario":"A rule file scopes to `paths: [\"photos [2024/**\"]`, intending to match everything under a folder literally named `photos [2024`. No error is raised when the session starts, but the rule's conventions are never applied even when Claude reads files inside that folder.","enunciado":"What is the correct explanation and fix?","opciones":[{"id":"A","texto":"The unescaped `[` is interpreted as the start of a bracket expression rather than a literal character, producing an invalid pattern that silently matches nothing; escaping it as `\\[` fixes the match.","correcta":true,"justificacion":"The `[` character opens a bracket expression in glob syntax; an invalid bracket like this one doesn't error but matches nothing, and the documented fix is escaping it as a literal `\\[`."},{"id":"B","texto":"The pattern exceeds the shared budget of 1,000 expanded patterns and 4 MiB, so it falls back to matching nothing.","correcta":false,"justificacion":"That budget applies specifically to patterns using brace expansion (`{...}`); this pattern contains no braces at all, so the budget is not the relevant constraint."},{"id":"C","texto":"Glob patterns cannot contain spaces, so `photos [2024` is rejected outright.","correcta":false,"justificacion":"No documented restriction on spaces in glob patterns exists; the actual issue is the unescaped bracket character, not the space."},{"id":"D","texto":"`.claude/rules/` does not support recursive discovery into folders with special characters in their names.","correcta":false,"justificacion":"Recursive discovery isn't restricted by special characters in folder names; the failure is caused by the invalid bracket expression within the pattern itself."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-3","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q09","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.3","escenario":"A platform team maintains rules at both `~/.claude/rules/` (shared across every project on the machine) and `.claude/rules/` inside a specific project, with some overlapping guidance between the two, plus several `paths:` entries using brace expansion like `src/**/*.{ts,tsx,js,jsx}` across many rule files.","enunciado":"Select TWO statements that correctly describe documented behavior in this setup.","opciones":[{"id":"A","texto":"User-level rules load before project-level rules, so on a conflict the project-level rule takes precedence.","correcta":true,"justificacion":"User-level rules under ~/.claude/rules/ load before project rules, giving project rules higher precedence when they conflict."},{"id":"B","texto":"Patterns using brace expansion count against a shared budget of 1,000 expanded patterns and 4 MiB per rule, while patterns without braces don't count against that budget.","correcta":true,"justificacion":"The 1,000-pattern/4 MiB budget applies specifically to brace-expanded patterns; patterns without braces are excluded from that shared budget."},{"id":"C","texto":"Project-level rules load before user-level rules, so the user-level rule always wins on conflict.","correcta":false,"justificacion":"This reverses the documented load order: user-level rules load first, and project-level rules take precedence, not the other way around."},{"id":"D","texto":"Once a rule matches and loads, its guidance is enforced like a `PreToolUse` hook, blocking any conflicting action.","correcta":false,"justificacion":"Rules are non-binding contextual guidance, not enforcement; only a PreToolUse hook provides a guaranteed hard block on an action."},{"id":"E","texto":"Every glob pattern, whether or not it uses brace expansion, counts against the 1,000-pattern/4 MiB budget.","correcta":false,"justificacion":"Only patterns that use brace expansion count against that budget; patterns without braces are explicitly excluded from it."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-2-3","fuentes":["https://code.claude.com/docs/en/memory"]},{"id":"b2-q10","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.4","escenario":"A team is migrating from one HTTP client library to another across roughly 60 files in the codebase, and two viable integration approaches exist with different infrastructure implications (one requires a new connection-pooling service, the other doesn't).","enunciado":"What is the appropriate way to start this task?","opciones":[{"id":"A","texto":"Start in plan mode to explore the codebase and evaluate both approaches before committing to changes, given the scale and the divergent infrastructure implications.","correcta":true,"justificacion":"This matches the documented signals for plan mode: a large-scale, multi-file change (well past the 45+ file threshold) with multiple valid approaches carrying different infrastructure requirements."},{"id":"B","texto":"Skip planning and start editing files directly, correcting course if the wrong approach becomes apparent partway through.","correcta":false,"justificacion":"This is the documented anti-pattern for architecturally significant, multi-file changes with several viable approaches: skipping exploration risks costly rework if the wrong approach was chosen first."},{"id":"C","texto":"Use `tool_choice: \"any\"` to force Claude to call a migration tool on every file.","correcta":false,"justificacion":"tool_choice is a Messages API tool-selection parameter unrelated to Claude Code's plan mode vs. direct execution decision for a codebase migration."},{"id":"D","texto":"Write a detailed `CLAUDE.md` describing both approaches and let Claude pick one automatically without further review.","correcta":false,"justificacion":"CLAUDE.md is non-binding contextual guidance; it doesn't provide the explicit exploration-then-approval step that plan mode offers for a decision of this scale and infrastructure impact."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-4","fuentes":["https://code.claude.com/docs/en/permission-modes","https://code.claude.com/docs/en/best-practices"]},{"id":"b2-q11","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.4","escenario":"A developer needs to add a single null-check condition to one function, with the exact fix already clear from the stack trace. Before making the change, they activate plan mode with `Shift+Tab` and spend several minutes describing the investigation approach before letting Claude touch any file.","enunciado":"How should this use of plan mode be evaluated?","opciones":[{"id":"A","texto":"It's unnecessary overhead — the change is simple and well-scoped enough to describe in one sentence, so direct execution would have been the appropriate choice.","correcta":true,"justificacion":"The documented guidance is to skip planning when the diff can be described in one sentence; systematically planning trivial single-file edits introduces overhead without adding value."},{"id":"B","texto":"It's correct, since any use of plan mode before an edit reduces the risk of incorrect changes, regardless of task size.","correcta":false,"justificacion":"Planning systematically even for trivial single-file edits is explicitly documented as an anti-pattern that slows down the workflow unnecessarily."},{"id":"C","texto":"It's incorrect because plan mode cannot be used for single-file changes at all.","correcta":false,"justificacion":"Plan mode isn't restricted to multi-file changes; it can apply to single-file edits when warranted, but the issue here is task simplicity, not a hard technical restriction."},{"id":"D","texto":"It's correct, because plan mode is required before any change involving a stack trace.","correcta":false,"justificacion":"No such requirement exists; a stack-trace-driven fix with an evident, well-scoped solution is precisely the documented example where direct execution is the appropriate choice."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-4","fuentes":["https://code.claude.com/docs/en/best-practices"]},{"id":"b2-q12","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.4","escenario":"A senior engineer explains plan mode to a new hire: 'Once you're in plan mode, Claude can only read files and answer questions, and after it presents a plan you must either fully approve it as-is or discard it and start exploring again — there's no way to tweak the plan yourself, and once you switch to executing, you can't go back to planning for the rest of that task.'","enunciado":"Select TWO corrections to this explanation, per documented plan mode behavior.","opciones":[{"id":"A","texto":"After a plan is presented, there are three possible outcomes — approve and use auto mode, approve and apply edits manually, or continue planning — not just approve-as-is or discard.","correcta":true,"justificacion":"The documented outcomes after a plan is presented are exactly these three, richer than a simple binary approve/discard choice."},{"id":"B","texto":"`Ctrl+G` opens the proposed plan in an editor so the developer can modify it directly before Claude continues, rather than only approving or discarding it wholesale.","correcta":true,"justificacion":"Ctrl+G is documented as opening the plan in the default editor for direct modification, contradicting the claim that the plan can't be tweaked."},{"id":"C","texto":"It's accurate that plan mode blocks all edits until approval, since reading files is also disallowed in plan mode.","correcta":false,"justificacion":"Reading files and answering questions is explicitly allowed in plan mode; only applying edits is blocked until the plan is approved."},{"id":"D","texto":"It's accurate that switching from plan mode to execution is a one-way transition for the rest of the task.","correcta":false,"justificacion":"The Explore → Plan → Implement → Commit workflow, plus `Shift+Tab` cycling and `/plan`, allow returning to planning for a later portion of the same task rather than being locked into execution permanently."},{"id":"E","texto":"`Shift+Tab` toggles directly between plan mode and acceptEdits only, without a default mode in the cycle.","correcta":false,"justificacion":"The documented cycle is default → acceptEdits → plan, which includes the default mode rather than skipping it."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-2-4","fuentes":["https://code.claude.com/docs/en/permission-modes"]},{"id":"b2-q13","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.5","escenario":"A developer asks Claude to 'add tests for foo.py' and, after three rounds of vague follow-up corrections ('no, also test the other case', 'that's not quite what I meant'), the resulting test suite still misses the intended edge case.","enunciado":"What change to the initial prompt would most effectively reduce this back-and-forth, per documented iterative refinement guidance?","opciones":[{"id":"A","texto":"Specify the exact edge case to cover and any constraints up front, e.g. \"write a test for foo.py covering the edge case when the user is logged out, avoid mocks\".","correcta":true,"justificacion":"This is the documented contrast between a vague prompt and a specific one: naming the exact edge case and constraints up front is documented to reduce the number of correction rounds needed."},{"id":"B","texto":"Increase `max_tokens` so Claude has more room to write a longer test file.","correcta":false,"justificacion":"max_tokens governs the output token budget, not the specificity of what should be tested; it does not address the ambiguity causing the repeated corrections."},{"id":"C","texto":"Ask Claude to guess at edge cases by exploring the codebase for an hour before writing any tests.","correcta":false,"justificacion":"Open-ended, unscoped exploration isn't the documented technique for this problem; naming concrete edge cases directly is the faster, documented way to converge."},{"id":"D","texto":"Switch the request to plan mode before writing the tests.","correcta":false,"justificacion":"Plan mode addresses architecturally significant, multi-file decisions; it is a different concern from the clarity of a single, well-scoped test-writing prompt."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-2-5","fuentes":["https://code.claude.com/docs/en/best-practices"]},{"id":"b2-q14","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.5","escenario":"In a single session, Claude has now attempted to fix the same race condition in the session-refresh logic three times, each attempt introducing a new but related bug, and the conversation has accumulated a long trail of failed approaches and corrections.","enunciado":"What is the most effective next step, per documented guidance on context management during iterative refinement?","opciones":[{"id":"A","texto":"Run `/clear` to wipe the contaminated context entirely, then start a new prompt that incorporates what was learned from the failed attempts.","correcta":true,"justificacion":"When the same problem has been corrected more than twice in a session, the context is documented as contaminated with failed approaches; the recommended fix is /clear followed by a better initial prompt, not continuing to accumulate corrections."},{"id":"B","texto":"Run `/compact` to summarize the conversation so far while keeping the failed attempts as reference for the next fix.","correcta":false,"justificacion":"/compact preserves the gist of a contaminated context rather than removing it; the documented guidance for repeated failed corrections on the same issue is a full /clear and restart, not compaction."},{"id":"C","texto":"Provide only an assertion that the race condition is now fixed, without further test output, to move faster.","correcta":false,"justificacion":"This doesn't address the context contamination problem at all, and relying on assertions instead of evidence is itself documented as a weaker verification practice."},{"id":"D","texto":"Interrupt with `Esc` twice and use `/rewind` to revert only the most recent edit, keeping the rest of the session intact.","correcta":false,"justificacion":"Reverting a single edit doesn't address a context already contaminated by three accumulated failed approaches; the documented fix for that specific symptom is /clear, not a partial rewind."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-5","fuentes":["https://code.claude.com/docs/en/best-practices"]},{"id":"b2-q15","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.5","escenario":"A code review surfaces two issues in the same caching module: the cache invalidation logic doesn't account for a new eviction policy, and the eviction policy itself has an off-by-one error that only manifests once invalidation is triggered correctly. The developer reports the eviction bug in one message, waits for a fix and confirmation, then reports the invalidation issue in a second, separate message.","enunciado":"Is this the correct way to sequence these two corrections, per documented guidance on grouping feedback?","opciones":[{"id":"A","texto":"No — because the two issues interact (the invalidation fix can't be verified without the eviction bug fixed, and vice versa), they should have been reported together in a single detailed message.","correcta":true,"justificacion":"The documented criterion is that problems which interact with each other should be communicated together in one detailed message, while independent problems are corrected sequentially; these two issues clearly interact."},{"id":"B","texto":"Yes — any two bugs found in the same code review should always be reported in separate sequential messages to keep each fix isolated.","correcta":false,"justificacion":"The documented rule depends on whether the issues interact, not on always separating feedback; interacting issues are specifically meant to be bundled together."},{"id":"C","texto":"No — but only because eviction should always be fixed before invalidation, regardless of whether the issues interact.","correcta":false,"justificacion":"The documented criterion for combining feedback is interaction between problems, not a fixed ordering rule that favors one particular type of issue over another."},{"id":"D","texto":"Yes — sequential messages are correct because giving Claude more than one issue at a time contaminates the context, regardless of whether the issues are related.","correcta":false,"justificacion":"The documented guidance doesn't treat multiple issues in one message as inherently contaminating; it explicitly recommends bundling interacting issues into a single detailed message."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-2-5","fuentes":["https://code.claude.com/docs/en/best-practices"]},{"id":"b2-q16","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.6","escenario":"A CI pipeline step invokes `claude` to summarize a build log, but the job hangs indefinitely and eventually times out, with no output ever produced.","enunciado":"What is the most likely cause and fix?","opciones":[{"id":"A","texto":"Claude Code was run in its default interactive mode, which can wait for input; adding `-p`/`--print` runs it non-interactively so it completes without hanging.","correcta":true,"justificacion":"-p/--print is documented specifically to prevent the pipeline from stalling on interactive input; running without it is the documented cause of exactly this kind of hang."},{"id":"B","texto":"The `--bare` flag was missing, and without it Claude always waits for hooks to be manually approved.","correcta":false,"justificacion":"--bare skips auto-discovery of hooks, skills, plugins, MCP servers, auto memory, and CLAUDE.md for faster, more consistent startup; the documented cause of indefinite hangs is missing -p/--print, not --bare."},{"id":"C","texto":"`--output-format json` must be set for any pipeline invocation to complete.","correcta":false,"justificacion":"The output format flag controls the shape of the returned result; it has no bearing on whether the process hangs waiting for interactive input."},{"id":"D","texto":"The stdin input exceeded 10 MB, causing the process to hang instead of erroring.","correcta":false,"justificacion":"Exceeding the documented 10 MB stdin limit causes Claude to terminate with an error and non-zero exit status, not an indefinite hang."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-2-6","fuentes":["https://code.claude.com/docs/en/headless"]},{"id":"b2-q17","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.6","escenario":"A team switches their CI job to `claude --bare -p \"Run the test suite\"` for faster, more consistent startup. Immediately after the switch, every invocation fails with an authentication error, even though the exact same command without `--bare` worked fine on the same runner.","enunciado":"What is the most likely cause and fix?","opciones":[{"id":"A","texto":"`--bare` mode does not read OAuth credentials or the system keychain; setting `ANTHROPIC_API_KEY` in the environment restores authentication.","correcta":true,"justificacion":"--bare is documented to skip reading OAuth credentials and the system keychain, so authenticating to the Anthropic API in that mode requires explicitly setting ANTHROPIC_API_KEY."},{"id":"B","texto":"`--bare` disables the Anthropic API entirely and only supports Bedrock/GCP deployments.","correcta":false,"justificacion":"No such restriction is documented; --bare's effect is skipping auto-discovery of hooks/skills/plugins/MCP/CLAUDE.md/auto memory, and it still works with the Anthropic API given an explicit key."},{"id":"C","texto":"`--bare` requires `--output-format json` to be set simultaneously or authentication is skipped.","correcta":false,"justificacion":"No documented dependency exists between --bare and --output-format regarding authentication; they are independent flags."},{"id":"D","texto":"`--bare` only works with `--json-schema` provided, since it assumes structured output mode.","correcta":false,"justificacion":"There is no documented requirement tying --bare to --json-schema; --bare's effect is on auto-discovery and credential reading, unrelated to output schema enforcement."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-2-6","fuentes":["https://code.claude.com/docs/en/headless"]},{"id":"b2-q18","bloque":2,"dominio":"Claude Code Configuration & Workflows","taskStatement":"3.6","escenario":"A team installs the Claude GitHub Action with the basic `@claude` workflow (triggered on `issue_comment` and `pull_request_review_comment`) and expects every newly opened pull request to be automatically reviewed for security issues without anyone needing to comment `@claude` on it.","enunciado":"Why doesn't this happen, and what documented capability actually matches the team's stated goal?","opciones":[{"id":"A","texto":"The basic `@claude` workflow only responds to comments that mention Claude; automatic review of every PR without a mention is provided by the separate GitHub Code Review capability, not the basic mention-triggered workflow.","correcta":true,"justificacion":"The documented distinction is explicit: the basic @claude workflow reacts to issue_comment/pull_request_review_comment mentions, while GitHub Code Review is a distinct capability that provides automatic PR review without any @claude mention."},{"id":"B","texto":"The workflow is correctly configured; `issue_comment` and `pull_request_review_comment` already fire automatically the moment a PR is opened, with no comment required.","correcta":false,"justificacion":"Those events fire on comment activity, not on PR creation; the basic workflow specifically requires someone to comment mentioning Claude to trigger a run."},{"id":"C","texto":"The team needs to add `claude_args: --max-turns 10` to the Action configuration to enable automatic reviews.","correcta":false,"justificacion":"claude_args passes extra CLI flags like turn limits or model selection to an already-triggered run; it does not change which GitHub events trigger the workflow or enable mention-free review."},{"id":"D","texto":"Automatic PR review without a mention requires running `/install-github-app` a second time with a different workflow name.","correcta":false,"justificacion":"/install-github-app interactively installs the integration, but reinstalling it under a different name doesn't grant a new capability; mention-free automatic review comes from the distinct GitHub Code Review feature, not from reinstalling the app."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-2-6","fuentes":["https://code.claude.com/docs/en/github-actions","https://code.claude.com/docs/en/code-review"]}]};
+// __PREGUNTAS_JSON_END__
+
+(function () {
+  "use strict";
+  const cfg = DATA.config, bank = DATA.preguntas;
+  const KEY = "ccarf-quiz-" + cfg.titulo + "-v" + cfg.version;
+  const app = document.getElementById("app");
+  document.getElementById("q-title").textContent = cfg.titulo;
+  document.getElementById("q-eyebrow").textContent = "CCAR-F · BLOQUE " + String(cfg.bloque).toUpperCase();
+  document.title = cfg.solo_examen ? "Simulacro de examen CCAR-F" : "Quiz CCAR-F · " + cfg.titulo;
+
+  let S = null; // state: {mode, order[], optOrder{}, answers{}, flags[], idx, remaining, finished, revealed{}}
+
+  // Funcionalidad "Continuar": marca "ccarf-sum-quiz-<bloque>.updated" como
+  // timestamp de último acceso a este quiz en CADA carga de página, aunque
+  // no se responda nada (syncSummary() ya lo actualiza al interactuar, pero
+  // solo abrir la portada no la llama). Se fusiona con el resumen existente
+  // -- nunca lo reemplaza -- para no perder "best"/"hits"/etc. de intentos
+  // previos. El índice del curso compara este campo con el equivalente de
+  // "ccarf-sum-guia-<bloque>.updated" para el botón global "Continuar".
+  (function touchAccess() {
+    try {
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      prev.bloque = cfg.bloque; prev.titulo = cfg.titulo; prev.version = cfg.version;
+      prev.updated = Date.now();
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(prev));
+    } catch (e) {}
+  })();
+
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const byId = id => bank.find(q => q.id === id);
+  const save = () => { localStorage.setItem(KEY, JSON.stringify(S)); syncSummary(); };
+  // Progress summary consumed by the course index (dist/index.html).
+  function syncSummary() {
+    if (S && S.subset) return;   // un repaso parcial no pisa la nota del intento completo
+    try {
+      const answered = Object.keys(S.answers).filter(k => (S.answers[k] || []).length).length;
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      const sum = { bloque: cfg.bloque, titulo: cfg.titulo, version: cfg.version, mode: S.mode,
+        answered, total: bank.length, finished: !!S.finished, best: prev.best || 0, updated: Date.now() };
+      if (S.finished) {
+        const hits = S.order.filter(id => isCorrect(byId(id))).length;
+        sum.hits = hits;
+        sum.scaled = Math.round(100 + hits / bank.length * 900);
+        sum.best = Math.max(sum.best, sum.scaled);
+      }
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(sum));
+    } catch (e) {}
+  }
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  // refSeccion apunta al documento de referencia, que no se publica. Se traduce
+  // a la leccion equivalente de la guia del bloque, que si esta en el sitio.
+  function leccionDe(q) {
+    const m = /^#cap-(\d+)-ts-(\d+)$/.exec(q.refSeccion || "");
+    if (!m) return null;
+    return { href: "../bloque-" + m[1] + "/guia_v1.2.html#leccion-" + m[2],
+             texto: "Bloque " + m[1] + ", Lección " + m[2] };
+  }
+  const isCorrect = q => {
+    const sel = (S.answers[q.id] || []).slice().sort().join(",");
+    const ok = q.opciones.filter(o => o.correcta).map(o => o.id).sort().join(",");
+    return sel === ok && sel !== "";
+  };
+
+  function startScreen() {
+    const saved = load();
+    let html = '<div class="card"><h2>Configuración</h2>';
+    if (saved && !saved.finished) html += '<p>Hay un intento guardado (' + (saved.mode === "examen" ? "modo examen" : "modo estudio") + ', pregunta ' + (saved.idx + 1) + '). </p><div class="actions"><button class="primary" id="resume">Reanudar intento</button></div><hr>';
+    html += '<p>Elige modo:</p><div class="actions">';
+    if (!cfg.solo_examen) html += '<button class="primary" id="m-estudio">Modo estudio</button>';
+    html += '<button ' + (cfg.solo_examen ? 'class="primary"' : '') + ' id="m-examen">Modo examen</button></div>';
+    html += '<p class="muted">Estudio: corrección y justificación inmediatas. Examen: temporizador de ' + examMinutes() + ' min, resultados al final con desglose por dominio.</p></div>';
+    app.innerHTML = html;
+    const r = document.getElementById("resume");
+    if (r) r.onclick = () => { S = saved; render(); };
+    const e1 = document.getElementById("m-estudio");
+    if (e1) e1.onclick = () => init("estudio");
+    document.getElementById("m-examen").onclick = () => init("examen");
+  }
+
+  function examMinutes() { return cfg.duracion_examen_min || Math.ceil(bank.length * 2); }
+
+  function init(mode, ids) {
+    // ids: subconjunto (repaso de falladas). Un repaso no es un intento puntuable.
+    const lista = ids && ids.length ? ids : bank.map(q => q.id);
+    S = { mode, order: shuffle(lista), subset: !!(ids && ids.length), optOrder: {}, answers: {}, flags: [], idx: 0, remaining: examMinutes() * 60, finished: false, revealed: {} };
+    bank.forEach(q => S.optOrder[q.id] = shuffle(q.opciones.map(o => o.id)));
+    save(); render();
+  }
+
+  let tick = null;
+  function startTimer(el) {
+    clearInterval(tick);
+    tick = setInterval(() => {
+      S.remaining--; save();
+      if (el.isConnected) { el.textContent = fmt(S.remaining); el.classList.toggle("low", S.remaining < 300); }
+      if (S.remaining <= 0) { clearInterval(tick); finishExam(); }
+    }, 1000);
+  }
+
+  function render() {
+    if (S.finished) return results();
+    const q = byId(S.order[S.idx]);
+    const multi = q.seleccionar > 1, type = multi ? "checkbox" : "radio";
+    const sel = S.answers[q.id] || [];
+    const revealed = S.mode === "estudio" && S.revealed[q.id];
+
+    let html = '<div class="card' + (revealed ? " revealed" : "") + '">';
+    html += '<div class="topbar"><div><span class="pill">' + (S.idx + 1) + " / " + S.order.length + '</span><span class="pill">' + esc(q.dominio || "Transversal") + '</span><span class="pill">TS ' + esc(q.taskStatement) + '</span></div>';
+    if (S.mode === "examen") html += '<div class="timer" id="timer">' + fmt(S.remaining) + "</div>";
+    html += "</div>";
+    if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+    html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+    S.optOrder[q.id].forEach(oid => {
+      const o = q.opciones.find(x => x.id === oid);
+      const chosen = sel.includes(oid);
+      let cls = chosen ? " sel" : "";
+      if (revealed) { if (o.correcta) cls = " ok"; else if (chosen) cls = " ko"; }
+      html += '<label class="opt' + cls + '"><input type="' + type + '" name="opt" value="' + oid + '"' + (chosen ? " checked" : "") + (revealed ? " disabled" : "") + "><div>" + esc(o.texto) + '<div class="rationale"><strong>' + (o.correcta ? "✔" : "✘") + "</strong> " + esc(o.justificacion) + "</div></div></label>";
+    });
+    html += '<div class="actions">';
+    if (S.mode === "estudio") {
+      html += revealed
+        ? '<button class="primary" id="next">' + (S.idx + 1 < S.order.length ? "Siguiente" : "Ver resultado") + "</button>"
+        : '<button class="primary" id="check" ' + (sel.length ? "" : "disabled") + ">Comprobar</button>";
+    } else {
+      html += '<button id="prev" ' + (S.idx ? "" : "disabled") + ">← Anterior</button>";
+      html += '<button id="nextq" ' + (S.idx + 1 < S.order.length ? "" : "disabled") + ">Siguiente →</button>";
+      html += '<button id="flag">' + (S.flags.includes(q.id) ? "Desmarcar" : "Marcar 🚩") + "</button>";
+      html += '<button class="primary" id="finish">Finalizar examen</button>';
+    }
+    html += "</div></div>";
+
+    if (S.mode === "examen") {
+      html += '<div class="card"><div class="navgrid">' + S.order.map((id, i) => {
+        let c = [];
+        if ((S.answers[id] || []).length) c.push("answered");
+        if (S.flags.includes(id)) c.push("flagged");
+        if (i === S.idx) c.push("current");
+        return '<button data-i="' + i + '" class="' + c.join(" ") + '">' + (i + 1) + "</button>";
+      }).join("") + '</div><div class="muted">Gris: respondida · Borde ámbar: marcada</div></div>';
+    }
+    app.innerHTML = html;
+
+    app.querySelectorAll('input[name="opt"]').forEach(inp => inp.onchange = () => {
+      let cur = S.answers[q.id] || [];
+      if (multi) {
+        cur = inp.checked ? cur.concat(inp.value) : cur.filter(v => v !== inp.value);
+        if (cur.length > q.seleccionar) { inp.checked = false; cur = cur.filter(v => v !== inp.value); }
+      } else cur = [inp.value];
+      S.answers[q.id] = cur; save(); render();
+    });
+    const $ = id => document.getElementById(id);
+    if ($("check")) $("check").onclick = () => { S.revealed[q.id] = true; save(); render(); };
+    if ($("next")) $("next").onclick = () => { S.idx + 1 < S.order.length ? (S.idx++, save(), render()) : finishExam(); };
+    if ($("prev")) $("prev").onclick = () => { S.idx--; save(); render(); };
+    if ($("nextq")) $("nextq").onclick = () => { S.idx++; save(); render(); };
+    if ($("flag")) $("flag").onclick = () => { S.flags.includes(q.id) ? S.flags = S.flags.filter(f => f !== q.id) : S.flags.push(q.id); save(); render(); };
+    if ($("finish")) $("finish").onclick = () => { const un = S.order.filter(id => !(S.answers[id] || []).length).length; if (!un || confirm("Quedan " + un + " preguntas sin responder. ¿Finalizar igualmente?")) finishExam(); };
+    app.querySelectorAll(".navgrid button").forEach(b => b.onclick = () => { S.idx = +b.dataset.i; save(); render(); });
+    if ($("timer")) startTimer($("timer"));
+  }
+
+  function finishExam() { clearInterval(tick); S.finished = true; save(); results(); }
+
+  function results() {
+    clearInterval(tick);
+    const total = S.order.length, hits = S.order.filter(id => isCorrect(byId(id))).length;
+    const pct = hits / total, scaled = Math.round(100 + pct * 900);
+    const dom = {};
+    S.order.forEach(id => { const q = byId(id), d = q.dominio || "Transversal"; dom[d] = dom[d] || [0, 0]; dom[d][1]++; if (isCorrect(q)) dom[d][0]++; });
+    let html = '<div class="card"><h2>' + (S.subset ? "Repaso de falladas" : "Resultado") + "</h2>";
+    if (S.subset) {
+      html += '<div class="big ' + (hits === total ? "ok-t" : "ko-t") + '">' + hits + " / " + total + "</div>";
+      html += "<p>Repaso de " + total + " pregunta(s) que habías fallado. No cuenta como intento: la nota del bloque sigue siendo la de tu última vuelta completa.</p>";
+    } else {
+      html += '<div class="big ' + (scaled >= 720 ? "ok-t" : "ko-t") + '">' + scaled + ' <span class="muted" style="font-size:1rem">/ 1000 (orientativo·)</span></div>';
+      html += "<p>" + hits + " de " + total + " correctas (" + Math.round(pct * 100) + "%). Corte real del examen: <strong>720</strong>.</p>";
+      html += '<p class="muted">· Aproximación lineal: el examen real usa equating estadístico no público.</p>';
+    }
+    html += "<table><tr><th>Dominio</th><th>Aciertos</th><th>%</th></tr>" + Object.entries(dom).map(([d, v]) => "<tr><td>" + esc(d) + "</td><td>" + v[0] + "/" + v[1] + "</td><td>" + Math.round(v[0] / v[1] * 100) + "%</td></tr>").join("") + "</table>";
+    const fallidas = S.order.filter(id => !isCorrect(byId(id)));
+    html += '<div class="actions"><button class="primary" id="review">Revisar respuestas</button>';
+    if (fallidas.length) {
+      html += '<button id="repasar">Repetir solo las ' + fallidas.length + " fallada(s)</button>";
+    }
+    html += '<button id="restart">' + (S.subset ? "Volver al banco completo" : "Nuevo intento") + "</button></div></div>";
+    app.innerHTML = html;
+    document.getElementById("restart").onclick = () => { localStorage.removeItem(KEY); startScreen(); };
+    document.getElementById("review").onclick = review;
+    const rep = document.getElementById("repasar");
+    if (rep) rep.onclick = () => init(S.mode, fallidas);
+  }
+
+  function review() {
+    let html = "";
+    S.order.forEach((id, i) => {
+      const q = byId(id), ok = isCorrect(q), sel = S.answers[id] || [];
+      html += '<div class="card revealed"><p><span class="pill">' + (i + 1) + '</span><span class="pill">' + esc(q.dominio || "Transversal") + " · TS " + esc(q.taskStatement) + '</span> <strong class="' + (ok ? "ok-t" : "ko-t") + '">' + (ok ? "Correcta" : "Incorrecta") + "</strong></p>";
+      if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+      html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+      const leccion = leccionDe(q);
+      if (leccion) html += '<p class="repasa">Repasa la <a href="' + leccion.href + '">' + esc(leccion.texto) + "</a></p>";
+      q.opciones.forEach(o => {
+        let cls = o.correcta ? " ok" : (sel.includes(o.id) ? " ko" : "");
+        html += '<div class="opt' + cls + '"><div>' + o.id + ". " + esc(o.texto) + '<div class="rationale">' + esc(o.justificacion) + "</div></div></div>";
+      });
+      html += "</div>";
+    });
+    html += '<div class="card"><div class="actions"><button class="primary" id="back">Volver al resultado</button></div></div>';
+    app.innerHTML = html;
+    document.getElementById("back").onclick = results;
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): si hay un intento sin
+  // terminar, lo reanuda directamente en la siguiente pregunta sin responder
+  // -- no necesariamente S.idx, que en modo examen puede quedar en cualquier
+  // pregunta por la navegación libre/el marcado -- sin pasar por la portada.
+  // Reutiliza el mismo S guardado y el mismo render() del botón "Reanudar
+  // intento" existente, no duplica estado. Si no hay intento en curso, cae a
+  // la portada normal (startScreen()).
+  let continued = false;
+  if (/[?&]continue=1/.test(location.search)) {
+    const saved = load();
+    if (saved && !saved.finished) {
+      S = saved;
+      const nextIdx = S.order.findIndex(id => !(S.answers[id] || []).length);
+      if (nextIdx !== -1) S.idx = nextIdx;
+      save();
+      render();
+      continued = true;
+    }
+  }
+  if (!continued) startScreen();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "toggle theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "toggle fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+</body>
+</html>

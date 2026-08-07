@@ -1,0 +1,336 @@
+{
+  "config": {
+    "titulo": "Bloque 5 — Gestión de contexto y fiabilidad",
+    "version": "1.0",
+    "bloque": 5,
+    "modo_defecto": "estudio",
+    "solo_examen": false,
+    "generado_desde_corpus": "bloque-5-contexto-fiabilidad.md v1.0",
+    "fecha": "2026-08-07"
+  },
+  "preguntas": [
+    {
+      "id": "b5-q01",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "A customer support agent resends the full conversation history on every request, as required by the stateless Messages API. After 15 turns, a mid-conversation summary compresses the details of an order dispute into 'the customer has a shipping issue,' and the agent can no longer state the order ID, refund amount, or the 5-business-day commitment it made earlier.",
+      "enunciado": "What is the most effective fix for this loss of transactional detail?",
+      "opciones": [
+        {"id": "A", "texto": "Extract the order ID, amount, dates, and the stated customer expectation into a persistent 'case facts' block included in every prompt, kept outside the resumable history, so no later summary can dilute those values.", "correcta": true, "justificacion": "A persistent case-facts block extracted apart from the resumable history is precisely the pattern that prevents progressive summarization from ever touching the critical transactional values."},
+        {"id": "B", "texto": "Continue resending the full history unchanged and trust the model to re-derive the details from earlier turns each time.", "correcta": false, "justificacion": "This is what already happened; relying on recall from a long, resummarized history is exactly what let progressive summarization dilute the values in the first place."},
+        {"id": "C", "texto": "Stop resending the full conversation history and send only the latest user message to reduce token usage and force the model to focus on what's current.", "correcta": false, "justificacion": "The stateless API requires the client to resend the full desired history for coherence; sending only the latest message breaks that requirement instead of fixing the summarization issue."},
+        {"id": "D", "texto": "Load the entire customer order database into context at session start so any order detail is always available if needed.", "correcta": false, "justificacion": "Loading data 'just in case' consumes tokens and accelerates context rot; the correct approach is just-in-time exploration plus persisting the few facts about this specific case, not preloading everything."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/context-windows"]
+    },
+    {
+      "id": "b5-q02",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "An order-lookup tool returns a JSON payload with 40+ fields (shipping carrier metadata, internal warehouse codes, audit timestamps, etc.), of which only order_id, status, amount, and ship_date matter for the current task. Across a ten-turn session, these payloads accumulate in context, and the team notices token usage climbing without any corresponding improvement in answer quality.",
+      "enunciado": "What is the correct fix for this pattern of context accumulation?",
+      "opciones": [
+        {"id": "A", "texto": "Trim each tool result to only the fields relevant to the task before it accumulates in context, rather than keeping the full 40+ field payload turn after turn.", "correcta": true, "justificacion": "Trimming verbose tool outputs to the relevant fields before they accumulate directly addresses irrelevant fields consuming token budget without adding value."},
+        {"id": "B", "texto": "Progressively summarize the accumulated tool outputs into shorter, vaguer descriptions each time a new one arrives.", "correcta": false, "justificacion": "Vague progressive summarization is the same anti-pattern that destroys precise transactional values; it trades bulk for lost precision on the few fields that actually matter."},
+        {"id": "C", "texto": "Increase the model's context window so all fields comfortably fit without any trimming.", "correcta": false, "justificacion": "Fitting isn't the problem; irrelevant fields still consume token budget turn after turn and add no value regardless of how much headroom the window has."},
+        {"id": "D", "texto": "Insert a dedicated classifier model that scores each of the 40+ fields for relevance before every tool call.", "correcta": false, "justificacion": "Over-engineered; a simple deterministic filter to the known relevant fields achieves the same result without training or maintaining a separate model."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/context-windows"]
+    },
+    {
+      "id": "b5-q03",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "A team building on Claude Sonnet 4.5 adds custom logic that tracks estimated token usage after every tool call and manually injects warning text into the prompt when a threshold is crossed, believing this tracking must be built by hand.",
+      "enunciado": "Is this custom tracking layer necessary given the documented behavior of context awareness on this model family?",
+      "opciones": [
+        {"id": "A", "texto": "No — Claude Sonnet 5, Sonnet 4.6, Sonnet 4.5, and Haiku 4.5 already inject a token budget tag at conversation start and a system_warning update after each tool call automatically, letting the model track its own remaining budget without developer intervention.", "correcta": true, "justificacion": "Context awareness on these models is automatic: the API injects <budget:token_budget> at the start and <system_warning> updates after each tool call, so a hand-built duplicate layer is unnecessary."},
+        {"id": "B", "texto": "Yes — context awareness is an opt-in flag that must be explicitly enabled per request, so without it no budget tracking happens at all.", "correcta": false, "justificacion": "Context awareness is automatic on the supported models, not a request-level opt-in flag; no such setting exists in the documented behavior."},
+        {"id": "C", "texto": "Yes — context awareness only mitigates lost-in-the-middle degradation, not token budget truncation, so a separate tracking layer is still required for budget awareness.", "correcta": false, "justificacion": "This mischaracterizes context awareness, which is specifically the mechanism for tracking remaining token budget via the injected tags, not a lost-in-the-middle fix."},
+        {"id": "D", "texto": "No — but only because the team already maintains a persistent case-facts block, which makes budget tracking unnecessary.", "correcta": false, "justificacion": "Case-facts blocks and context awareness solve different problems (preserving specific transactional values vs. tracking overall token budget); one doesn't substitute for the other."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-1",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/context-windows"]
+    },
+    {
+      "id": "b5-q04",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.2",
+      "escenario": "A customer support agent's first-contact resolution rate sits at 55% against an 80% target. Log review shows the agent frequently escalates straightforward damage-replacement requests that include photographic evidence, while attempting to resolve, on its own, cases that actually require an explicit policy exception.",
+      "enunciado": "What is the most effective first step to address this pattern?",
+      "opciones": [
+        {"id": "A", "texto": "Add explicit escalation criteria with few-shot examples to the system prompt, clearly demonstrating when to escalate versus when to resolve autonomously.", "correcta": true, "justificacion": "The root cause is unclear decision boundaries in the prompt; explicit criteria with few-shot examples is the low-effort, proportionate fix that directly targets that cause."},
+        {"id": "B", "texto": "Deploy a separate classifier trained on historical ticket data to predict, before the agent processes anything, whether a case should be escalated.", "correcta": false, "justificacion": "Over-engineered infrastructure for a problem that hasn't even been addressed yet with the much cheaper fix of clarifying the prompt's decision criteria."},
+        {"id": "C", "texto": "Route escalation decisions based on a sentiment-analysis score of how frustrated the customer sounds in their message.", "correcta": false, "justificacion": "Sentiment doesn't correlate reliably with case complexity; a frustrated customer with a trivial issue doesn't need escalation, and this doesn't fix unclear decision boundaries."},
+        {"id": "D", "texto": "Use the model's own self-reported confidence score on each case as the escalation trigger.", "correcta": false, "justificacion": "Self-reported confidence is unreliable, and the model can appear confident precisely on the difficult cases where it's most likely to be wrong."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-2",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q05",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.2",
+      "escenario": "A lookup by customer name returns three matching accounts. The agent's current logic picks whichever record was most recently created and proceeds to act on it.",
+      "enunciado": "What is the correct way to resolve this ambiguity?",
+      "opciones": [
+        {"id": "A", "texto": "Ask the customer for an additional identifier (such as email or order ID) to disambiguate, rather than selecting a record based on any heuristic.", "correcta": true, "justificacion": "Requesting additional identifiers is the documented resolution for multiple customer matches; heuristic selection risks acting on the wrong customer."},
+        {"id": "B", "texto": "Keep selecting the most recently created matching record, since it's the most likely to reflect current account activity.", "correcta": false, "justificacion": "This is exactly the documented anti-pattern — a 'most recent record' heuristic risks acting on the wrong customer entirely."},
+        {"id": "C", "texto": "Escalate the case to a human immediately, since customer identity ambiguity isn't one of the agent's autonomous responsibilities.", "correcta": false, "justificacion": "This isn't one of the documented escalation triggers (explicit request, policy gap, no progress); asking for an identifier is a lower-effort resolution that doesn't require a human."},
+        {"id": "D", "texto": "Select the account with the highest lifetime purchase value as the most likely intended match.", "correcta": false, "justificacion": "Another arbitrary heuristic; it can just as easily select the wrong customer as the 'most recent' heuristic does."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-2"
+    },
+    {
+      "id": "b5-q06",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.2",
+      "escenario": "While designing escalation logic, a team debates several signals to use for deciding whether a case needs human review.",
+      "enunciado": "Select TWO signals that are explicitly documented as unreliable proxies for actual case complexity.",
+      "opciones": [
+        {"id": "A", "texto": "Sentiment analysis detecting how frustrated the customer sounds.", "correcta": true, "justificacion": "Sentiment doesn't correlate reliably with complexity: a frustrated customer with a trivial issue doesn't need escalation, and a calm customer with a complex case might."},
+        {"id": "B", "texto": "The model's own self-reported confidence score for the case.", "correcta": true, "justificacion": "Self-reported confidence is unreliable because the model can be incorrectly confident precisely on the difficult cases where it fails most."},
+        {"id": "C", "texto": "Explicit escalation criteria with few-shot examples embedded in the system prompt.", "correcta": false, "justificacion": "This is the documented correct pattern for escalation, not an unreliable proxy signal."},
+        {"id": "D", "texto": "The customer explicitly requesting a human agent.", "correcta": false, "justificacion": "This is one of the three legitimate, explicit escalation triggers, not an inferred proxy for complexity."},
+        {"id": "E", "texto": "Detecting that the current policy doesn't address the customer's specific request.", "correcta": false, "justificacion": "This is also a legitimate, explicit trigger (a policy gap), not an indirect complexity proxy."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-2",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q07",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.3",
+      "escenario": "A subagent's search tool times out after 30 seconds. The coordinator's contract for this failure is a plain boolean success flag plus the string 'search unavailable' — nothing else.",
+      "enunciado": "What is the correct fix so the coordinator can make an informed recovery decision?",
+      "opciones": [
+        {"id": "A", "texto": "Return a structured error contract that includes failure type, whether it's retryable, a descriptive message, what was attempted, any partial results, and possible alternative approaches.", "correcta": true, "justificacion": "A structured error contract with failure type, retryability, attempted query, partial results, and alternatives is exactly what habilitates an informed recovery decision at the coordinator."},
+        {"id": "B", "texto": "Have the coordinator retry the exact same call three times automatically whenever it sees 'search unavailable,' regardless of the failure type.", "correcta": false, "justificacion": "Without knowing whether the failure is retryable or what was attempted, blind automatic retries can't distinguish a transient timeout from a permanent policy-based rejection."},
+        {"id": "C", "texto": "Have the subagent retry indefinitely on its own and never report back to the coordinator, since local recovery is preferred over propagation.", "correcta": false, "justificacion": "Local recovery is right for transient failures, but not every failure is retryable; retrying forever on a non-transient failure only hides a problem the coordinator needs visibility into."},
+        {"id": "D", "texto": "Increase the tool's timeout threshold so this specific failure stops occurring.", "correcta": false, "justificacion": "This addresses only this instance's timing, not the underlying contract problem — the coordinator still has no structured way to react to whatever failures do occur."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-3",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q08",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.3",
+      "escenario": "A coordinator receives 'no data' both when a subagent's search timed out and when a subagent's search executed successfully but simply found zero matching records. In several cases it wrongly retries a query that had already legitimately returned zero results, and in others it wrongly accepts a timeout as a confirmed 'no results found.'",
+      "enunciado": "What is the correct architectural fix for this confusion?",
+      "opciones": [
+        {"id": "A", "texto": "Have subagents explicitly distinguish access failures (marked as errors, with a retryable flag) from valid empty results (a successful response with empty content) in their structured output.", "correcta": true, "justificacion": "Access failures and valid empty results require opposite responses; distinguishing them explicitly in the structured output is what lets the coordinator react correctly to each."},
+        {"id": "B", "texto": "Increase every tool's timeout duration so access failures become rare enough to ignore.", "correcta": false, "justificacion": "Reduces frequency but not the underlying ambiguity in the report; a timeout can still occur and still be indistinguishable from a valid empty result without an explicit contract."},
+        {"id": "C", "texto": "Have the subagent report 'likely no results' whenever it isn't fully certain what happened.", "correcta": false, "justificacion": "Introduces vague, fabricated uncertainty language instead of a structured, reliable signal; it still doesn't tell the coordinator whether a retry is warranted."},
+        {"id": "D", "texto": "Have the coordinator retry any 'no data' response several times before accepting it, just to be safe.", "correcta": false, "justificacion": "Wastes calls on legitimate empty results and doesn't fix the reporting contract that caused the ambiguity in the first place."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-3",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q09",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.3",
+      "escenario": "A synthesis step combines findings from five subagents into a final report. One subagent's data source became unavailable partway through and never recovered.",
+      "enunciado": "Select TWO practices that correctly handle this partial failure per the documented pattern for multi-agent error propagation.",
+      "opciones": [
+        {"id": "A", "texto": "The subagent attempts local recovery (retry with backoff) for the failure first, and only propagates a structured error to the coordinator if it truly cannot resolve it.", "correcta": true, "justificacion": "Subagents should implement local recovery for transient failures and propagate to the coordinator only what they cannot resolve themselves."},
+        {"id": "B", "texto": "The final synthesized report includes coverage annotations explicitly flagging which topic areas have gaps due to the unavailable source, rather than presenting a uniformly complete-looking result.", "correcta": true, "justificacion": "Coverage annotations indicating which findings are well-supported and which have gaps is the documented pattern for handling an unrecovered subagent failure in synthesis."},
+        {"id": "C", "texto": "The synthesis step silently omits the affected topic area so the report reads as complete.", "correcta": false, "justificacion": "This is the documented anti-pattern of suppressing errors, which hides an incomplete result from anyone relying on it."},
+        {"id": "D", "texto": "The coordinator's top-level exception handler aborts the entire five-subagent workflow because one subagent failed.", "correcta": false, "justificacion": "This is the opposite documented anti-pattern — a single failure shouldn't discard valid partial results from the other four subagents."},
+        {"id": "E", "texto": "The affected subagent propagates the raw timeout to the coordinator immediately, without attempting any retry, to keep its logic simple.", "correcta": false, "justificacion": "Skips the required local-recovery step for transient failures before considering propagation."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-3",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q10",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.4",
+      "escenario": "During an extended single-session exploration of a large codebase, an agent identifies key classes UserService and AuthHandler early on. Much later in the same session, after context has filled considerably, it starts describing 'typical patterns' in generic terms instead of naming those specific classes again.",
+      "enunciado": "What is the most direct fix for this specific symptom?",
+      "opciones": [
+        {"id": "A", "texto": "Have the agent write key findings (such as discovered class names and their roles) to scratchpad files outside the context window, and retrieve them for later questions.", "correcta": true, "justificacion": "Scratchpad files persist concrete findings across context limits, directly countering the effect of the agent 'forgetting' specific classes it discovered earlier."},
+        {"id": "B", "texto": "Rely on periodic /compact calls to resolve this, since compaction is designed to manage exactly this kind of long-session context problem.", "correcta": false, "justificacion": "Compaction summarizes accumulated conversation but can dilute exact class names a scratchpad would preserve verbatim; the two are complementary, not substitutes."},
+        {"id": "C", "texto": "Delegate all further exploration to subagents with no persistence mechanism for the main agent's own findings.", "correcta": false, "justificacion": "Subagent delegation isolates verbose exploration output from the main agent's context but doesn't by itself persist findings the main agent already made; it solves a different problem."},
+        {"id": "D", "texto": "Increase the model's output token limit for each response so it can describe classes in more detail.", "correcta": false, "justificacion": "Output length has no bearing on whether earlier findings remain accessible in context; it doesn't address the retention problem at all."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-4",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/compaction"]
+    },
+    {
+      "id": "b5-q11",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.4",
+      "escenario": "A long-running coding agent needs to survive process crashes and restarts without losing track of which planned features are actually working versus still broken, and without accidentally masking a feature that's known to be failing.",
+      "enunciado": "Which artifact pattern is designed specifically to prevent this kind of masking?",
+      "opciones": [
+        {"id": "A", "texto": "A feature_list.json enumerating planned features with a passes (pass/fail) field that the agent is only allowed to update, never delete or redefine.", "correcta": true, "justificacion": "An update-only passes field prevents the agent from silently erasing or redefining evidence of a broken or pending feature, which is exactly the masking risk described."},
+        {"id": "B", "texto": "A claude-progress.txt log read at the start of each session.", "correcta": false, "justificacion": "Useful for narrative context on what's already been done, but it isn't structured with an update-only pass/fail field, so it doesn't specifically guard against masking a broken feature's status."},
+        {"id": "C", "texto": "A single freeform scratchpad file that the agent can freely rewrite each turn.", "correcta": false, "justificacion": "Without any restriction on rewriting, the agent could just as easily overwrite or drop evidence of a broken feature as record it."},
+        {"id": "D", "texto": "Git commit messages as the sole source of truth for feature status.", "correcta": false, "justificacion": "Commits document progress and serve as recovery points to revert to, but they aren't a structured pass/fail record of feature status with an update-only guarantee."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-4",
+      "fuentes": ["https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents"]
+    },
+    {
+      "id": "b5-q12",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.4",
+      "escenario": "A team is deciding how to combine compaction and subagent delegation while exploring a large codebase.",
+      "enunciado": "Which statement correctly distinguishes the two mechanisms?",
+      "opciones": [
+        {"id": "A", "texto": "Compaction automatically summarizes the accumulated conversation once a token threshold is crossed (a platform-level mechanism), while subagent delegation isolates verbose exploration output so it never enters the main agent's context at all; they are complementary, not interchangeable.", "correcta": true, "justificacion": "Compaction and delegation are two distinct, complementary mechanisms — automatic summarization at a threshold versus isolation of verbose output — and neither substitutes for the other."},
+        {"id": "B", "texto": "They are functionally identical — both simply delete old context to free up tokens.", "correcta": false, "justificacion": "Compaction summarizes rather than deletes, and delegation isolates rather than either summarizing or deleting; neither description matches 'simply deleting.'"},
+        {"id": "C", "texto": "Compaction requires scratchpad files to function, while delegation needs no persistence mechanism at all.", "correcta": false, "justificacion": "Compaction operates independently of scratchpad files; the two are separate, complementary tools, not dependent on each other."},
+        {"id": "D", "texto": "Subagent delegation is triggered automatically once a token threshold is reached, exactly like compaction.", "correcta": false, "justificacion": "Delegation is a deliberate decision by the coordinating agent to spin off a subagent for a specific question, not an automatic threshold-triggered mechanism like compaction."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-4",
+      "fuentes": ["https://platform.claude.com/docs/en/build-with-claude/compaction"]
+    },
+    {
+      "id": "b5-q13",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.5",
+      "escenario": "A document-extraction pipeline reports 97% overall accuracy. Based on this figure, the team plans to auto-approve every extraction with a confidence score above 0.9 without further review. A later audit reveals one document type is actually at 50% accuracy, its errors diluted into the 97% average.",
+      "enunciado": "What should have been done before reducing human review based on the 97% figure?",
+      "opciones": [
+        {"id": "A", "texto": "Validate accuracy by document type and by field segment, using stratified random sampling on high-confidence extractions, to confirm consistent performance across all segments before reducing review anywhere.", "correcta": true, "justificacion": "Aggregate accuracy can hide a segment performing far worse than the average; stratified sampling and per-segment validation are the documented prerequisite before automating any reduction in review."},
+        {"id": "B", "texto": "Trust the 97% aggregate figure directly, since it comfortably exceeds most typical accuracy thresholds.", "correcta": false, "justificacion": "This is the exact documented anti-pattern — an aggregate figure can conceal a segment performing far worse than the average suggests."},
+        {"id": "C", "texto": "Raise the auto-approval confidence threshold from 0.9 to 0.99 to be more conservative.", "correcta": false, "justificacion": "Doesn't address whether confidence scores are even calibrated correctly for the underperforming segment, and doesn't identify which segment is the problem."},
+        {"id": "D", "texto": "Immediately retrain the extraction model on the underperforming document type, without first measuring segment-level accuracy through sampling.", "correcta": false, "justificacion": "Skips the diagnostic step (segment validation via stratified sampling) that would confirm the scope and nature of the problem before committing to a fix."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-5"
+    },
+    {
+      "id": "b5-q14",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.5",
+      "escenario": "A field-level confidence score of 0.95 is reported for a batch of extracted values, but a manual audit of that same high-confidence batch finds true accuracy closer to 60%.",
+      "enunciado": "What is the correct fix so these confidence scores can be trusted for routing extractions to human review?",
+      "opciones": [
+        {"id": "A", "texto": "Calibrate the confidence scores against a labeled validation set before using them to route review decisions, since an uncalibrated score can report high confidence even when true accuracy is much lower.", "correcta": true, "justificacion": "Calibration against a labeled validation set is the documented fix for a confidence score that reports high confidence while true accuracy is much lower."},
+        {"id": "B", "texto": "Report confidence scores with more decimal precision (e.g., 0.953 instead of 0.95) to support finer-grained routing decisions.", "correcta": false, "justificacion": "Added precision doesn't fix the underlying miscalibration; a more precise but still uncalibrated number is just as misleading."},
+        {"id": "C", "texto": "Replace field-level confidence scores with a single document-level score to simplify the routing logic.", "correcta": false, "justificacion": "This regresses toward the same aggregation problem confidence calibration is meant to avoid — a document-level average can mask poor performance on specific fields."},
+        {"id": "D", "texto": "Have a second model independently re-score each extraction and average the two scores as the final confidence.", "correcta": false, "justificacion": "Without calibration against ground truth, averaging two uncalibrated scores doesn't establish any real relationship between the reported number and actual accuracy."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-5"
+    },
+    {
+      "id": "b5-q15",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.5",
+      "escenario": "An eval for a production agent needs to certify that users can expect consistently correct behavior every time they invoke a specific task, not just that the agent is capable of succeeding occasionally. The team is deciding which reliability metric to report from k repeated runs of the same task.",
+      "enunciado": "Which metric is appropriate here, and why would the alternative be misleading?",
+      "opciones": [
+        {"id": "A", "texto": "pass^k (the probability that all k attempts succeed) is the relevant metric, because pass@k (at least one success across k attempts) would look reassuring even if the agent only succeeds on a fraction of runs.", "correcta": true, "justificacion": "pass^k measures whether every attempt succeeds, which is exactly what 'consistently correct every time' requires; pass@k only requires one success and would misrepresent that consistency."},
+        {"id": "B", "texto": "pass@k is equally valid here, since a single successful run already demonstrates the underlying capability exists.", "correcta": false, "justificacion": "Demonstrating capability once doesn't establish the consistent, every-time reliability the scenario requires; this is the documented trap of using pass@k where pass^k is needed."},
+        {"id": "C", "texto": "Report a single aggregate accuracy figure across all previous evaluation runs, regardless of k.", "correcta": false, "justificacion": "An aggregate figure across unrelated runs doesn't measure whether the same task succeeds consistently across repeated attempts, which is what the scenario specifically asks for."},
+        {"id": "D", "texto": "Rely solely on an LLM-judge's score for each run without ever validating that judge against human expert judgment.", "correcta": false, "justificacion": "LLM judges must be calibrated against human experts to minimize divergence; an uncalibrated judge's score doesn't reliably tell you whether the underlying pass rate is real."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-5",
+      "fuentes": ["https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"]
+    },
+    {
+      "id": "b5-q16",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.6",
+      "escenario": "A multi-agent research system compresses findings from several subagents into fluent prose for the final report. The report reads well, but a reviewer trying to fact-check a specific claim can no longer tell which subagent or source it originally came from.",
+      "enunciado": "What is the correct fix for this loss of traceability?",
+      "opciones": [
+        {"id": "A", "texto": "Require subagents to produce structured claim-source mappings (source URL, document name, relevant excerpt) and have the synthesis agent preserve and explicitly combine these mappings.", "correcta": true, "justificacion": "Structured claim-source mappings preserved through synthesis are exactly the documented mechanism to keep every claim traceable to its source."},
+        {"id": "B", "texto": "Ask the synthesis agent to write longer, more detailed prose paragraphs for each claim to improve clarity.", "correcta": false, "justificacion": "More detailed prose still doesn't restore a checkable link between a specific claim and its specific source; it's still unstructured text."},
+        {"id": "C", "texto": "Have the synthesis agent cite only the single most authoritative source per claim, to keep the prose focused.", "correcta": false, "justificacion": "This drops the structured mapping to any other supporting sources and still doesn't preserve traceable per-claim attribution, it just narrows what's lost."},
+        {"id": "D", "texto": "Deploy a dedicated fact-verification model to retroactively re-attribute claims to likely sources after synthesis is done.", "correcta": false, "justificacion": "Over-engineered after-the-fact guesswork; the documented fix is to require the structured mapping upstream so nothing needs to be reconstructed later."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-6",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    },
+    {
+      "id": "b5-q17",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.6",
+      "escenario": "Two credible sources report different figures for the same statistic — one says AI adoption in music production grew 45%, the other says 38% — with publication dates about a month apart. The current synthesis logic picks whichever source it judges more authoritative and reports only that single number.",
+      "enunciado": "What is the correct way to handle this discrepancy?",
+      "opciones": [
+        {"id": "A", "texto": "Annotate both values with their source attribution and publication dates rather than arbitrarily selecting one.", "correcta": true, "justificacion": "Annotating both conflicting values with attribution and dates is the documented pattern; picking one hides real uncertainty and the date gap might partly explain the difference."},
+        {"id": "B", "texto": "Average the two values into a single blended figure (e.g., ~41.5%) to present one clean number.", "correcta": false, "justificacion": "Invents a number neither source actually reported and still hides the real discrepancy, just in a different way."},
+        {"id": "C", "texto": "Discard both values, since neither can be independently verified as fully correct.", "correcta": false, "justificacion": "Over-correction that throws away information a reader could use; the documented fix is to preserve and annotate both, not discard them."},
+        {"id": "D", "texto": "Keep a standing rule of always using the more recent source's value as the tie-breaker going forward.", "correcta": false, "justificacion": "Still an arbitrary selection rule that hides uncertainty, even applied consistently; the documented fix is annotation of both values, not a recency-based selection rule."}
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-6"
+    },
+    {
+      "id": "b5-q18",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.6",
+      "escenario": "A final multi-source report renders every finding as uniform prose, and none of the structured outputs feeding into it include a publication or collection date field. Analysts complain that (1) they can't tell whether an apparent contradiction between two data points is a real conflict or just a difference in when each was collected, and (2) financial figures are hard to compare at a glance.",
+      "enunciado": "Select TWO changes that directly address both complaints.",
+      "opciones": [
+        {"id": "A", "texto": "Require every structured finding to include a publication or collection date field, so temporal differences aren't mistaken for real contradictions.", "correcta": true, "justificacion": "Missing publication dates is exactly what causes legitimate temporal differences to be misread as contradictions; requiring dates in every structured output fixes that."},
+        {"id": "B", "texto": "Render different content types with formats suited to them — for example, tables for financial data and prose for narrative findings — instead of forcing everything into uniform prose.", "correcta": true, "justificacion": "Matching rendering to content type (tables for financial data, prose for narrative) is the documented fix for uniform prose losing the conventions that make comparison easy."},
+        {"id": "C", "texto": "Assign a dedicated agent to rewrite all findings into a single consistent narrative voice.", "correcta": false, "justificacion": "Uniform prose is the documented problem for content types like financial data, not the fix."},
+        {"id": "D", "texto": "Drop any data point whose collection date cannot be verified.", "correcta": false, "justificacion": "An overly aggressive fix that discards potentially valid data instead of simply requiring and preserving date metadata going forward."},
+        {"id": "E", "texto": "Have the coordinator unilaterally decide which of two conflicting values to keep before synthesis, without annotating the other.", "correcta": false, "justificacion": "Contradicts the documented pattern of annotating both conflicting values with attribution rather than arbitrarily resolving to one."}
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-6",
+      "fuentes": ["https://www.anthropic.com/engineering/built-multi-agent-research-system"]
+    }
+  ]
+}

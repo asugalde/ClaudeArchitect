@@ -19,6 +19,25 @@ El *agentic loop* (bucle agéntico) es el ciclo que ejecuta el Agent SDK por deb
 
 El *lifecycle* tiene cinco pasos: se recibe el prompt junto con el `system prompt`, las tools y el historial, y el SDK emite un `SystemMessage` con `subtype: "init"`; Claude responde y el SDK emite un `AssistantMessage`; el SDK ejecuta cada tool solicitada y los resultados alimentan el siguiente turno; los dos pasos anteriores se repiten mientras haya tool calls; y al producirse una respuesta sin tool calls, el SDK emite el `AssistantMessage` final seguido de un `ResultMessage` con texto, coste, uso de tokens y `session_id`. Un **turn** es esa ronda completa —tool calls, ejecución, resultados devueltos— sin que la aplicación ceda el control; los turns cuentan contra `maxTurns` (`max_turns` en Python), que es una red de seguridad, no el mecanismo principal de parada. Por debajo de esta abstracción sigue el mismo campo `stop_reason` del Bloque 0: mientras la respuesta trae `stop_reason: "tool_use"` el bucle continúa, y termina cuando trae `"end_turn"`. `maxBudgetUsd` (`max_budget_usd`) es el límite equivalente medido en gasto estimado en USD —incluyendo el de los subagentes—, y al alcanzarse el `ResultMessage` llega con `subtype: "error_max_budget_usd"` en vez de `"success"`.
 
+```mermaid
+sequenceDiagram
+    participant App as Aplicación
+    participant SDK as Agent SDK
+    participant C as Claude
+    App->>SDK: query(prompt, options)
+    SDK->>C: SystemMessage(init) + historial
+    C-->>SDK: AssistantMessage (tool calls y/o texto)
+    alt hay tool calls
+        SDK->>SDK: ejecuta tools (concurrente si read-only, secuencial si state-modifying)
+        SDK-->>C: UserMessage (tool results)
+        C-->>SDK: AssistantMessage (siguiente turno)
+    else sin tool calls
+        SDK-->>App: ResultMessage (subtype, coste, session_id)
+    end
+```
+
+El diagrama muestra que el turno se repite mientras la respuesta de Claude incluya tool calls, y que el `ResultMessage` —no un análisis de texto ni un contador arbitrario— es la señal de cierre del bucle que consume la aplicación.
+
 ```typescript
 import { query } from "@anthropic-ai/claude-agent-sdk";
 

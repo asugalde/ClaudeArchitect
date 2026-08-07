@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bloque 5 — Gestión de contexto y fiabilidad</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<script>try{var l=localStorage.getItem("ccarf-lang");document.documentElement.dataset.lang=(l==="python")?"python":"typescript"}catch(e){document.documentElement.dataset.lang="typescript"}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  /* Design tokens · Volt (copiados de plantillas/volt-style-guide.html) */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
+  /* Topbar sticky — marca a la izquierda, controles (tema/idioma/pantalla completa) a la derecha. */
+  .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
+    gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
+  .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
+
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+  .hero { padding-bottom:var(--sp-5); }
+  .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+
+  /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
+  .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+    border-right:1px solid var(--border); padding-right:var(--sp-5); }
+  .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
+  .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
+    white-space:normal; transition:color var(--ease),border-color var(--ease); }
+  .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
+  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
+
+  @media (max-width:900px) {
+    .layout { flex-direction:column; gap:var(--sp-4); }
+    .sidebar { position:static; width:100%; flex:0 0 auto; max-height:none; overflow:visible;
+      border-right:none; padding-right:0; border-bottom:1px solid var(--border); padding-bottom:var(--sp-4); }
+    .content-wrap { max-width:100%; }
+  }
+
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.02em; margin-top:var(--sp-8); border-bottom:1px solid var(--border); padding-bottom:var(--sp-2); }
+  h3 { font-size:var(--fs-h3); font-weight:var(--fw-bold); color:var(--text); letter-spacing:-.015em; margin-top:var(--sp-7); }
+  /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
+     (consolidation/namespacing/renaming/splitting) son una sola palabra sin
+     punto de corte y se salian de la caja en movil. Solo parte si desborda. */
+  p, li { max-width:72ch; overflow-wrap:break-word; }
+  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  a:hover { text-decoration:underline; }
+  strong { font-weight:var(--fw-semibold); }
+
+  /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
+     (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
+     de corte que desbordaba el ancho en movil. */
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
+  pre code { background:none; border:none; color:inherit; padding:0; }
+  pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
+  /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
+  pre[data-lang] { position:relative; padding-top:30px; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  /* Referencias oficiales al cierre de cada lección. */
+  .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
+  /* Foco visible (regla de accesibilidad Volt). */
+  :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
+  tbody tr:hover { background:var(--surface-2); }
+
+  blockquote { border-left:3px solid var(--accent); margin:1.2em 0; padding:8px 18px; color:var(--text-muted); }
+  blockquote p { margin:.4em 0; }
+  hr { border:none; border-top:1px solid var(--border); margin:var(--sp-6) 0; }
+
+  .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
+  .minicheck .mc-q { margin-top:0; }
+  .minicheck label { display:block; padding:5px 0; cursor:pointer; }
+  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover { background:var(--accent-hover); }
+  .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
+  .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
+  .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
+  body.print-mode .mc-answer, .mc-answer { font-weight:var(--fw-semibold); color:var(--success); }
+
+  .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .print-only { display:none; }
+  @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition:none !important; }
+  }
+  @media print {
+    .topbar, .sidebar, .minicheck button { display:none !important; }
+    .wrap, .layout, main { max-width:100%; padding:0; margin:0; border:none; }
+    h2 { break-before:page; }
+    h2:first-of-type { break-before:auto; }
+    pre { white-space:pre-wrap; }
+    a { color:inherit; text-decoration:none; }
+    .print-only { display:block; }
+  }
+  body.print-mode .sidebar, body.print-mode .minicheck button { display:none; }
+  .theme-toggle, .fs-toggle { width:40px; padding-left:0; padding-right:0; text-align:center; }
+  html[data-lang="typescript"] .lang-variant[data-lang="python"],
+  html[data-lang="python"] .lang-variant[data-lang="typescript"] { display:none; }
+  .lang-variant > pre { margin-top:0; }
+  .lang-variant .lang-note { max-width:72ch; margin:8px 0 0; font-size:var(--fs-caption); line-height:1.45; color:var(--text-muted); border-left:3px solid var(--warning); padding-left:10px; }
+  .lang-variant .lang-note code { font-size:.92em; }
+  /* El PDF de estudio no tiene JS ni toggle: imprime siempre TypeScript. */
+  @media print {
+    .lang-variant[data-lang="python"] { display:none !important; }
+    .lang-variant[data-lang="typescript"] { display:block !important; }
+  }
+
+  /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
+  #contenido { counter-reset:sec; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    letter-spacing:.08em; margin-bottom:6px; }
+
+  /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
+  .minicheck button { color:var(--on-accent); }
+
+  /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
+  @media print {
+    .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
+    .eyebrow { color:#0E82FF; }
+    .hero h1 { color:#0E1B2C; }
+    .hero .lead { color:#45536C; }
+    #contenido > h2::before { color:#0E82FF; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="topbar-controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">CCAR-F · Guía de estudio</div>
+    <h1>Bloque 5 — Gestión de contexto y fiabilidad</h1>
+    <p class="lead">Peso en el examen: 15% (Dominio 5 oficial: Context Management &amp; Reliability) · Escenarios donde cae: conversaciones y sesiones de exploración muy largas, sistemas multi-agente con subagentes que fallan o divergen, flujos de revisión humana con métricas agregadas engañosas, síntesis de múltiples fuentes con datos conflictivos</p>
+  </div>
+  <div class="layout">
+    <aside class="sidebar">
+      <nav id="toc"><div class="eyebrow">Contenido</div><div id="toc-links"></div></nav>
+    </aside>
+    <main class="content-wrap">
+    <div id="contenido">
+      <h2 id="que-evalua-el-examen">Qué evalúa el examen en este bloque</h2>
+
+      <p>Este bloque cierra el temario con la pregunta que atraviesa a los otros cuatro dominios: qué pasa cuando la conversación, la exploración de código o el sistema multi-agente se alargan lo suficiente como para que el contexto deje de ser fiable. Mientras otros bloques se centran en <em>cómo</em> orquestar agentes y tools, aquí se evalúa <em>qué</em> información sobrevive esa orquestación —hechos transaccionales, atribución de fuentes, criterios de escalación— y con qué garantías. Un enunciado típico describe un agente de soporte que tras veinte turnos empieza a repetir preguntas ya respondidas, o un sistema de research con varios subagentes donde uno falla en silencio y la síntesis final no lo refleja; la pregunta pide identificar la causa raíz y el mecanismo correcto, no solo reconocer el síntoma. Los seis task statements (5.1 a 5.6) recorren, en este orden, la preservación de contexto conversacional, el diseño de escalación, la propagación de errores entre agentes, la exploración de codebases grandes, la calibración de revisión humana y la preservación de procedencia en síntesis multi-fuente.</p>
+
+      <h2 id="antes-de-empezar">Antes de empezar</h2>
+
+      <p>Este bloque asume que ya dominas el bucle agéntico básico (Bloque 0), el diseño de tools y sub-agentes (Bloques 1-2) y, sobre todo, el Agent SDK y los patrones de orquestación multi-agente del Bloque 4: aquí no se explica de nuevo cómo se lanza un subagente o cómo se estructura un coordinador, sino qué información debe sobrevivir esa orquestación cuando las cosas se alargan o fallan. Conviene llegar con una intuición clara de qué es la ventana de contexto y por qué la API de Claude es stateless (sin estado), porque buena parte de los mecanismos de este bloque —case facts, scratchpads, compaction— existen precisamente para gestionar las consecuencias de esa arquitectura sin estado a lo largo de sesiones largas.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-1">Lección 1 — Preservar contexto crítico en interacciones largas: case facts, context awareness y el efecto lost in the middle</h2>
+
+      <p>A medida que una conversación acumula turnos, la ventana de contexto crece y la precisión con la que el modelo recupera datos concretos se degrada de forma progresiva, un fenómeno conocido como <em>context rot</em> (degradación progresiva de la fiabilidad de recuperación de información en contextos largos). No es un límite duro como agotar tokens: técnicamente los datos siguen cabiendo en la ventana, pero la fiabilidad con la que el modelo los usa cae. El problema que resuelve este eje es cómo diseñar el flujo de información para que los hechos críticos —importes, fechas, números de pedido, expectativas explícitas del cliente— sobrevivan intactos aunque la conversación se alargue y se resuma varias veces.</p>
+
+      <p>La causa de fondo tiene dos componentes que conviene separar bien. Por un lado está el <em>lost in the middle effect</em> (efecto de pérdida en el medio): los modelos procesan de forma fiable la información al principio y al final de una entrada larga, pero pueden omitir hallazgos situados en secciones intermedias. Por otro está la acumulación desproporcionada de resultados de tools: un resultado de búsqueda de pedido puede traer 40 o más campos cuando solo 5 son relevantes para la tarea, y esos campos irrelevantes se acumulan turno tras turno consumiendo presupuesto sin aportar nada. A esto se suma el riesgo de la <em>progressive summarization</em>: condensar valores numéricos y expectativas explícitas del cliente en resúmenes vagos ("el cliente tiene un problema de envío") destruye precisión que después no se puede reconstruir. Los modelos más recientes (Sonnet 5, Sonnet 4.6, Sonnet 4.5, Haiku 4.5) mitigan parcialmente esto con <strong>context awareness</strong> automático: la API inyecta una etiqueta al inicio de la conversación y actualizaciones tras cada tool call para que el propio modelo rastree su presupuesto restante.</p>
+
+      <pre data-lang="xml"><code>&lt;!-- Inyectado por la API al inicio de la conversación --&gt;
+&lt;budget:token_budget&gt;200000&lt;/budget:token_budget&gt;</code></pre>
+
+      <pre data-lang="xml"><code>&lt;!-- Actualización tras cada tool call --&gt;
+&lt;system_warning&gt;Token usage: 35000/200000; 165000 remaining&lt;/system_warning&gt;</code></pre>
+
+      <p>Pero context awareness ayuda al modelo a autorregularse; no resuelve el problema de fondo, que es de diseño de la aplicación. El patrón nuclear consiste en separar dos capas: el historial conversacional completo, que se reenvía sin recortar porque la API es <em>stateless</em> (sin estado) y ese reenvío es literalmente lo que sostiene la coherencia de la conversación —esto no es un anti-patrón, es un requisito real—, y una <strong>capa de hechos estructurados</strong> que se extrae y persiste aparte, fuera de cualquier resumen, para que ningún paso de compresión posterior pueda diluirla.</p>
+
+      <pre data-lang="json"><code>// Persistent "case facts" block: se incluye en CADA prompt, fuera del historial resumible
+{
+  "case_facts": {
+    "order_id": "ORD-88214",
+    "amount": 129.99,
+    "currency": "USD",
+    "issue_date": "2026-07-30",
+    "customer_stated_expectation": "full refund within 5 business days",
+    "status": "shipped"
+  }
+}</code></pre>
+
+      <p>Sobre esa base se añaden mitigaciones puntuales: recortar (<em>trim</em>) los tool outputs verbosos a solo los campos relevantes antes de que se acumulen; colocar los resúmenes de hallazgos clave al principio de los inputs agregados en vez de enterrarlos a mitad de un bloque largo; y, en arquitecturas multi-agente, exigir a los subagentes que incluyan metadata explícita (fechas, fuente, contexto metodológico) en sus outputs estructurados para que la síntesis downstream no dependa de reconstruir esa información implícitamente. Un hallazgo relacionado y contraintuitivo: pedir al modelo que extraiga primero a un <em>scratchpad</em> (bloc de notas temporal) las citas o pasajes relevantes antes de responder mejora la precisión de recuperación frente a responder directamente, a un coste pequeño de latencia, y la mejora se mantiene incluso cuando el pasaje relevante está cerca del principio del documento, no solo al final. Es el mismo principio que el bloque de case facts: obligar a que lo crítico quede escrito explícitamente en vez de confiar en que el modelo lo recupere de un historial largo.</p>
+
+      <p>En producción esto se ve en sesiones de soporte multi-issue: un cliente abre un caso, la conversación se alarga con varias idas y vueltas, y al turno 20 el agente necesita seguir sabiendo con precisión que el importe es 129.99 USD y que la promesa fue "reembolso completo en 5 días hábiles" —no una paráfrasis vaga de esos datos generada dos resúmenes atrás—. El anti-patrón más costoso en la dirección opuesta es cargar todos los archivos o toda la información disponible por adelantado "por si acaso": consume tokens innecesarios y acelera precisamente el context rot que se quiere evitar; el patrón correcto es exploración <em>just-in-time</em> (bajo demanda), cargando datos dinámicamente según se necesiten.</p>
+
+      <p>El examen suele contraponer dos afirmaciones que parecen contradictorias pero no lo son: "hay que reenviar el historial completo para mantener coherencia" (cierto, requisito de la API stateless) y "hay que recortar/extraer agresivamente" (también cierto, pero aplicado a tool outputs verbosos y a hechos transaccionales extraídos a un bloque aparte, no al historial conversacional en sí). La opción distractora generaliza el trimming al historial completo, lo que rompe coherencia; la correcta reconoce que ambas cosas conviven porque actúan en capas distintas.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 1.</strong> Un agente de soporte lleva 25 turnos de conversación con un cliente. ¿Cuál es la forma correcta de asegurar que el importe exacto del pedido no se pierda en un resumen posterior?</p>
+        <label><input type="radio" name="mc1" value="A"> A. Reenviar solo los últimos 3 turnos en cada request para ahorrar tokens.</label>
+        <label><input type="radio" name="mc1" value="B"> B. Mantener un bloque de "case facts" persistente con los datos transaccionales, aparte del historial resumible.</label>
+        <label><input type="radio" name="mc1" value="C"> C. Confiar en que <code>context awareness</code> reconstruya el dato automáticamente cuando haga falta.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="un bloque de hechos estructurados que se incluye en cada prompt, fuera del historial que puede resumirse, es el único mecanismo que garantiza que un resumen posterior no diluya ese valor; context awareness solo informa del presupuesto restante, no protege datos concretos."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://platform.claude.com/docs/en/build-with-claude/context-windows" target="_blank" rel="noopener">Context windows</a> explica el mecanismo de context awareness y el consumo de tokens por turno; <a href="https://www.anthropic.com/news/prompting-long-context" target="_blank" rel="noopener">Prompting for long context</a> documenta el hallazgo del scratchpad de extracción de citas.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-2">Lección 2 — Diseñar escalación y resolución de ambigüedad sin proxies engañosos</h2>
+
+      <p>Un agente autónomo necesita un criterio explícito para decidir cuándo resolver por sí mismo y cuándo escalar a un humano. El problema de fondo es que las señales "obvias" para inferir esa decisión —cuán frustrado suena el cliente, cuán seguro dice estar el propio modelo— no correlacionan de forma fiable con la complejidad real del caso, y diseñar la escalación sobre esas señales produce sistemas que escalan mal en ambas direcciones: casos simples escalados de más, casos complejos resueltos de menos.</p>
+
+      <p>Los triggers de escalación apropiados están explícitamente delimitados a tres: el cliente solicita un humano de forma explícita, existe una excepción o un vacío de policy (no basta con que el caso sea "complejo" en abstracto), o el agente no puede hacer progreso significativo tras varios intentos. La primera categoría tiene una distinción fina que el examen explota: si el cliente exige un humano explícitamente, se escala de inmediato, sin intentar investigación previa; pero si el issue es sencillo y está dentro de las capacidades del agente, se reconoce la frustración del cliente y se ofrece resolución, escalando solo si el cliente reitera su preferencia. El vacío de policy es un trigger legítimo aunque el caso no sea "difícil": un cliente que pide igualar el precio de un competidor, cuando la policy solo cubre ajustes de precio en el propio sitio, no está frente a un caso complejo sino frente a un silencio de la policy, y eso basta para escalar. Cuando una búsqueda retorna múltiples matches de cliente, la resolución correcta de la ambigüedad de identidad es pedir identificadores adicionales, nunca elegir por heurística (como "el registro más reciente"): esa heurística puede llevar a actuar sobre el cliente equivocado.</p>
+
+      <pre data-lang="text"><code># Fragmento de system prompt: criterios explícitos + few-shot
+Escalate when:
+- Customer explicitly requests human agent
+- Policy does not address the specific request
+- You cannot make meaningful progress after several attempts
+
+Do NOT escalate when:
+- Issue is within your capabilities and straightforward
+- Customer is frustrated but not requesting a human</code></pre>
+
+      <p>El patrón que el examen premia es exactamente ese: añadir criterios explícitos de escalación con ejemplos <em>few-shot</em> (unos pocos ejemplos de referencia en el propio prompt) al system prompt, mostrando cuándo escalar frente a cuándo resolver de forma autónoma. Es la intervención de menor esfuerzo, y suele ser la correcta cuando el problema de fondo es que los límites de decisión son ambiguos, no que falte infraestructura. Un caso de producción recurrente: un agente logra 55% de resolución en el primer contacto frente a un objetivo del 80%, y los logs muestran que escala casos sencillos —un reemplazo por daño con evidencia fotográfica adjunta— mientras intenta resolver por su cuenta casos que requieren excepciones de policy que no tiene autoridad para conceder. La causa raíz son límites de decisión poco claros en el prompt, y la solución es la misma de siempre: criterios explícitos con few-shot, no un sistema nuevo.</p>
+
+      <pre class="mermaid">flowchart TD
+    Q[Solicitud del cliente] --> D1{Pide humano explícitamente?}
+    D1 -->|Sí| ESC[Escalar de inmediato]
+    D1 -->|No| D2{Policy cubre el caso?}
+    D2 -->|No / ambigua| ESC
+    D2 -->|Sí| D3{Progreso significativo tras varios intentos?}
+    D3 -->|No| ESC
+    D3 -->|Sí| D4{Múltiples matches de cliente?}
+    D4 -->|Sí| CLARIFY[Pedir identificadores adicionales]
+    D4 -->|No| RESOLVE[Resolver autónomamente]</pre>
+
+      <p>El diagrama muestra que la escalación se decide por triggers explícitos en cascada —petición explícita, vacío de policy, falta de progreso, ambigüedad de identidad— y nunca por proxies indirectos como el sentimiento del cliente o la confianza autoreportada del modelo.</p>
+
+      <p>Los anti-patrones de este eje son casi siempre proxies plausibles pero no fiables. Escalar según <em>sentiment analysis</em> (detección de frustración en el texto del cliente) falla porque el sentimiento no correlaciona con la complejidad real: un cliente muy frustrado con un problema trivial no necesita escalación, y uno tranquilo con un caso genuinamente complejo sí. Usar el <em>confidence score</em> autoreportado por el propio modelo es igual de frágil: en sistemas agénticos, cambios menores en el input pueden producir cambios grandes de comportamiento, y el modelo puede mostrarse incorrectamente seguro precisamente en los casos difíciles donde más falla. Desplegar un clasificador separado entrenado con tickets históricos para predecir la escalación es sobre-ingeniería cuando el problema real —criterios ambiguos en el prompt— ni siquiera se ha intentado resolver con la intervención más barata.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Cliente exige explícitamente un humano</td><td>Escalar de inmediato, sin investigar antes</td><td>La preferencia explícita tiene prioridad sobre cualquier intento de resolución</td></tr>
+          <tr><td>Umbral de escalación ambiguo en el prompt</td><td>Criterios explícitos + few-shot en el system prompt</td><td>Intervención de menor esfuerzo que ataca la causa raíz real</td></tr>
+          <tr><td>Decidir si un caso es "complejo"</td><td>Nunca sentiment analysis ni confidence autoreportado</td><td>Ninguno de los dos correlaciona de forma fiable con la complejidad real</td></tr>
+          <tr><td>Múltiples matches de cliente en una búsqueda</td><td>Pedir identificadores adicionales</td><td>Elegir por heurística arriesga actuar sobre el cliente equivocado</td></tr>
+        </tbody>
+      </table>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 2.</strong> Un agente de soporte tiene un 55% de resolución en primer contacto frente a un objetivo del 80%, y los logs muestran que escala casos sencillos mientras intenta resolver casos que exigen excepciones de policy. ¿Cuál es la intervención más efectiva como primer paso?</p>
+        <label><input type="radio" name="mc2" value="A"> A. Entrenar un clasificador separado con tickets históricos para predecir cuándo escalar.</label>
+        <label><input type="radio" name="mc2" value="B"> B. Añadir criterios de escalación explícitos con ejemplos few-shot al system prompt.</label>
+        <label><input type="radio" name="mc2" value="C"> C. Usar el confidence score autoreportado del modelo como señal de escalación.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="la causa raíz es que los límites de decisión son ambiguos en el prompt; esa es la intervención de menor esfuerzo que la ataca directamente, frente a un clasificador (sobre-ingeniería) o un confidence score (proxy no fiable)."></div>
+      </div>
+
+      <!-- HUECO: TS 5.2 — cobertura limitada en fuentes oficiales de blog/documentación más allá del exam guide y su Sample Question 3; no se incluyen umbrales concretos adicionales ni plantillas de few-shot más extensas por no estar respaldados en el corpus. -->
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://www.anthropic.com/engineering/built-multi-agent-research-system" target="_blank" rel="noopener">How we built our multi-agent research system</a> documenta cómo cambios menores en el input pueden producir cambios grandes de comportamiento en sistemas agénticos, relevante para entender por qué el confidence autoreportado no es fiable.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-3">Lección 3 — Propagar errores entre agentes con contexto estructurado, no con un booleano</h2>
+
+      <p>Cuando un subagente falla —un timeout, una búsqueda sin resultados, un permiso denegado—, la forma en que ese fallo se comunica al coordinador determina si el sistema puede recuperarse con criterio o si el fallo se propaga de forma opaca hasta romper todo el flujo. El problema que resuelve este eje es diseñar un contrato de error que dé al coordinador la información necesaria para decidir —reintentar, usar una alternativa, aceptar un resultado parcial— en lugar de un simple éxito/fracaso.</p>
+
+      <p>El contrato de error estructurado (el patrón <code>isError</code> de MCP) incluye, más allá del booleano, el tipo de fallo, si es reintentable, un mensaje legible, qué se intentó, resultados parciales si los hay, y alternativas posibles. Un status genérico como "search unavailable" esconde exactamente ese contexto y le impide al coordinador decidir con criterio. La distinción central que hay que memorizar es entre <strong>access failures</strong> (fallos de acceso, como un timeout, que requieren una decisión de reintento) y <strong>valid empty results</strong> (una consulta que se ejecutó correctamente y simplemente no encontró coincidencias): ambos pueden llegar al coordinador como "sin datos" si no se distinguen explícitamente, pero exigen respuestas opuestas —reintentar en el primer caso, aceptar el resultado en el segundo—.</p>
+
+      <pre data-lang="json"><code>// Contrato de error estructurado (patrón isError de MCP)
+{
+  "isError": true,
+  "errorCategory": "transient",
+  "isRetryable": true,
+  "message": "Search service timed out after 30s",
+  "failureType": "timeout",
+  "attemptedQuery": "orders WHERE customer_id = 88214",
+  "partialResults": null,
+  "alternativeApproaches": ["retry with backoff", "query secondary index"]
+}</code></pre>
+
+      <p>Los subagentes deben implementar <em>recovery local</em> para fallos transitorios —reintentos con backoff, por ejemplo— y propagar al coordinador únicamente los errores que no pueden resolver por sí mismos, incluyendo qué se intentó y qué resultados parciales obtuvieron. Cuando la síntesis final combina resultados de varios subagentes y alguno falló sin recuperación, el output se estructura con <strong>coverage annotations</strong> (anotaciones de cobertura) que indican explícitamente qué hallazgos están bien soportados y qué áreas tienen huecos por fuentes no disponibles, en vez de presentar un resultado aparentemente completo con lagunas silenciosas.</p>
+
+      <pre class="mermaid">flowchart TD
+    T[Subagente ejecuta tool] --> E{Falla?}
+    E -->|No| OK[Retorna resultado válido, incl. empty result legítimo]
+    E -->|Transitorio| LR[Recovery local: retry / backoff]
+    LR --> T
+    E -->|No recuperable| CTX[Error estructurado: failureType, attemptedQuery, partialResults, alternatives]
+    CTX --> COORD[Coordinador decide: reintentar, alternativa, o anotar gap en la síntesis]</pre>
+
+      <p>El diagrama muestra que solo los fallos que el subagente no puede resolver localmente llegan al coordinador, y siempre como contexto estructurado —nunca como un status genérico— para habilitar una decisión de recuperación informada.</p>
+
+      <p>En un sistema de research con varios subagentes especializados, este patrón se traduce en algo concreto: si un subagente de búsqueda tiene un timeout en una de tres fuentes, el subagente reintenta localmente con backoff antes de considerar siquiera propagar; si tras varios intentos sigue fallando, propaga un error con <code>failureType: "timeout"</code> y las alternativas que probó, y el coordinador puede decidir aceptar la síntesis con una nota de cobertura ("fuente X no disponible") en vez de bloquear todo el reporte.</p>
+
+      <p>Los dos anti-patrones que el examen contrapone son igual de dañinos en direcciones opuestas. Suprimir errores en silencio —devolver un resultado vacío marcado como éxito cuando en realidad hubo un timeout— esconde el fallo e impide cualquier recuperación, arriesgando entregar un output incompleto sin que nadie lo sepa. Propagar la excepción directamente hasta un handler de nivel superior que termina todo el workflow es el anti-patrón opuesto: un fallo puntual en una de varias fuentes no debería tumbar resultados parciales que sí eran válidos y aprovechables. La opción correcta está en medio: recovery local, propagación estructurada solo de lo irresoluble, y resultados parciales con anotaciones de cobertura.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 3.</strong> Un subagente de búsqueda ejecuta una consulta que se completa correctamente pero no encuentra ningún resultado. ¿Cómo debe reportarlo al coordinador?</p>
+        <label><input type="radio" name="mc3" value="A"> A. Como un error con <code>isError: true</code> y <code>isRetryable: true</code>, igual que un timeout.</label>
+        <label><input type="radio" name="mc3" value="B"> B. Como un resultado válido (empty result legítimo), distinto de un access failure.</label>
+        <label><input type="radio" name="mc3" value="C"> C. Suprimiendo el reporte por completo, ya que no hay datos que sintetizar.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="un empty result válido no es un fallo de acceso; tratarlo como error dispararía reintentos innecesarios, y suprimirlo oculta información legítima (que esa fuente no tiene datos) que la síntesis final podría necesitar."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://www.anthropic.com/engineering/built-multi-agent-research-system" target="_blank" rel="noopener">How we built our multi-agent research system</a> describe la recuperación local que retoma el punto donde ocurrió el fallo en vez de reiniciar todo el flujo, y la coordinación mediante resultados parciales.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-4">Lección 4 — Gestionar el contexto en la exploración de codebases grandes: scratchpads, subagentes y compaction</h2>
+
+      <p>Explorar un codebase grande en una sesión extendida tiene un síntoma de degradación característico y fácil de reconocer: el modelo empieza a dar respuestas inconsistentes y a referenciar "patrones típicos" genéricos en lugar de las clases concretas que había descubierto antes en esa misma sesión. El problema que resuelve este eje es cómo estructurar la exploración —qué se delega, qué se persiste, qué se comprime— para que ese conocimiento adquirido no se diluya a medida que avanza la sesión.</p>
+
+      <p>Tres mecanismos complementarios, no intercambiables, atacan esta degradación desde ángulos distintos. Los <strong>scratchpad files</strong> (ficheros de notas persistentes) permiten que el agente escriba hallazgos clave fuera de la ventana de contexto y los recupere después para preguntas subsecuentes, contrarrestando directamente el efecto de "olvidar" clases o patrones ya descubiertos. La <strong>delegación en subagentes</strong> aísla el output verboso de la exploración —leer decenas de archivos, greps extensos— mientras el agente principal coordina el entendimiento de alto nivel sin cargar ese ruido en su propio contexto: se generan subagentes para preguntas puntuales ("find all test files", "trace refund flow dependencies") mientras el agente principal preserva la coordinación general. La <strong>compaction</strong> es distinta de las dos anteriores: es un mecanismo de plataforma (en beta) que resume automáticamente la conversación al alcanzar un umbral de tokens, sin intervención manual del agente; el comando <code>/compact</code> de Claude Code aplica la misma idea bajo demanda cuando el contexto se llena de output de descubrimiento verboso.</p>
+
+      <pre data-lang="python"><code># Compaction API (beta): resumen automático al alcanzar el umbral
+response = client.beta.messages.create(
+    betas=["compact-2026-01-12"],
+    model="claude-opus-5",
+    max_tokens=4096,
+    messages=messages,
+    context_management={"edits": [{"type": "compact_20260112"}]}
+)</code></pre>
+
+      <pre data-lang="text"><code># Parámetros de compaction
+trigger: 150,000 tokens (mínimo configurable: 50,000)
+pause_after_compaction: false (valor por defecto)
+instructions: None (usa el resumen por defecto si no se especifica)</code></pre>
+
+      <pre class="mermaid">flowchart TD
+    S[Sesión de exploración extendida] --> M1[Scratchpad: hallazgos concretos]
+    S --> M2[Subagentes: aíslan output verboso]
+    S --> M3[Compaction: resume al alcanzar umbral de tokens]
+    M1 --> R[Entendimiento del codebase se preserva a través de la sesión]
+    M2 --> R
+    M3 --> R</pre>
+
+      <p>El diagrama muestra que los tres mecanismos actúan en paralelo sobre el mismo problema —preservar entendimiento durante una exploración larga— pero desde ángulos distintos: notas explícitas, aislamiento de ruido y resumen automático; ninguno sustituye a los otros dos.</p>
+
+      <p>Un cuarto ángulo, orientado a recuperación ante caídas, es la <strong>persistencia estructurada de estado</strong>: cada agente exporta su estado a una ubicación conocida (un manifiesto), y el coordinador carga ese manifiesto al reanudar e inyecta su contenido en los prompts de los agentes siguientes. Este mismo patrón aparece materializado en artefactos con nombre concreto en el diseño de harnesses para agentes de larga duración: un fichero de progreso (<code>claude-progress.txt</code>) que se lee al inicio de cada sesión para entender el estado sin redescubrirlo; un <code>feature_list.json</code> con un campo <code>passes</code> que el agente solo puede actualizar, nunca borrar ni redefinir, para no enmascarar funcionalidad rota; los commits de git como puntos de recuperación explícitos con mensajes descriptivos; y un script de bootstrap (<code>init.sh</code>) que arranca el entorno en un estado conocido al inicio de cada sesión.</p>
+
+      <pre data-lang="json"><code>// Manifiesto de estado exportado por un agente (recuperación ante caída)
+{
+  "phase": "codebase_analysis",
+  "key_findings": {
+    "entry_points": ["src/main.ts", "src/index.ts"],
+    "key_classes": ["UserService", "AuthHandler"],
+    "dependencies_identified": {}
+  },
+  "files_analyzed": ["src/auth.ts", "src/user.ts"],
+  "questions_pending": ["find all test files", "trace refund flow"]
+}</code></pre>
+
+      <p>En producción, el patrón correcto de construcción de entendimiento es incremental: empezar con grep para localizar puntos de entrada, seguir imports con lecturas dirigidas para trazar flujos, y solo entonces delegar en subagentes para las siguientes preguntas, inyectándoles un resumen de lo que la fase anterior ya encontró en vez de dejar que cada fase redescubra desde cero. El anti-patrón más costoso es justo lo contrario en dos direcciones: sobrecargar un único agente sin ninguna delegación, que acumula todo el ruido de la exploración y pierde la coordinación de alto nivel que debería mantener; y no persistir hallazgos a través de los límites de contexto —sin scratchpads ni exports de estado—, de forma que al agotarse el contexto y empezar una sesión nueva, el agente empieza a hablar de "patrones típicos" genéricos en vez de las clases concretas que ya conocía.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> compaction resume automáticamente lo acumulado (a nivel de plataforma, por umbral de tokens); el scratchpad preserva hallazgos concretos por decisión explícita del agente; la delegación en subagentes aísla ruido de exploración del entendimiento de alto nivel. Son complementarios, no sustitutos entre sí — un distractor típico presenta <code>/compact</code> como reemplazo de mantener scratchpads.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 4.</strong> Una sesión de exploración de un codebase grande empieza a producir respuestas que mencionan "patrones típicos" en lugar de las clases concretas descubiertas 40 turnos antes. ¿Cuál es la causa más probable?</p>
+        <label><input type="radio" name="mc4" value="A"> A. El comando <code>/compact</code> se ejecutó y eliminó permanentemente esa información.</label>
+        <label><input type="radio" name="mc4" value="B"> B. No se persistieron los hallazgos clave en un scratchpad o export de estado antes de que el contexto se saturara.</label>
+        <label><input type="radio" name="mc4" value="C"> C. Se delegó demasiado trabajo en subagentes en vez de que el agente principal lo hiciera todo.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="sin scratchpads ni manifiestos de estado, los hallazgos ya descubiertos se pierden al agotarse el contexto o iniciar una sesión nueva, y el modelo recurre a generalidades; la delegación en subagentes (C) es precisamente una mitigación, no la causa."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://platform.claude.com/docs/en/build-with-claude/compaction" target="_blank" rel="noopener">Compaction</a> detalla el mecanismo de resumen automático y sus parámetros; <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents" target="_blank" rel="noopener">Effective harnesses for long-running agents</a> documenta <code>claude-progress.txt</code>, <code>feature_list.json</code>, los commits de git como puntos de recuperación e <code>init.sh</code>.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-5">Lección 5 — Revisión humana y calibración de confianza: por qué la accuracy agregada engaña</h2>
+
+      <p>Cuando un sistema de extracción o clasificación reporta una métrica de precisión agregada alta —97% overall, por ejemplo—, esa cifra puede esconder un rendimiento pobre en tipos de documento o campos específicos que quedan diluidos en el promedio. El problema que resuelve este eje es cómo diseñar el flujo de revisión humana y la calibración de confianza para que reducir la revisión manual se apoye en evidencia por segmento, no en una media global que puede ocultar fallos concentrados.</p>
+
+      <p>El riesgo concreto es que la accuracy agregada esconda que un tipo de documento tiene, por ejemplo, 50% de accuracy real mientras otro tiene 99%: las extracciones de alta confianza del segmento con baja accuracy real seguirían auto-aprobándose y fallando sin que nadie lo note. Para mitigarlo se aplica <em>stratified random sampling</em> (muestreo aleatorio estratificado, es decir, tomar muestras de cada segmento por separado en vez de una muestra global) sobre las extracciones de alta confianza, tanto para medir tasas de error reales como para detectar patrones de error nuevos que no se habían anticipado. Los modelos deben producir <strong>confidence scores a nivel de campo</strong>, no solo a nivel de documento, y esos scores se calibran contra conjuntos de validación etiquetados antes de usarlos para enrutar la atención de revisión: un score sin calibrar puede decir "95% de confianza" con una accuracy real de solo 60%.</p>
+
+      <pre data-lang="json"><code>// Confidence score a nivel de campo
+{
+  "extracted_field": "value",
+  "confidence_score": 0.92,
+  "field_type": "date",
+  "should_review": false
+}</code></pre>
+
+      <pre data-lang="text"><code># Umbral de revisión calibrado (ejemplo ilustrativo, no es una cifra oficial del examen)
+If confidence &lt; 0.70: route to human review
+If ambiguous or contradictory source document: route to human review
+Otherwise: auto-approve</code></pre>
+
+      <p>Antes de automatizar cualquier extracción de alta confianza, hace falta validar la accuracy por tipo de documento y por segmento de campo, confirmando rendimiento consistente en todos los segmentos —no solo en el promedio—. Relacionado con esta misma idea de calibración, pero aplicado a evaluar la fiabilidad del propio agente en vez de a extracción documental, está la distinción entre <strong>pass@k</strong> (la probabilidad de obtener al menos una solución correcta en k intentos) y <strong>pass^k</strong> (la probabilidad de que los k intentos sean <em>todos</em> exitosos). Esta segunda métrica es la relevante cuando los usuarios esperan comportamiento fiable de forma consistente, no solo "acertar alguna vez". Los modelos-juez basados en LLM que se usan para evaluar a otros agentes deben calibrarse cuidadosamente contra expertos humanos, y las puntuaciones bajas deben revisarse sistemáticamente para distinguir si reflejan limitaciones reales del agente o problemas de la propia evaluación —especificaciones ambiguas, graders defectuosos—.</p>
+
+      <p><strong>Tabla de decisión:</strong></p>
+
+      <table>
+        <thead><tr><th>Situación</th><th>Elección correcta</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Accuracy agregada alta (p. ej. 97%) antes de reducir revisión humana</td><td>Validar por tipo de documento y campo con stratified sampling primero</td><td>La media puede esconder un segmento con accuracy mucho más baja que sigue auto-aprobándose</td></tr>
+          <tr><td>Se necesita fiabilidad consistente en cada ejecución, no solo "acertar alguna vez"</td><td>Medir con pass^k, no con pass@k</td><td>pass@k solo exige un acierto en k intentos; pass^k exige que todos lo sean</td></tr>
+          <tr><td>Enrutar a revisión humana</td><td>Confidence de campo calibrado + detección de ambigüedad en el documento origen</td><td>Prioriza la capacidad limitada del revisor humano hacia donde realmente aporta valor</td></tr>
+        </tbody>
+      </table>
+
+      <p>El anti-patrón central es apoyarse solo en la métrica agregada como justificación para reducir revisión humana, sin desglose por tipo de documento o campo: ese segmento con accuracy real baja sigue auto-aprobándose con extracciones de "alta confianza" que en realidad fallan con frecuencia. Igual de dañino es no calibrar los confidence scores contra un conjunto de validación etiquetado, dejando que scores mal calibrados determinen el enrutamiento y socavando todo el propósito de la calibración de confianza.</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 5.</strong> Un sistema de extracción reporta 97% de accuracy agregada, y el equipo se plantea reducir la revisión humana sobre las extracciones de alta confianza. ¿Qué debe verificarse antes?</p>
+        <label><input type="radio" name="mc5" value="A"> A. Nada más: 97% es suficientemente alto para automatizar sin más análisis.</label>
+        <label><input type="radio" name="mc5" value="B"> B. La accuracy desglosada por tipo de documento y por campo, con stratified sampling sobre las extracciones de alta confianza.</label>
+        <label><input type="radio" name="mc5" value="C"> C. Solo el pass@k del modelo en un benchmark interno.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="la accuracy agregada puede esconder un segmento con rendimiento mucho más bajo que el promedio; hay que confirmar consistencia por segmento antes de reducir revisión, no limitarse a la cifra global."></div>
+      </div>
+
+      <!-- HUECO: TS 5.5 — cobertura limitada en fuentes oficiales sobre patrones detallados de routing de revisión humana con ejemplos prácticos de despliegue (umbrales de confianza en producción, volumen de revisión, coste del reviewer humano); el blog "Demystifying evals for AI agents" aporta las métricas (pass@k, pass^k, calibración de jueces LLM) pero no casuística operativa adicional. -->
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents" target="_blank" rel="noopener">Demystifying evals for AI agents</a> desarrolla pass@k vs pass^k y la calibración de modelos-juez LLM contra expertos humanos.</p>
+
+      <hr>
+
+      <h2 id="leccion-5-6">Lección 6 — Preservar procedencia y manejar incertidumbre en síntesis multi-fuente</h2>
+
+      <p>Cuando varios subagentes investigan fuentes distintas y sus hallazgos se combinan en una síntesis final, es fácil perder la trazabilidad de qué afirmación proviene de qué fuente durante los pasos de compresión y resumen. El problema que resuelve este eje es cómo preservar esa procedencia (<em>provenance</em>, en inglés) y cómo representar honestamente la incertidumbre —estadísticas conflictivas entre fuentes creíbles, diferencias temporales entre datos— en lugar de aplanarla en una única respuesta aparentemente segura.</p>
+
+      <p>La atribución de fuente se pierde durante los pasos de resumen cuando los hallazgos se comprimen sin preservar los <strong>claim-source mappings</strong> (el vínculo estructurado entre una afirmación concreta y la fuente concreta que la respalda). Por eso es necesario exigir a los subagentes que produzcan esos mappings de forma estructurada —URLs, nombres de documento, extractos relevantes— y que el agente de síntesis los preserve explícitamente al fusionar hallazgos, en vez de reescribirlos como prosa genérica sin trazabilidad.</p>
+
+      <pre data-lang="json"><code>// Claim-source mapping estructurado
+{
+  "claim": "AI adoption in music production increased 45% in 2025",
+  "sources": [
+    {
+      "source_url": "https://example.com/report",
+      "document_name": "Music Industry Report 2025",
+      "relevant_excerpt": "45% year-over-year increase...",
+      "publication_date": "2025-06-15"
+    }
+  ],
+  "confidence": "high",
+  "conflict_detected": false
+}</code></pre>
+
+      <p>Cuando dos fuentes creíbles reportan estadísticas distintas para el mismo hecho, el tratamiento correcto es anotar el conflicto con atribución de fuente para cada valor, nunca seleccionar arbitrariamente uno de los dos —eso ocultaría la incertidumbre real ante quien lee la síntesis, dándole la falsa impresión de un dato consensuado—.</p>
+
+      <pre data-lang="json"><code>// Estadísticas conflictivas: se anotan ambas con atribución, no se elige una
+{
+  "metric": "AI adoption in music",
+  "values": [
+    {"value": "45%", "source": "Music Industry Report 2025", "publication_date": "2025-06-15"},
+    {"value": "38%", "source": "Tech Market Analysis", "publication_date": "2025-05-20"}
+  ],
+  "interpretation": "Different measurement methodologies; dates differ by one month"
+}</code></pre>
+
+      <p>Los datos temporales son otra fuente frecuente de falsos conflictos: si el output estructurado no exige fecha de publicación o de recolección de cada dato, una diferencia temporal real —un dato de mayo frente a uno de junio— puede malinterpretarse como una contradicción de fondo cuando en realidad el valor simplemente cambió con el tiempo. Por último, distintos tipos de contenido merecen renderizados distintos en la síntesis final —datos financieros como tablas, noticias como prosa, hallazgos técnicos como listas estructuradas— en lugar de forzar todo a un formato uniforme, que pierde las convenciones que facilitan la lectura de cada tipo de dato. Algunos sistemas multi-agente dedican un agente especializado, un <strong>CitationAgent</strong>, exclusivamente a localizar la ubicación exacta de cada cita y asegurar que toda afirmación del reporte final quede correctamente atribuida a su fuente.</p>
+
+      <p>En un sistema de research que sintetiza hallazgos de varios subagentes, esto se traduce en un reporte final con secciones que distinguen explícitamente hallazgos bien establecidos de hallazgos contestados, cada cifra con su fuente y su fecha visibles, y el coordinador —no el subagente individual— decidiendo cómo reconciliar cualquier conflicto detectado antes de presentarlo. El anti-patrón más dañino es justo lo contrario en dos frentes: perder la atribución al comprimir hallazgos en prosa libre, lo que hace imposible verificar después qué fuente dijo qué; y elegir arbitrariamente uno de dos valores conflictivos, escondiendo una discrepancia real tras una apariencia de consenso.</p>
+
+      <p><strong>Regla mnemotécnica:</strong> ante dos cifras distintas de fuentes creíbles, se anotan ambas con su atribución y se deja la interpretación al lector o al coordinador; nunca se elige una "porque parece más fiable" sin decirlo explícitamente. Sin fecha de publicación en el output estructurado, cualquier diferencia entre dos cifras es indistinguible entre "conflicto real" y "cambió con el tiempo".</p>
+
+      <div class="minicheck" data-correct="B">
+        <p class="mc-q"><strong>Mini-check 6.</strong> Dos fuentes creíbles reportan cifras distintas (45% y 38%) para la misma métrica en una síntesis multi-fuente. ¿Cuál es el tratamiento correcto?</p>
+        <label><input type="radio" name="mc6" value="A"> A. Usar la cifra de la fuente más reciente y descartar la otra silenciosamente.</label>
+        <label><input type="radio" name="mc6" value="B"> B. Anotar ambos valores con su atribución de fuente y fecha, señalando el conflicto explícitamente.</label>
+        <label><input type="radio" name="mc6" value="C"> C. Promediar ambas cifras para dar un único valor de consenso.</label>
+        <button class="mc-check">Comprobar</button>
+        <div class="mc-feedback" data-explica="elegir o promediar oculta la incertidumbre real; anotar ambos valores con atribución permite que el lector o el coordinador downstream entienda que hay discrepancia sin resolver, y por qué podría existir (metodología, fecha)."></div>
+      </div>
+
+      <p class="doc-link">📖 Para profundizar: <a href="https://www.anthropic.com/engineering/built-multi-agent-research-system" target="_blank" rel="noopener">How we built our multi-agent research system</a> describe el patrón CitationAgent y la preservación de claim-source mappings a través de la síntesis.</p>
+
+      <hr>
+
+      <h2 id="checklist-de-salida">Checklist de salida</h2>
+
+      <p>Dominas este bloque si puedes, sin mirar la guía:</p>
+
+      <ul>
+        <li>Explicar qué es el context rot, distinguirlo de agotar <code>max_tokens</code>, y diseñar un bloque de "case facts" persistente que separe hechos transaccionales del historial resumible.</li>
+        <li>Reconocer los tres triggers legítimos de escalación (petición explícita, vacío de policy, falta de progreso) y descartar sentiment analysis y confidence autoreportado como proxies fiables.</li>
+        <li>Diseñar un contrato de error estructurado para subagentes que distinga access failures de empty results, con recovery local antes de propagar y coverage annotations en la síntesis final.</li>
+        <li>Elegir entre scratchpads, delegación en subagentes y compaction según el problema concreto de una sesión de exploración de codebase larga, sin tratarlos como sustitutos entre sí.</li>
+        <li>Justificar por qué una accuracy agregada alta no basta para automatizar revisión humana, y aplicar stratified sampling y confidence de campo calibrado antes de reducirla; distinguir pass@k de pass^k.</li>
+        <li>Preservar claim-source mappings en una síntesis multi-fuente y anotar —nunca resolver arbitrariamente— conflictos estadísticos o temporales entre fuentes creíbles.</li>
+      </ul>
+
+      <h2 id="para-ir-mas-alla">Para ir más allá — referencias anotadas</h2>
+
+      <ul>
+        <li><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Effective context engineering for AI agents</a> — panorama general de context rot, gestión de tool outputs y patrones de contexto estructurado; base conceptual de la Lección 1.</li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/context-windows">Context windows</a> — mecanismo de context awareness (<code>budget:token_budget</code>, <code>system_warning</code>) y consumo de tokens por turno; base de la Lección 1.</li>
+        <li><a href="https://www.anthropic.com/news/prompting-long-context">Prompting for long context</a> — el hallazgo del scratchpad de extracción de citas antes de responder; complementa la Lección 1.</li>
+        <li><a href="https://www.anthropic.com/engineering/built-multi-agent-research-system">How we built our multi-agent research system</a> — recuperación local ante fallos de subagentes, coordinación con resultados parciales y patrón CitationAgent; base de las Lecciones 2, 3 y 6.</li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/compaction">Compaction</a> — mecanismo y parámetros del resumen automático de plataforma; base de la Lección 4.</li>
+        <li><a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">Effective harnesses for long-running agents</a> — <code>claude-progress.txt</code>, <code>feature_list.json</code>, commits de git como puntos de recuperación e <code>init.sh</code>; base de la Lección 4.</li>
+        <li><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Demystifying evals for AI agents</a> — pass@k vs pass^k y calibración de modelos-juez LLM; base de la Lección 5.</li>
+      </ul>
+
+      <p><em>Historial de versiones del curso: <a href="../../changelog.html">changelog</a> — único para todo el material; esta guía no lleva el suyo propio.</em></p>
+    </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var printMode = /[?&]print=1/.test(location.search);
+  if (printMode) {
+    document.body.classList.add("print-mode");
+    document.documentElement.dataset.lang = "typescript";
+  }
+
+  var darkTheme = document.documentElement.dataset.theme === "dark";
+  if (window.mermaid) mermaid.initialize({
+    startOnLoad: true, securityLevel: "loose", theme: "base",
+    themeVariables: darkTheme ? {
+      primaryColor: "#172230", primaryTextColor: "#E4EDF6", primaryBorderColor: "#3FA9FF",
+      secondaryColor: "#101927", tertiaryColor: "#33260F", lineColor: "#3FA9FF",
+      fontFamily: "Plus Jakarta Sans"
+    } : {
+      primaryColor: "#E2F1FF", primaryTextColor: "#0E1B2C", primaryBorderColor: "#0E82FF",
+      secondaryColor: "#F1F5FA", tertiaryColor: "#FBEFD9", lineColor: "#0E82FF",
+      fontFamily: "Plus Jakarta Sans"
+    }
+  });
+
+  // Build the sidebar TOC from h2/h3 headings.
+  var links = document.getElementById("toc-links");
+  var heads = document.querySelectorAll("#contenido h2, #contenido h3");
+  heads.forEach(function (h, i) {
+    if (!h.id) h.id = "sec-" + i;
+    var a = document.createElement("a");
+    a.href = "#" + h.id;
+    // TOC compacto: "Lección N — Título: subtítulo" -> "LN · Título".
+    var t = h.textContent;
+    var m = t.match(/^Lección\s+(\d+)\s+—\s+(.+)$/);
+    if (m) t = "L" + m[1] + " · " + m[2].split(":")[0].trim();
+    a.textContent = t;
+    a.title = h.textContent;
+    if (h.tagName === "H3") a.className = "l3";
+    links.appendChild(a);
+  });
+  var tocAnchors = links.querySelectorAll("a");
+  window.addEventListener("scroll", function () {
+    var cur = null;
+    heads.forEach(function (h) { if (h.getBoundingClientRect().top < 120) cur = h.id; });
+    // At the bottom of the page the last headings never cross the 120px line,
+    // so highlight the final one instead of the last one that did. Measure the
+    // viewport with clientHeight as well: mobile browsers report innerHeight as
+    // the *visible* height, shrunk by the retractable URL bar, while the maximum
+    // scroll offset is computed against the layout viewport -- comparing with
+    // innerHeight alone left the bottom unreachable there by the bar's height.
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    if (window.scrollY + viewportH >= docHeight - 24 && heads.length) {
+      cur = heads[heads.length - 1].id;
+    }
+    tocAnchors.forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + cur); });
+  }, { passive: true });
+
+  // Wire up mini-checks.
+  document.querySelectorAll(".minicheck").forEach(function (mc) {
+    var correct = (mc.dataset.correct || "").split(",").map(function (s) { return s.trim(); }).sort().join(",");
+    var fb = mc.querySelector(".mc-feedback");
+    var btn = mc.querySelector(".mc-check");
+    if (printMode) { // reveal answers for the PDF export
+      mc.querySelectorAll("label").forEach(function (l) {
+        var v = l.querySelector("input").value;
+        if (correct.split(",").indexOf(v) !== -1) l.classList.add("mc-answer"), l.append(" ✔");
+      });
+      fb.className = "mc-feedback ok";
+      fb.style.opacity = "1";
+      fb.textContent = "Respuesta: " + correct + ". " + (fb.dataset.explica || "");
+      return;
+    }
+    if (btn) btn.addEventListener("click", function () {
+      var sel = Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+      if (!sel) { fb.className = "mc-feedback ko"; fb.textContent = "Selecciona una opción."; return; }
+      var ok = sel === correct;
+      fb.className = "mc-feedback " + (ok ? "ok" : "ko");
+      fb.textContent = (ok ? "✔ Correcto. " : "✘ No exactamente — la respuesta es " + correct + ". ") + (fb.dataset.explica || "");
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var m = location.pathname.match(/bloque-(\d)/);
+  if (!m || !window.localStorage) return;
+  var PKEY = "ccarf-sum-guia-" + m[1];
+  var heads = Array.prototype.slice.call(document.querySelectorAll("#contenido h2"));
+  var mcs = document.querySelectorAll(".minicheck");
+  var st;
+  try { st = JSON.parse(localStorage.getItem(PKEY)) || {}; } catch (e) { st = {}; }
+  st.bloque = m[1];
+  st.visited = st.visited || {};
+  st.mc = st.mc || {};
+  st.mcTry = st.mcTry || {};   // intento por mini-check: {sel, ok}
+  st.totalSections = heads.length;
+  st.mcTotal = mcs.length;
+  // Funcionalidad "Continuar": st.updated hace de timestamp de "último
+  // acceso" a esta guía -- reutiliza el campo ya existente (antes solo se
+  // actualizaba al detectar scroll/mini-check) forzando un guardado aquí, en
+  // cada carga de página, aunque no cambie nada más. El índice del curso
+  // (plantillas/index.template.html) compara este mismo campo con el de
+  // "ccarf-sum-quiz-<bloque>.updated" para decidir a qué recurso apunta el
+  // botón global "Continuar".
+  save();
+  function save() {
+    st.nVisited = Object.keys(st.visited).length;
+    st.mcDone = Object.keys(st.mc).length;
+    st.mcTried = Object.keys(st.mcTry).length;
+    st.updated = Date.now();
+    try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
+  }
+  var t = null;
+  function atBottom() {
+    var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // innerHeight is the *visible* height: mobile browsers shrink it by the
+    // retractable URL bar, but the maximum scroll offset is computed against the
+    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
+    // the document by the bar's height and the bottom was never detected on a
+    // phone or tablet -- which left the closing sections unread for good.
+    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + viewportH >= docHeight - 24;
+  }
+  // A section counts as read once its heading has scrolled above the middle of
+  // the viewport, and every heading above that line is marked on each sample --
+  // marking only the current one loses the sections the reader scrolled past
+  // between two samples. At the very bottom the trailing headings can never
+  // reach the middle (everything below the fold is already on screen), so they
+  // are marked there; otherwise 100% would be unreachable.
+  function track() {
+    if (t) return;
+    t = setTimeout(function () {
+      t = null;
+      var bottom = atBottom();
+      var middle = window.innerHeight / 2;
+      var was = Object.keys(st.visited).length + "|" + st.lastSection;
+      var cur = null;
+      heads.forEach(function (h) {
+        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+        else if (bottom) { st.visited[h.id] = 1; }
+      });
+      if (bottom && heads.length) cur = heads[heads.length - 1];
+      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+    }, 800);
+  }
+  window.addEventListener("scroll", track, { passive: true });
+  track();
+  function nombreDe(mc) {
+    var inp = mc.querySelector("input");
+    return inp ? inp.name : null;
+  }
+  function seleccion(mc) {
+    return Array.prototype.map.call(mc.querySelectorAll("input:checked"), function (i) { return i.value; }).sort().join(",");
+  }
+
+  document.addEventListener("click", function (ev) {
+    var btn = ev.target;
+    if (!btn.classList || !btn.classList.contains("mc-check")) return;
+    var mc = btn.closest(".minicheck");
+    setTimeout(function () {
+      var fb = mc.querySelector(".mc-feedback");
+      var nombre = nombreDe(mc);
+      if (!fb || !nombre) return;
+      var sel = seleccion(mc);
+      if (!sel) return;                       // "selecciona una opcion" no es un intento
+      st.mcTry[nombre] = { sel: sel, ok: fb.classList.contains("ok") };
+      if (fb.classList.contains("ok")) st.mc[nombre] = 1; else delete st.mc[nombre];
+      save();
+    }, 50);
+  });
+
+  // Al volver a la guia se restaura lo ya respondido: antes se perdia si habias
+  // acertado o fallado, y cada visita empezaba de cero.
+  if (!/[?&]print=1/.test(location.search)) {
+    mcs.forEach(function (mc) {
+      var nombre = nombreDe(mc);
+      var prev = nombre && st.mcTry[nombre];
+      if (!prev || !prev.sel) return;
+      var sel = prev.sel.split(",");
+      Array.prototype.forEach.call(mc.querySelectorAll("input"), function (i) {
+        if (sel.indexOf(i.value) !== -1) i.checked = true;
+      });
+      var btn = mc.querySelector(".mc-check");
+      if (btn) btn.click();                   // reutiliza el mismo render de feedback
+    });
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): salta a la primera
+  // sección (h2) aún no marcada como visitada en st.visited, o a la última
+  // si ya estaban todas leídas. No se activa en modo impresión (el PDF no
+  // tiene JS de scroll con sentido) ni rompe el TOC: se espera a que la
+  // página termine de cargar (mermaid renderiza sus SVGs de forma asíncrona
+  // y puede desplazar alturas justo después del primer pintado).
+  if (/[?&]continue=1/.test(location.search) && !/[?&]print=1/.test(location.search) && heads.length) {
+    var contVisitadas = 0;
+    for (var cv = 0; cv < heads.length; cv++) { if (st.visited[heads[cv].id]) contVisitadas++; }
+    // Sin avance previo (0 secciones visitadas) la guía se abre arriba del todo, sin scroll.
+    if (contVisitadas > 0) {
+      var contTarget = null;
+      for (var ci = 0; ci < heads.length; ci++) {
+        if (!st.visited[heads[ci].id]) { contTarget = heads[ci]; break; }
+      }
+      if (!contTarget) contTarget = heads[heads.length - 1];
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          try { history.replaceState(null, "", "#" + contTarget.id); } catch (e) {}
+          contTarget.scrollIntoView();
+        }, 200);
+      });
+    }
+  }
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "☀" : "🌙";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  // Solo las guias que traen ambas variantes reciben el switch.
+  if (!document.querySelector(".lang-variant")) return;
+  var NAMES = { python: "Python", typescript: "TypeScript" };
+  var btn = document.createElement("button");
+  btn.className = "lang-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.lang === "python" ? "python" : "typescript"; }
+  function paint() {
+    var other = cur() === "python" ? "typescript" : "python";
+    btn.textContent = NAMES[cur()];
+    btn.title = "Ver los ejemplos de codigo en " + NAMES[other];
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "python" ? "typescript" : "python";
+    document.documentElement.dataset.lang = next;
+    try { localStorage.setItem("ccarf-lang", next); } catch (e) {}
+    paint();
+  });
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "⤡" : "⤢";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); (document.getElementById("topbar-controls") || document.body).appendChild(btn);
+})();
+</script>
+</body>
+</html>

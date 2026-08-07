@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz CCAR-F · Bloque 1 — Prompt Engineering y salida estructurada</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
+<!--
+  PLANTILLA DE QUIZ CCAR-F (autocontenida, sin dependencias).
+  INSTRUCCIONES DE GENERACIÓN (fase2-bloque):
+  - Sustituir TODO el bloque comprendido entre las líneas
+      // __PREGUNTAS_JSON_START__   y   // __PREGUNTAS_JSON_END__
+    por:  const DATA = <contenido de preguntas_vX.Y.json>;
+  - No editar preguntas aquí: el JSON es la fuente única.
+  - El objeto DATA sigue plantillas/esquema-pregunta.schema.json (config + preguntas).
+-->
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* =====================================================================
+     DESIGN TOKENS — Volt (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  :root {
+    --font-sans:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+
+    --fs-display:2.5rem; --fs-h1:2rem; --fs-h2:1.5rem; --fs-h3:1.25rem; --fs-h4:1.0625rem;
+    --fs-body:1rem; --fs-sm:.875rem; --fs-caption:.75rem; --fs-code:.8125rem;
+
+    --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --fw-extra:800;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:999px;
+
+    --shadow-sm:0 1px 2px rgba(12,27,44,.06);
+    --shadow-md:0 4px 12px rgba(12,27,44,.08);
+
+    --ease:150ms cubic-bezier(.4,0,.2,1);
+
+    --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
+    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
+
+    --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
+    --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+
+    --success:#0E8546; --success-weak:#E2F6EA;
+    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --danger:#CE4148;  --danger-weak:#FBE7E8;
+    --info:#2E63FF;    --info-weak:#EAF0FF;
+
+    /* Texto sobre fondo --accent: casi blanco en ambos temas (no --accent-contrast). */
+    --on-accent:#F7FBFF;
+  }
+  [data-theme="dark"] {
+    --bg:#06101C; --surface:#101927; --surface-2:#172230;
+    --border:#213244; --border-strong:#2E4257;
+    --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
+
+    --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
+    --accent-weak:#0E2C48; --accent-contrast:#06101C;
+
+    --success:#37DA84; --success-weak:#123526;
+    --warning:#F0A93C; --warning-weak:#33260F;
+    --danger:#F0656C;  --danger-weak:#3A1A1C;
+    --info:#6684FF;    --info-weak:#17223F;
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 6px 18px rgba(0,0,0,.4);
+  }
+
+  /* =====================================================================
+     BASE
+     ===================================================================== */
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6;
+    background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased;
+    transition:background var(--ease),color var(--ease); }
+  .wrap { max-width:960px; margin:0 auto; padding:40px 24px 90px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:var(--sp-5); margin-bottom:var(--sp-4); box-shadow:var(--shadow-sm); }
+  h1 { font-size:var(--fs-h1); margin:0 0 var(--sp-1); font-weight:var(--fw-extra); letter-spacing:-.025em; color:var(--text); }
+  .display { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.05; }
+  h2 { font-size:var(--fs-h2); font-weight:var(--fw-bold); letter-spacing:-.02em; color:var(--text); margin:0 0 var(--sp-3); }
+  .muted { color:var(--text-muted); font-size:var(--fs-sm); }
+  button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); border-radius:var(--r-md); padding:6px 12px; cursor:pointer;
+    transition:background var(--ease),border-color var(--ease),color var(--ease); }
+  button:hover { border-color:var(--accent); color:var(--accent); }
+  button.primary { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  button.primary:hover { background:var(--accent-hover); border-color:var(--accent-hover); color:var(--on-accent); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  /* CTA principal de portada (elección de modo): un punto mayor que el resto de botones de acción. */
+  #m-estudio, #m-examen { font-size:var(--fs-sm); padding:8px 14px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--border); border-radius:var(--r-md);
+    padding:10px 12px; margin:8px 0; cursor:pointer; transition:border-color var(--ease),background var(--ease); }
+  .opt input { margin-top:4px; }
+  .opt.sel { border-color:var(--accent); background:var(--accent-weak); }
+  .opt.ok { border-color:var(--success); background:var(--success-weak); }
+  .opt.ko { border-color:var(--danger); background:var(--danger-weak); }
+  .creditos { margin:24px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
+  .rationale { font-size:var(--fs-sm); color:var(--text-muted); margin-top:6px; display:none; }
+  .revealed .rationale { display:block; }
+  .repasa { font-size:var(--fs-sm); color:var(--text-muted); margin:6px 0 10px; }
+  .repasa a { color:var(--accent); font-weight:var(--fw-medium); }
+  .scenario { background:var(--surface-2); border-left:3px solid var(--accent); padding:10px 14px;
+    border-radius:0 var(--r-md) var(--r-md) 0; font-size:var(--fs-sm); margin-bottom:12px; }
+  .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .timer { font-variant-numeric:tabular-nums; font-weight:var(--fw-semibold); font-family:var(--font-mono); }
+  .timer.low { color:var(--danger); }
+  .navgrid { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .navgrid button { width:38px; height:32px; padding:0; font-size:var(--fs-caption); }
+  .navgrid .answered { background:var(--success-weak); border-color:var(--success); }
+  .navgrid .flagged { outline:2px solid var(--warning); }
+  .navgrid .current { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+  .pill { display:inline-block; font-size:var(--fs-caption); font-weight:var(--fw-medium); border:1px solid var(--border); background:var(--surface-2);
+    border-radius:var(--r-pill); padding:1px 10px; margin-right:6px; color:var(--text-muted); }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  th,td { border-bottom:1px solid var(--border); padding:10px 12px; text-align:left; }
+  th { font-weight:var(--fw-semibold); font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em;
+    color:var(--text-muted); border-bottom:2px solid var(--border-strong); }
+  tbody tr:hover { background:var(--surface-2); }
+  .big { font-size:2rem; font-weight:var(--fw-bold); }
+  .ok-t { color:var(--success); } .ko-t { color:var(--danger); }
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  /* =====================================================================
+     CABECERA — topbar sticky + hero limpio (ver plantillas/volt-style-guide.html)
+     ===================================================================== */
+  header.topbar { position:sticky; top:0; z-index:30; display:flex; justify-content:space-between;
+    align-items:center; gap:var(--sp-4); padding:14px 24px; margin:0;
+    background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--border); }
+  header.topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold);
+    letter-spacing:-.01em; color:var(--text); white-space:nowrap; }
+  header.topbar .brand .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
+  .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
+  header.topbar .controls { display:flex; gap:8px; align-items:center; }
+  .toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
+    font-family:inherit; line-height:1; transition:border-color var(--ease),color var(--ease); }
+  .toggle:hover { border-color:var(--accent); color:var(--accent); }
+  @media print { header.topbar .controls { display:none !important; } }
+
+  .hero { padding:var(--sp-7) 0 var(--sp-2); }
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); color:var(--accent);
+    text-transform:uppercase; letter-spacing:.08em; margin-bottom:var(--sp-2); }
+  @media (max-width:700px) { .hero h1 { font-size:var(--fs-h2); } header.topbar { padding:12px 16px; } .wrap { padding-left:16px; padding-right:16px; } }
+  @media print { header.topbar { position:static; background:none; backdrop-filter:none; border-bottom:2px solid var(--accent); }
+    .hero { padding:var(--sp-4) 0 var(--sp-2); } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="controls" id="topbar-controls"></div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow" id="q-eyebrow">CCAR-F · QUIZ</div>
+    <h1 class="display" id="q-title">Quiz</h1>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// __PREGUNTAS_JSON_START__
+const DATA = {"config":{"titulo":"Bloque 1 — Prompt Engineering y salida estructurada","version":"1.0","bloque":1,"modo_defecto":"estudio","solo_examen":false,"generado_desde_corpus":"bloque-1-prompt-engineering.md v1.0","fecha":"2026-08-07"},"preguntas":[{"id":"b1-q01","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.1","escenario":"A code review tool's prompt instructs Claude to \"flag comments only when confidence is high.\" Production logs show clearly contradictory comments going unflagged in some runs, while minor stylistic mismatches get flagged in others.","enunciado":"What is the most effective fix for this inconsistent flagging behavior?","opciones":[{"id":"A","texto":"Replace the confidence-based instruction with explicit categorical criteria stating exactly what to report (e.g., comments that contradict actual code behavior) and what to omit (style preferences, imprecise but non-contradictory comments).","correcta":true,"justificacion":"Replacing vague confidence-based instructions with explicit categorical criteria gives the model a verifiable, operative definition; this is the documented fix for this exact failure mode."},{"id":"B","texto":"Add a post-processing filter that discards low-confidence findings after generation.","correcta":false,"justificacion":"Post-processing filters discard findings already generated by the same vague criterion; the root cause is never addressed, so the same noise is produced and then blindly dropped."},{"id":"C","texto":"Instruct the model to be \"more conservative\" in future runs.","correcta":false,"justificacion":"This is the same category of vague instruction that caused the problem; it gives no operative, verifiable criterion and does not improve precision over the baseline."},{"id":"D","texto":"Lower the temperature parameter to make output more deterministic.","correcta":false,"justificacion":"Temperature affects sampling randomness, not the criteria the model uses to decide what counts as a reportable issue; it does not address the lack of explicit categorical criteria."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-1-1","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q02","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.1","escenario":"A security review prompt defines severity levels critical/high/medium/low with a one-sentence textual description each. Despite these definitions, the same type of finding is classified as \"high\" in one run and \"medium\" in another.","enunciado":"What change is most likely to fix this severity classification inconsistency?","opciones":[{"id":"A","texto":"Add a concrete code example for each severity level so classification anchors to actual cases, not abstract labels.","correcta":true,"justificacion":"Concrete code examples anchored to each severity level are what produce consistent classification across runs; textual labels alone leave the boundary between levels open to arbitrary interpretation."},{"id":"B","texto":"Replace the four textual levels with a numeric score from 1 to 10.","correcta":false,"justificacion":"A numeric scale without concrete anchoring examples is just as susceptible to inconsistent application as textual labels; it doesn't resolve the underlying ambiguity."},{"id":"C","texto":"Add 10+ generic few-shot examples covering easy, unambiguous cases.","correcta":false,"justificacion":"Piling on generic examples without targeting the actual severity boundary inflates context length without proportionally improving consistency, the documented anti-pattern of over-adding examples."},{"id":"D","texto":"Increase max_tokens so severity descriptions can be longer.","correcta":false,"justificacion":"max_tokens only bounds the output token budget; it has no bearing on how consistently the model applies severity criteria across runs."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-1","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q03","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.1","escenario":"A scanning tool's \"sql_injection_risk\" category has a 40% false-positive rate, and developers report they've started ignoring findings from the tool altogether, including accurate categories like \"hardcoded_secrets\".","enunciado":"Select TWO actions that follow the documented pattern for addressing this kind of trust erosion.","opciones":[{"id":"A","texto":"Temporarily disable the sql_injection_risk category while its prompt criteria are refined.","correcta":true,"justificacion":"Temporarily disabling a category with a high false-positive rate while its criteria are refined is the documented tactical mitigation — it stops trust erosion without abandoning the category permanently."},{"id":"B","texto":"Measure and track the false-positive rate per category to identify which ones need refinement.","correcta":true,"justificacion":"Measuring false-positive rate per category is what makes it possible to identify which categories are actually eroding trust and need refinement, rather than acting on impression alone."},{"id":"C","texto":"Permanently remove the sql_injection_risk category from the tool.","correcta":false,"justificacion":"Permanent removal goes beyond the documented mitigation, which is explicitly temporary — the goal is to refine and re-enable the category, not abandon it."},{"id":"D","texto":"Add a post-generation confidence filter that discards low-scoring findings from that category.","correcta":false,"justificacion":"A post-generation filter discards findings produced by the same unrefined criteria; it doesn't fix the categorical criteria causing the false positives."},{"id":"E","texto":"Lower the temperature parameter to 0 for that category's prompt.","correcta":false,"justificacion":"Temperature affects sampling variance, not whether the categorical criteria used to decide what to flag are well-defined; it does not address a structurally high false-positive rate."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-1-1","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q04","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.2","escenario":"A review tool's prompt lists the required output fields (location, issue, severity, suggested_fix) in detailed text instructions, but the JSON produced still varies in structure across runs, especially for multi-line issues.","enunciado":"What is the most effective fix per documented few-shot guidance?","opciones":[{"id":"A","texto":"Add 2-4 targeted <example> blocks showing the exact output_format for representative edge cases, including multi-line issues.","correcta":true,"justificacion":"2-4 targeted examples showing the exact output_format for representative edge cases is the documented fix for output that remains inconsistent despite detailed instructions; the tags clearly separate examples from instructions."},{"id":"B","texto":"Repeat and intensify the same textual instructions about required fields.","correcta":false,"justificacion":"Repeating or intensifying the same instructions doesn't give the model a concrete pattern to match; examples, not more emphatic instructions, are what fix format inconsistency."},{"id":"C","texto":"Switch to a more capable model for this task.","correcta":false,"justificacion":"Switching models doesn't address a prompt design problem; the inconsistency stems from the prompt lacking concrete examples, not from model capability."},{"id":"D","texto":"Increase max_tokens so the JSON has more room to be formatted correctly.","correcta":false,"justificacion":"max_tokens caps the output token budget; it has no effect on whether the JSON format itself is applied consistently across runs."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-2","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q05","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.2","escenario":"A team added 12 few-shot examples covering simple, uncontroversial cases to a tool-selection prompt. Genuinely ambiguous cases — where two overlapping tools could plausibly apply — are still handled inconsistently.","enunciado":"What change is most likely to fix the ambiguous-case handling?","opciones":[{"id":"A","texto":"Replace the generic examples with 2-4 examples specifically targeting the ambiguous decision points, including explicit reasoning for why one tool was chosen over the other.","correcta":true,"justificacion":"Few, well-targeted examples covering the actual ambiguous decision points, including explicit reasoning, generalize judgment to new ambiguous cases better than broad, uncontroversial examples."},{"id":"B","texto":"Add 10 more generic examples to increase overall coverage.","correcta":false,"justificacion":"More generic examples covering easy, uncontroversial cases don't teach the model how to handle the genuinely ambiguous cases; example count isn't the lever — targeting is."},{"id":"C","texto":"Remove all examples and rely purely on detailed textual instructions.","correcta":false,"justificacion":"Removing examples abandons the technique most effective for consistency and judgment generalization; detailed instructions alone were already shown to be insufficient."},{"id":"D","texto":"Increase the example count to 20 to be safe.","correcta":false,"justificacion":"Simply increasing example count further, without targeting the actual ambiguous cases, is the documented anti-pattern of adding examples without proportional gain in clarity."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-2","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q06","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.2","escenario":"An extraction schema already marks middle_name as optional/nullable, since not every source document includes it. Logs still show the model occasionally producing plausible-looking fabricated middle names when the field is absent from the source.","enunciado":"What additional fix, per documented few-shot guidance, best addresses this residual fabrication?","opciones":[{"id":"A","texto":"Add a few-shot example demonstrating a document where the field is legitimately absent, with the expected output showing null rather than a fabricated value.","correcta":true,"justificacion":"A few-shot example showing legitimate absence mapped to null teaches the distinction between 'absent' and 'must be invented' — the documented use of examples to reduce hallucination in extraction, on top of the field already being optional."},{"id":"B","texto":"Mark the field as required instead of optional, forcing an explicit decision.","correcta":false,"justificacion":"Marking the field required would reintroduce the pressure to fabricate a value whenever the source lacks it — the opposite of the needed fix."},{"id":"C","texto":"Enable strict: true on the tool if not already enabled.","correcta":false,"justificacion":"strict: true validates structural/type conformance of whatever value is produced; it does not stop the model from producing a plausible-looking fabricated value that still conforms to the schema."},{"id":"D","texto":"Add more examples of common, non-edge documents that do include the field.","correcta":false,"justificacion":"More examples of common, non-edge cases don't teach the specific 'field can be legitimately absent' distinction; only an example demonstrating that exact case does."}],"seleccionar":1,"dificultad":"dificil","refSeccion":"#ts-1-2","fuentes":["https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"]},{"id":"b1-q07","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.3","escenario":"A document pipeline has separate extraction tools for invoices, receipts, and contracts, each with its own JSON schema. The incoming document's type is unknown ahead of time, but some extraction tool must always run.","enunciado":"Which tool_choice setting best matches this requirement?","opciones":[{"id":"A","texto":"{\"type\": \"any\"}","correcta":true,"justificacion":"\"any\" forces Claude to call some extraction tool while still letting it choose which schema fits the unknown document type, exactly the documented use case for an uncertain document type with multiple candidate schemas."},{"id":"B","texto":"\"auto\"","correcta":false,"justificacion":"\"auto\" allows Claude to respond with plain text instead of calling any extraction tool, which doesn't satisfy the requirement that some tool always runs."},{"id":"C","texto":"{\"type\": \"tool\", \"name\": \"extract_invoice\"}","correcta":false,"justificacion":"Forcing a single named tool removes the flexibility needed when the document type — and therefore the correct schema — is unknown in advance."},{"id":"D","texto":"\"none\"","correcta":false,"justificacion":"\"none\" prevents any tool call entirely, the opposite of the requirement that some extraction tool always runs."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-1-3","fuentes":["https://platform.claude.com/docs/en/build-with-claude/structured-outputs"]},{"id":"b1-q08","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.3","escenario":"An extract_invoice tool has strict: true, and 100% of production responses are valid JSON conforming to the schema. Despite this, a systemic issue persists: the sum of line_items frequently doesn't equal the reported total field.","enunciado":"What best explains this and what should be done about it?","opciones":[{"id":"A","texto":"strict mode validates structure and types via grammar-constrained sampling, not semantic correctness; add an explicit semantic validation step (e.g., comparing calculated vs. stated total) outside the schema guarantee.","correcta":true,"justificacion":"strict mode has no mechanism to check that field values are mutually consistent; that check requires an explicit semantic validation step outside the schema guarantee, since strict only eliminates syntax errors."},{"id":"B","texto":"strict mode is misconfigured; add minimum/maximum constraints on the amount fields.","correcta":false,"justificacion":"minimum/maximum numeric constraints are not supported in strict mode, and even if they were, they wouldn't verify that two independently reported numbers are mutually consistent."},{"id":"C","texto":"Increase max_tokens so the model has more room to compute the correct sum.","correcta":false,"justificacion":"max_tokens bounds the output token budget; it has no effect on whether the model computes or reports mutually consistent totals."},{"id":"D","texto":"Switch tool_choice from \"any\" to a forced tool name to guarantee correctness.","correcta":false,"justificacion":"tool_choice governs whether and which tool is called, not whether the values produced inside a valid call are semantically correct."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use","https://platform.claude.com/docs/en/build-with-claude/structured-outputs"]},{"id":"b1-q09","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.3","escenario":"An architect is designing an input_schema intended to run entirely under strict: true grammar-constrained sampling and needs to know which JSON Schema constructs are actually supported.","enunciado":"Select TWO of the following constructs that ARE supported under strict tool use.","opciones":[{"id":"A","texto":"enum constraints on string fields","correcta":true,"justificacion":"enum is explicitly listed among the JSON Schema features supported under strict mode's grammar-constrained sampling."},{"id":"B","texto":"minLength/maxLength string length constraints","correcta":false,"justificacion":"String length constraints such as minLength/maxLength are explicitly listed as NOT supported in strict mode."},{"id":"C","texto":"additionalProperties: false","correcta":true,"justificacion":"additionalProperties: false is explicitly listed among the supported keywords in strict mode."},{"id":"D","texto":"minimum/maximum numeric range constraints","correcta":false,"justificacion":"Numeric range constraints such as minimum/maximum are explicitly listed as NOT supported in strict mode."},{"id":"E","texto":"Recursive schemas that reference themselves","correcta":false,"justificacion":"Recursive schemas are explicitly listed as NOT supported in strict mode."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-1-3","fuentes":["https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use","https://platform.claude.com/docs/en/build-with-claude/structured-outputs"]},{"id":"b1-q10","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.4","escenario":"An invoice extraction fails validation because the sum of item amounts ($1000) doesn't match the stated total ($1500). The retry prompt simply says \"The previous extraction was invalid, please try again.\" The retry reproduces the exact same error.","enunciado":"What is the most effective fix for this retry loop?","opciones":[{"id":"A","texto":"Rewrite the retry prompt to include the exact validation error (e.g., \"$1000 sum != $1500 stated total\"), the original document, and the failed extraction.","correcta":true,"justificacion":"Including the exact validation error, the original document, and the failed extraction gives the model actionable information to correct the specific problem; a generic message gives it nothing to act on and tends to reproduce the same error."},{"id":"B","texto":"Increase the retry count from 1 to 10 without changing the retry prompt content.","correcta":false,"justificacion":"Increasing retry attempts without changing what information is fed back doesn't fix the underlying problem — the model will keep repeating the same mistake with the same generic prompt."},{"id":"C","texto":"Switch tool_choice to \"any\" for the retry call.","correcta":false,"justificacion":"tool_choice governs whether/which tool is called, not the quality of feedback the model receives about why its previous extraction failed validation."},{"id":"D","texto":"Add strict: true to the tool definition to prevent invalid output on retry.","correcta":false,"justificacion":"strict: true guarantees structural conformance, not that the model receives the specific semantic error needed to correct a totals mismatch on retry."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-4","fuentes":[]},{"id":"b1-q11","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.4","escenario":"An extraction schema requires a tax_id field. About 15% of receipts genuinely have no tax ID printed on them. The retry loop attempts up to 5 retries whenever tax_id is missing, all of them failing, doubling latency and cost with no improvement.","enunciado":"What is the correct fix for this specific retry loop?","opciones":[{"id":"A","texto":"Recognize this as a case where retrying is structurally useless; make tax_id optional/nullable and accept its legitimate absence instead of retrying.","correcta":true,"justificacion":"When the missing data genuinely isn't in the source, no amount of retrying will produce it; the documented pattern is to recognize this as unrecoverable and accept the absence rather than retry."},{"id":"B","texto":"Increase retry attempts to 10 to improve the odds of successful extraction.","correcta":false,"justificacion":"More retry attempts don't help when the failure cause is information absent from the source — this is the documented dead-end retry loop, not a case where increasing effort helps."},{"id":"C","texto":"Rewrite the retry prompt to include the exact validation error each time.","correcta":false,"justificacion":"Specific error feedback helps when the extraction failure is a format/structure problem the model can fix by re-examining the document; it cannot fix a field that simply isn't present in the source."},{"id":"D","texto":"Enable strict: true so missing fields are caught earlier in the pipeline.","correcta":false,"justificacion":"strict: true validates schema conformance of whatever is produced; it does not detect, at design time, that a field will sometimes be legitimately absent from certain source documents."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-4","fuentes":[]},{"id":"b1-q12","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.4","escenario":"A code review extraction pipeline needs to (1) later analyze systematically which finding categories developers dismiss most often, and (2) auto-detect when an invoice's declared total conflicts with the sum of its line items.","enunciado":"Select TWO schema/field design changes that directly enable these two capabilities.","opciones":[{"id":"A","texto":"Add a detected_pattern field to each finding labeling which code construct triggered it.","correcta":true,"justificacion":"A detected_pattern field labeling the code construct that triggered each finding is the documented design that enables systematic analysis later of which finding categories get dismissed at what rate."},{"id":"B","texto":"Extract calculated_total, stated_total, and a conflict_detected boolean in the invoice schema.","correcta":true,"justificacion":"Extracting both the calculated and stated totals plus a conflict_detected boolean is the documented pattern for surfacing inconsistent data at the source, letting the conflict be detected automatically."},{"id":"C","texto":"Mark every field in both schemas as required.","correcta":false,"justificacion":"Marking every field required forces the model to fabricate values whenever the source is incomplete; it does nothing to enable dismissal-rate analysis or total-conflict detection."},{"id":"D","texto":"Increase max_tokens on both extraction calls.","correcta":false,"justificacion":"max_tokens bounds the output budget; it has no relationship to enabling categorical dismissal analysis or detecting total mismatches."},{"id":"E","texto":"Add strict: true to both tools without adding any new fields.","correcta":false,"justificacion":"strict: true alone guarantees schema conformance of whatever fields already exist; without adding the specific fields needed, it provides neither capability the scenario requires."}],"seleccionar":2,"dificultad":"dificil","refSeccion":"#ts-1-4","fuentes":[]},{"id":"b1-q13","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.5","escenario":"A nightly job regenerates unit tests for the entire codebase. It is not user-facing and can tolerate waiting several hours for results before the next business day.","enunciado":"Which API should be used for this workload, and why?","opciones":[{"id":"A","texto":"The Message Batches API, since the workload is non-blocking and latency-tolerant, offering a 50% cost saving in exchange for a processing window of up to 24 hours with no latency SLA.","correcta":true,"justificacion":"This workload matches exactly the documented profile for the Message Batches API: non-blocking, latency-tolerant, and eligible for the 50% cost saving in exchange for a window of up to 24 hours."},{"id":"B","texto":"The synchronous Messages API, for guaranteed low latency.","correcta":false,"justificacion":"The synchronous API is the right choice for blocking, real-time-feedback workloads; using it here would forgo the batch API's cost saving for a workload that doesn't need low latency."},{"id":"C","texto":"The Message Batches API with stream: true enabled for progress updates.","correcta":false,"justificacion":"stream: true is explicitly not supported on batch requests; requesting it would be invalid for this workload."},{"id":"D","texto":"The synchronous API with max_tokens: 0 to reduce cost.","correcta":false,"justificacion":"max_tokens: 0 is explicitly not supported on batch requests, and using the synchronous API here would forgo the batch API's cost advantage for a workload that tolerates waiting."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-1-5","fuentes":["https://platform.claude.com/docs/en/build-with-claude/batch-processing"]},{"id":"b1-q14","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.5","escenario":"A pipeline must guarantee that extraction results are available within an SLA of 30 hours from document arrival, using the Message Batches API, which can take up to 24 hours to complete.","enunciado":"Per the documented calculation pattern, how frequently should batches be submitted to satisfy this SLA?","opciones":[{"id":"A","texto":"Every 4 hours","correcta":true,"justificacion":"Per the documented pattern for calculating submission frequency against an SLA, guaranteeing results within 30 hours against a batch processing window of up to 24 hours requires submitting batches every 4 hours."},{"id":"B","texto":"Every 24 hours","correcta":false,"justificacion":"Submitting only every 24 hours — the maximum processing window itself — leaves no buffer to consistently guarantee the 30-hour SLA."},{"id":"C","texto":"Every 30 hours","correcta":false,"justificacion":"Submitting at the SLA boundary itself provides no margin and does not match the documented calculation for sustaining a 30-hour SLA."},{"id":"D","texto":"Only once, at the start of the SLA window","correcta":false,"justificacion":"A single submission doesn't account for documents arriving continuously throughout the SLA period."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-5","fuentes":["https://platform.claude.com/docs/en/build-with-claude/batch-processing"]},{"id":"b1-q15","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.5","escenario":"A workflow needs to call an external lookup tool mid-extraction, receive its result, and continue reasoning within the same request, submitted as part of a large overnight Message Batches job.","enunciado":"What is the correct way to handle this requirement given documented batch API limitations?","opciones":[{"id":"A","texto":"This isn't supported: the Batch API doesn't support multi-turn tool calling within a single batched request, since each request is processed independently with no shared state; resolve the tool call synchronously before submitting the batch request, or run that step on the synchronous API.","correcta":true,"justificacion":"The Batch API doesn't support multi-turn tool calling within a single batched request because each request is processed independently with no shared state between steps; the tool call needs to be resolved before or outside the batch."},{"id":"B","texto":"Enable stream: true on the batch request so the tool result can be returned mid-generation.","correcta":false,"justificacion":"stream: true is explicitly not supported on batch requests, and streaming wouldn't provide shared state for a mid-generation tool result regardless."},{"id":"C","texto":"Increase the batch size limit configuration to allow multi-turn exchanges.","correcta":false,"justificacion":"There is no configuration to enable multi-turn tool exchanges within a batch; each batched request is processed independently by design, not due to a size limit."},{"id":"D","texto":"Use cache_hint on the batch request to preserve tool state between turns.","correcta":false,"justificacion":"cache_hint / context_hint are explicitly not supported on batch requests, and they address prompt caching, not preserving tool-call state across turns."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-5","fuentes":["https://platform.claude.com/docs/en/build-with-claude/batch-processing"]},{"id":"b1-q16","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.6","escenario":"The same Claude instance that generated a code fix is then asked, in the same session, to review its own output for bugs before merging.","enunciado":"Is this the recommended pattern for reviewing generated code?","opciones":[{"id":"A","texto":"No — a same-instance self-review retains the reasoning used to generate the code and is less likely to question its own decisions; an independent reviewer instance without that context is more effective at catching subtle issues.","correcta":true,"justificacion":"A same-instance self-review retains the reasoning used to generate the code and is documented as less likely to question its own prior decisions; an independent reviewer instance is documented as more effective at catching subtle issues."},{"id":"B","texto":"Yes, as long as extended thinking is enabled for the review step.","correcta":false,"justificacion":"Extended thinking within the same instance is explicitly documented as not matching the effectiveness of an independent reviewer instance, since the model still retains its generation-time reasoning."},{"id":"C","texto":"Yes, because the same instance has full context of what it just wrote.","correcta":false,"justificacion":"Retaining full context of what it just wrote is exactly why the same instance is less likely to challenge its own decisions, not a reason self-review is adequate."},{"id":"D","texto":"No — the fix is to add tool_choice: \"any\" to force additional scrutiny.","correcta":false,"justificacion":"tool_choice governs whether/which tool is called; it has no bearing on whether the reviewing instance has independent context from the generator."}],"seleccionar":1,"dificultad":"facil","refSeccion":"#ts-1-6","fuentes":[]},{"id":"b1-q17","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.6","escenario":"A multi-file pull request review runs a single Claude pass instructed to catch both local syntax issues and cross-file data-flow problems at once. The results include several findings that contradict each other about the same code path.","enunciado":"What is the correct architectural fix for this contradictory-findings problem?","opciones":[{"id":"A","texto":"Split the review into a local per-file analysis pass (syntax, direct patterns) and a separate cross-file integration pass (data flow, dependencies, contradictions).","correcta":true,"justificacion":"Splitting the review into a local per-file pass and a separate cross-file integration pass is the documented fix for the attention dilution and contradictory findings produced by a single combined pass."},{"id":"B","texto":"Run the same single combined pass twice and merge the two result sets.","correcta":false,"justificacion":"Running the same combined pass twice doesn't change its focus; it's still doing local and integration analysis at once and is documented to dilute attention and produce contradictions regardless of repetition."},{"id":"C","texto":"Increase max_tokens so the single pass has more room to reconcile contradictions itself.","correcta":false,"justificacion":"max_tokens bounds output length; it doesn't change whether the pass's attention is diluted by trying to do two kinds of analysis simultaneously."},{"id":"D","texto":"Add a confidence field to findings so contradictions can be filtered out automatically.","correcta":false,"justificacion":"A confidence field helps route findings for manual review, but it doesn't resolve why a single combined pass produces contradictory findings in the first place."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-6","fuentes":[]},{"id":"b1-q18","bloque":1,"dominio":"Prompt Engineering & Structured Output","taskStatement":"4.6","escenario":"After combining local per-file findings and cross-file integration findings into one final report, the team wants one more end-to-end sanity check on that combined result before routing to automatic acceptance versus manual review, without re-analyzing the underlying code from scratch.","enunciado":"Which architectural addition matches the documented pattern for this requirement?","opciones":[{"id":"A","texto":"An independent verification pass, run by a separate instance, that reviews the already-combined result and reports its own confidence on whether it is correct — distinct from, and not a replacement for, the local and integration passes.","correcta":true,"justificacion":"An independent verification pass over the already-combined result, with its own confidence self-report, is the documented third architectural layer, distinct from and not a replacement for the local and integration passes."},{"id":"B","texto":"Re-run the local and integration passes with extended thinking enabled instead.","correcta":false,"justificacion":"Extended thinking is documented as not matching the effectiveness of an independent instance; re-running the local/integration passes with it also doesn't provide the required end-to-end check on the already-combined result."},{"id":"C","texto":"Have the same instance that produced the integration pass re-review its own combined output.","correcta":false,"justificacion":"This is the same self-review limitation documented elsewhere: the instance retains its own prior reasoning and is less likely to challenge it."},{"id":"D","texto":"Skip a dedicated verification step and route purely by the confidence scores already attached to individual findings.","correcta":false,"justificacion":"This omits the documented end-to-end check on the combined result, which carries its own separate confidence self-report distinct from individual finding confidence."}],"seleccionar":1,"dificultad":"media","refSeccion":"#ts-1-6","fuentes":[]}]};
+// __PREGUNTAS_JSON_END__
+
+(function () {
+  "use strict";
+  const cfg = DATA.config, bank = DATA.preguntas;
+  const KEY = "ccarf-quiz-" + cfg.titulo + "-v" + cfg.version;
+  const app = document.getElementById("app");
+  document.getElementById("q-title").textContent = cfg.titulo;
+  document.getElementById("q-eyebrow").textContent = "CCAR-F · BLOQUE " + String(cfg.bloque).toUpperCase();
+  document.title = cfg.solo_examen ? "Simulacro de examen CCAR-F" : "Quiz CCAR-F · " + cfg.titulo;
+
+  let S = null; // state: {mode, order[], optOrder{}, answers{}, flags[], idx, remaining, finished, revealed{}}
+
+  // Funcionalidad "Continuar": marca "ccarf-sum-quiz-<bloque>.updated" como
+  // timestamp de último acceso a este quiz en CADA carga de página, aunque
+  // no se responda nada (syncSummary() ya lo actualiza al interactuar, pero
+  // solo abrir la portada no la llama). Se fusiona con el resumen existente
+  // -- nunca lo reemplaza -- para no perder "best"/"hits"/etc. de intentos
+  // previos. El índice del curso compara este campo con el equivalente de
+  // "ccarf-sum-guia-<bloque>.updated" para el botón global "Continuar".
+  (function touchAccess() {
+    try {
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      prev.bloque = cfg.bloque; prev.titulo = cfg.titulo; prev.version = cfg.version;
+      prev.updated = Date.now();
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(prev));
+    } catch (e) {}
+  })();
+
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const byId = id => bank.find(q => q.id === id);
+  const save = () => { localStorage.setItem(KEY, JSON.stringify(S)); syncSummary(); };
+  // Progress summary consumed by the course index (dist/index.html).
+  function syncSummary() {
+    if (S && S.subset) return;   // un repaso parcial no pisa la nota del intento completo
+    try {
+      const answered = Object.keys(S.answers).filter(k => (S.answers[k] || []).length).length;
+      let prev = {}; try { prev = JSON.parse(localStorage.getItem("ccarf-sum-quiz-" + cfg.bloque)) || {}; } catch (e) {}
+      const sum = { bloque: cfg.bloque, titulo: cfg.titulo, version: cfg.version, mode: S.mode,
+        answered, total: bank.length, finished: !!S.finished, best: prev.best || 0, updated: Date.now() };
+      if (S.finished) {
+        const hits = S.order.filter(id => isCorrect(byId(id))).length;
+        sum.hits = hits;
+        sum.scaled = Math.round(100 + hits / bank.length * 900);
+        sum.best = Math.max(sum.best, sum.scaled);
+      }
+      localStorage.setItem("ccarf-sum-quiz-" + cfg.bloque, JSON.stringify(sum));
+    } catch (e) {}
+  }
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmt = s => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  // refSeccion apunta al documento de referencia, que no se publica. Se traduce
+  // a la leccion equivalente de la guia del bloque, que si esta en el sitio.
+  function leccionDe(q) {
+    const m = /^#cap-(\d+)-ts-(\d+)$/.exec(q.refSeccion || "");
+    if (!m) return null;
+    return { href: "../bloque-" + m[1] + "/guia_v1.2.html#leccion-" + m[2],
+             texto: "Bloque " + m[1] + ", Lección " + m[2] };
+  }
+  const isCorrect = q => {
+    const sel = (S.answers[q.id] || []).slice().sort().join(",");
+    const ok = q.opciones.filter(o => o.correcta).map(o => o.id).sort().join(",");
+    return sel === ok && sel !== "";
+  };
+
+  function startScreen() {
+    const saved = load();
+    let html = '<div class="card"><h2>Configuración</h2>';
+    if (saved && !saved.finished) html += '<p>Hay un intento guardado (' + (saved.mode === "examen" ? "modo examen" : "modo estudio") + ', pregunta ' + (saved.idx + 1) + '). </p><div class="actions"><button class="primary" id="resume">Reanudar intento</button></div><hr>';
+    html += '<p>Elige modo:</p><div class="actions">';
+    if (!cfg.solo_examen) html += '<button class="primary" id="m-estudio">Modo estudio</button>';
+    html += '<button ' + (cfg.solo_examen ? 'class="primary"' : '') + ' id="m-examen">Modo examen</button></div>';
+    html += '<p class="muted">Estudio: corrección y justificación inmediatas. Examen: temporizador de ' + examMinutes() + ' min, resultados al final con desglose por dominio.</p></div>';
+    app.innerHTML = html;
+    const r = document.getElementById("resume");
+    if (r) r.onclick = () => { S = saved; render(); };
+    const e1 = document.getElementById("m-estudio");
+    if (e1) e1.onclick = () => init("estudio");
+    document.getElementById("m-examen").onclick = () => init("examen");
+  }
+
+  function examMinutes() { return cfg.duracion_examen_min || Math.ceil(bank.length * 2); }
+
+  function init(mode, ids) {
+    // ids: subconjunto (repaso de falladas). Un repaso no es un intento puntuable.
+    const lista = ids && ids.length ? ids : bank.map(q => q.id);
+    S = { mode, order: shuffle(lista), subset: !!(ids && ids.length), optOrder: {}, answers: {}, flags: [], idx: 0, remaining: examMinutes() * 60, finished: false, revealed: {} };
+    bank.forEach(q => S.optOrder[q.id] = shuffle(q.opciones.map(o => o.id)));
+    save(); render();
+  }
+
+  let tick = null;
+  function startTimer(el) {
+    clearInterval(tick);
+    tick = setInterval(() => {
+      S.remaining--; save();
+      if (el.isConnected) { el.textContent = fmt(S.remaining); el.classList.toggle("low", S.remaining < 300); }
+      if (S.remaining <= 0) { clearInterval(tick); finishExam(); }
+    }, 1000);
+  }
+
+  function render() {
+    if (S.finished) return results();
+    const q = byId(S.order[S.idx]);
+    const multi = q.seleccionar > 1, type = multi ? "checkbox" : "radio";
+    const sel = S.answers[q.id] || [];
+    const revealed = S.mode === "estudio" && S.revealed[q.id];
+
+    let html = '<div class="card' + (revealed ? " revealed" : "") + '">';
+    html += '<div class="topbar"><div><span class="pill">' + (S.idx + 1) + " / " + S.order.length + '</span><span class="pill">' + esc(q.dominio || "Transversal") + '</span><span class="pill">TS ' + esc(q.taskStatement) + '</span></div>';
+    if (S.mode === "examen") html += '<div class="timer" id="timer">' + fmt(S.remaining) + "</div>";
+    html += "</div>";
+    if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+    html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+    S.optOrder[q.id].forEach(oid => {
+      const o = q.opciones.find(x => x.id === oid);
+      const chosen = sel.includes(oid);
+      let cls = chosen ? " sel" : "";
+      if (revealed) { if (o.correcta) cls = " ok"; else if (chosen) cls = " ko"; }
+      html += '<label class="opt' + cls + '"><input type="' + type + '" name="opt" value="' + oid + '"' + (chosen ? " checked" : "") + (revealed ? " disabled" : "") + "><div>" + esc(o.texto) + '<div class="rationale"><strong>' + (o.correcta ? "✔" : "✘") + "</strong> " + esc(o.justificacion) + "</div></div></label>";
+    });
+    html += '<div class="actions">';
+    if (S.mode === "estudio") {
+      html += revealed
+        ? '<button class="primary" id="next">' + (S.idx + 1 < S.order.length ? "Siguiente" : "Ver resultado") + "</button>"
+        : '<button class="primary" id="check" ' + (sel.length ? "" : "disabled") + ">Comprobar</button>";
+    } else {
+      html += '<button id="prev" ' + (S.idx ? "" : "disabled") + ">← Anterior</button>";
+      html += '<button id="nextq" ' + (S.idx + 1 < S.order.length ? "" : "disabled") + ">Siguiente →</button>";
+      html += '<button id="flag">' + (S.flags.includes(q.id) ? "Desmarcar" : "Marcar 🚩") + "</button>";
+      html += '<button class="primary" id="finish">Finalizar examen</button>';
+    }
+    html += "</div></div>";
+
+    if (S.mode === "examen") {
+      html += '<div class="card"><div class="navgrid">' + S.order.map((id, i) => {
+        let c = [];
+        if ((S.answers[id] || []).length) c.push("answered");
+        if (S.flags.includes(id)) c.push("flagged");
+        if (i === S.idx) c.push("current");
+        return '<button data-i="' + i + '" class="' + c.join(" ") + '">' + (i + 1) + "</button>";
+      }).join("") + '</div><div class="muted">Gris: respondida · Borde ámbar: marcada</div></div>';
+    }
+    app.innerHTML = html;
+
+    app.querySelectorAll('input[name="opt"]').forEach(inp => inp.onchange = () => {
+      let cur = S.answers[q.id] || [];
+      if (multi) {
+        cur = inp.checked ? cur.concat(inp.value) : cur.filter(v => v !== inp.value);
+        if (cur.length > q.seleccionar) { inp.checked = false; cur = cur.filter(v => v !== inp.value); }
+      } else cur = [inp.value];
+      S.answers[q.id] = cur; save(); render();
+    });
+    const $ = id => document.getElementById(id);
+    if ($("check")) $("check").onclick = () => { S.revealed[q.id] = true; save(); render(); };
+    if ($("next")) $("next").onclick = () => { S.idx + 1 < S.order.length ? (S.idx++, save(), render()) : finishExam(); };
+    if ($("prev")) $("prev").onclick = () => { S.idx--; save(); render(); };
+    if ($("nextq")) $("nextq").onclick = () => { S.idx++; save(); render(); };
+    if ($("flag")) $("flag").onclick = () => { S.flags.includes(q.id) ? S.flags = S.flags.filter(f => f !== q.id) : S.flags.push(q.id); save(); render(); };
+    if ($("finish")) $("finish").onclick = () => { const un = S.order.filter(id => !(S.answers[id] || []).length).length; if (!un || confirm("Quedan " + un + " preguntas sin responder. ¿Finalizar igualmente?")) finishExam(); };
+    app.querySelectorAll(".navgrid button").forEach(b => b.onclick = () => { S.idx = +b.dataset.i; save(); render(); });
+    if ($("timer")) startTimer($("timer"));
+  }
+
+  function finishExam() { clearInterval(tick); S.finished = true; save(); results(); }
+
+  function results() {
+    clearInterval(tick);
+    const total = S.order.length, hits = S.order.filter(id => isCorrect(byId(id))).length;
+    const pct = hits / total, scaled = Math.round(100 + pct * 900);
+    const dom = {};
+    S.order.forEach(id => { const q = byId(id), d = q.dominio || "Transversal"; dom[d] = dom[d] || [0, 0]; dom[d][1]++; if (isCorrect(q)) dom[d][0]++; });
+    let html = '<div class="card"><h2>' + (S.subset ? "Repaso de falladas" : "Resultado") + "</h2>";
+    if (S.subset) {
+      html += '<div class="big ' + (hits === total ? "ok-t" : "ko-t") + '">' + hits + " / " + total + "</div>";
+      html += "<p>Repaso de " + total + " pregunta(s) que habías fallado. No cuenta como intento: la nota del bloque sigue siendo la de tu última vuelta completa.</p>";
+    } else {
+      html += '<div class="big ' + (scaled >= 720 ? "ok-t" : "ko-t") + '">' + scaled + ' <span class="muted" style="font-size:1rem">/ 1000 (orientativo·)</span></div>';
+      html += "<p>" + hits + " de " + total + " correctas (" + Math.round(pct * 100) + "%). Corte real del examen: <strong>720</strong>.</p>";
+      html += '<p class="muted">· Aproximación lineal: el examen real usa equating estadístico no público.</p>';
+    }
+    html += "<table><tr><th>Dominio</th><th>Aciertos</th><th>%</th></tr>" + Object.entries(dom).map(([d, v]) => "<tr><td>" + esc(d) + "</td><td>" + v[0] + "/" + v[1] + "</td><td>" + Math.round(v[0] / v[1] * 100) + "%</td></tr>").join("") + "</table>";
+    const fallidas = S.order.filter(id => !isCorrect(byId(id)));
+    html += '<div class="actions"><button class="primary" id="review">Revisar respuestas</button>';
+    if (fallidas.length) {
+      html += '<button id="repasar">Repetir solo las ' + fallidas.length + " fallada(s)</button>";
+    }
+    html += '<button id="restart">' + (S.subset ? "Volver al banco completo" : "Nuevo intento") + "</button></div></div>";
+    app.innerHTML = html;
+    document.getElementById("restart").onclick = () => { localStorage.removeItem(KEY); startScreen(); };
+    document.getElementById("review").onclick = review;
+    const rep = document.getElementById("repasar");
+    if (rep) rep.onclick = () => init(S.mode, fallidas);
+  }
+
+  function review() {
+    let html = "";
+    S.order.forEach((id, i) => {
+      const q = byId(id), ok = isCorrect(q), sel = S.answers[id] || [];
+      html += '<div class="card revealed"><p><span class="pill">' + (i + 1) + '</span><span class="pill">' + esc(q.dominio || "Transversal") + " · TS " + esc(q.taskStatement) + '</span> <strong class="' + (ok ? "ok-t" : "ko-t") + '">' + (ok ? "Correcta" : "Incorrecta") + "</strong></p>";
+      if (q.escenario) html += '<div class="scenario">' + esc(q.escenario) + "</div>";
+      html += "<p><strong>" + esc(q.enunciado) + "</strong></p>";
+      const leccion = leccionDe(q);
+      if (leccion) html += '<p class="repasa">Repasa la <a href="' + leccion.href + '">' + esc(leccion.texto) + "</a></p>";
+      q.opciones.forEach(o => {
+        let cls = o.correcta ? " ok" : (sel.includes(o.id) ? " ko" : "");
+        html += '<div class="opt' + cls + '"><div>' + o.id + ". " + esc(o.texto) + '<div class="rationale">' + esc(o.justificacion) + "</div></div></div>";
+      });
+      html += "</div>";
+    });
+    html += '<div class="card"><div class="actions"><button class="primary" id="back">Volver al resultado</button></div></div>';
+    app.innerHTML = html;
+    document.getElementById("back").onclick = results;
+  }
+
+  // ?continue=1 (funcionalidad "Continuar" del índice): si hay un intento sin
+  // terminar, lo reanuda directamente en la siguiente pregunta sin responder
+  // -- no necesariamente S.idx, que en modo examen puede quedar en cualquier
+  // pregunta por la navegación libre/el marcado -- sin pasar por la portada.
+  // Reutiliza el mismo S guardado y el mismo render() del botón "Reanudar
+  // intento" existente, no duplica estado. Si no hay intento en curso, cae a
+  // la portada normal (startScreen()).
+  let continued = false;
+  if (/[?&]continue=1/.test(location.search)) {
+    const saved = load();
+    if (saved && !saved.finished) {
+      S = saved;
+      const nextIdx = S.order.findIndex(id => !(S.answers[id] || []).length);
+      if (nextIdx !== -1) S.idx = nextIdx;
+      save();
+      render();
+      continued = true;
+    }
+  }
+  if (!continued) startScreen();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var btn = document.createElement("button");
+  btn.className = "toggle theme-toggle"; btn.type = "button";
+  function cur() { return document.documentElement.dataset.theme === "dark" ? "dark" : "light"; }
+  function paint() {
+    btn.textContent = cur() === "dark" ? "\u2600" : "\uD83C\uDF19";
+    btn.title = cur() === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
+  }
+  btn.addEventListener("click", function () {
+    var next = cur() === "dark" ? "light" : "dark";
+    if (next === "dark") document.documentElement.dataset.theme = "dark";
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem("ccarf-theme", next); } catch (e) {}
+    paint();
+  });
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  if (!document.documentElement.requestFullscreen) return;
+  var btn = document.createElement("button");
+  btn.className = "toggle fs-toggle"; btn.type = "button";
+  function paint() {
+    var fs = !!document.fullscreenElement;
+    btn.textContent = fs ? "\u2921" : "\u2922";
+    btn.title = fs ? "Salir de pantalla completa" : "Pantalla completa";
+  }
+  btn.addEventListener("click", function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  document.addEventListener("fullscreenchange", paint);
+  paint(); document.getElementById("topbar-controls").appendChild(btn);
+})();
+</script>
+</body>
+</html>
