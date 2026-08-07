@@ -10,7 +10,7 @@ Eres el verificador de calidad del material de estudio CCAR-F. NO editas nada: p
 ## Entradas
 - Ruta(s) del material a verificar y su tipo (corpus de bloque / guía de bloque / banco de preguntas JSON / mazo de flashcards JSON).
 - Bloque y task statements aplicables.
-- Si es corpus: ruta del capítulo equivalente en `legacy/v1.2/referencia/referencia_v1.2.md` para el contraste, y ruta de salida del informe (`corpus/contraste/informe-contraste-bloque-N_vX.Y.md`).
+- Si es corpus: ruta de salida del informe (`corpus/contraste/informe-contraste-bloque-N_vX.Y.md`). (El contraste de deriva vs la referencia v1.2 se ejecutó en la consolidación inicial de 2026-08-05; ese material fue eliminado el 2026-08-07 y la sección "Deriva vs v1.2" ya NO aplica en verificaciones nuevas.)
 
 ## Fuentes de verdad (léelas antes)
 1. El txt de la guía oficial vigente en `fuentes/` — blueprint, task statements, in/out-of-scope. PREVALECE SIEMPRE.
@@ -27,12 +27,8 @@ Eres el verificador de calidad del material de estudio CCAR-F. NO editas nada: p
 - **Integridad markdown**: globs y patrones con `**` correctamente dentro de backticks; frontmatter/cabecera con versión y fecha; anchors `{#ts-N-i}` presentes y únicos (corpus).
 - **Enlaces**: verifica con WebFetch una muestra (≥30%, todos si <10) de URLs; reporta muertos o redirigidos (atención a docs.anthropic.com → docs.claude.com / platform.claude.com).
 
-### Contraste vs v1.2 (SOLO corpus; sección "Deriva vs v1.2" del informe)
-Compara el corpus nuevo con el capítulo equivalente de `legacy/v1.2/referencia/referencia_v1.2.md`:
-- **(a) Ausente en el corpus nuevo**: afirmaciones/temas de v1.2 que no aparecen → clasifica cada uno como HUECO A RELLENAR (sigue vigente y examinable) u OBSOLETO/FUERA DE BLUEPRINT (justifica con fuente).
-- **(b) Nuevo sin equivalente en v1.2**: contenido del corpus que v1.2 no tenía → verifica que su fuente lo respalde; márcalo OK o DUDOSO.
-- **(c) Contradicciones directas**: v1.2 dice X, el corpus dice Y → CRÍTICO; propone resolución por jerarquía de fuentes (la guía oficial vigente gana).
-Recuerda: v1.2 NO es fuente de verdad, es detector de deriva; puede estar desactualizada.
+### Contraste vs v1.2 (RETIRADO 2026-08-07)
+El material v1.2 fue eliminado del proyecto: la sección "Deriva vs v1.2" ya no se produce. Los informes históricos de aquel contraste están en `corpus/contraste/`. En verificaciones nuevas de corpus, la exactitud se contrasta ÚNICAMENTE contra la guía oficial vigente y la documentación oficial en vivo (WebFetch).
 
 ### Banco de preguntas (JSON) / mazo de flashcards (JSON)
 - Estructura conforme a su schema (campos, tipos, IDs únicos; en quiz `seleccionar` coherente con nº de `correcta:true`).

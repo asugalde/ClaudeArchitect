@@ -2,7 +2,7 @@
 
 Sistema de generación de material de estudio para el examen CCAR-F.
 
-> **NOTA TRANSICIONAL (2026-08-05):** el proyecto está en pleno replanteamiento. El pipeline anterior (Fase 1/Fase 2 gateada) y todo su material v1.2 están **congelados en `legacy/v1.2/`** (no editar; ver su README). El pipeline nuevo se está construyendo según el plan aprobado; este fichero se reescribirá en versión definitiva cuando el piloto (bloque 0) esté validado. Mientras tanto: **leer `ESTADO.md` al empezar cualquier sesión.**
+> **NOTA TRANSICIONAL (2026-08-05, actualizada 2026-08-07):** el proyecto se replanteó desde cero. El material v1.2 anterior fue **eliminado definitivamente** (2026-08-07, decisión del usuario; el proyecto nuevo diverge totalmente del anterior — no referenciar su material ni su canal de publicación). Este fichero se reescribirá en versión definitiva al cerrar los gates de formato. Mientras tanto: **leer `ESTADO.md` al empezar cualquier sesión.**
 
 ## Pipeline nuevo (en construcción)
 
@@ -16,7 +16,7 @@ Sistema de generación de material de estudio para el examen CCAR-F.
 5. /distribuir                   → dist/ (canal final por definir)
 ```
 
-Contrato entre etapas: cada skill solo lee lo que escribió la anterior. El corpus (`corpus/*.md`) es **la fuente de verdad** del material generado; `legacy/v1.2/referencia/referencia_v1.2.md` se usa solo como contraste de validación.
+Contrato entre etapas: cada skill solo lee lo que escribió la anterior. El corpus (`corpus/*.md`) es **la fuente de verdad** del material generado. (El contraste contra la referencia v1.2 se ejecutó durante la consolidación — informes en `corpus/contraste/` —; el material v1.2 ya no existe, así que futuras re-verificaciones del corpus serán solo contra la guía oficial y la doc oficial en vivo.)
 
 ## Estructura
 
@@ -27,7 +27,6 @@ Contrato entre etapas: cada skill solo lee lo que escribió la anterior. El corp
 ├── recursos/                # salida: guias/ quiz/ flashcards/ pdf/ simulacro/
 ├── plantillas/              # plantillas HTML/md y schemas (reutilizadas de v1.2 + nuevas)
 ├── herramientas/            # html-a-pdf.ps1 (Edge headless) + construir-dist.py (por reescribir)
-├── legacy/v1.2/             # material y andamiaje anteriores, CONGELADOS
 ├── versiones.json           # manifest de versiones, gates y trazabilidad del pipeline nuevo
 └── .claude/                 # skills y agents del pipeline nuevo
 ```

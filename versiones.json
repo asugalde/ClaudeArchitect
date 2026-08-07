@@ -1,5 +1,5 @@
 {
-  "$comment": "Manifest del pipeline nuevo. Lo actualizan las skills; no editar a mano salvo correccion. El material v1.2 anterior esta congelado en legacy/v1.2/ con su propio versiones.json.",
+  "$comment": "Manifest del pipeline nuevo. Lo actualizan las skills; no editar a mano salvo correccion. El material v1.2 anterior fue eliminado definitivamente el 2026-08-07 (decision del usuario).",
   "guia_oficial_examen": {
     "version": "1.0",
     "fecha_descarga": "2026-08-05",
