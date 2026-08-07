@@ -44,7 +44,7 @@
 ## Pendientes que arrastra el proyecto (decisiones del usuario)
 
 1. ~~Primer commit del repo~~ Hecho (2026-08-07): rama `develop` creada con el primer commit de todo el árbol. Modelo de ramas completo (papel de `main`, releases) aún por decidir.
-2. Canal de distribución de `dist/`.
+2. ~~Canal de distribución~~ Decidido y activo (2026-08-07): **GitHub Pages** en `asugalde/ClaudeArchitect` (rama `master`, raíz; portada `index.html` redirige a `recursos/index_v1.0.html`). URL: https://asugalde.github.io/ClaudeArchitect/ — verificado en vivo (index/guías/quiz/simulacro/flashcards con 200; `fuentes/` con 404, nunca se publica). Publicar = push a `master`. Credenciales: PAT fine-grained solo de ese repo, almacenado únicamente en `.git/credentials-asugalde` (helper local; no toca el keyring global). Pendiente menor: decidir si `dist/`/`construir-dist.py` siguen teniendo sentido o el repo publicado los sustituye.
 
 ## Historial
 
