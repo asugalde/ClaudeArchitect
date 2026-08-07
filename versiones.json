@@ -2,8 +2,9 @@
   "$comment": "Manifest del pipeline nuevo. Lo actualizan las skills; no editar a mano salvo correccion. El material v1.2 anterior fue eliminado definitivamente el 2026-08-07 (decision del usuario).",
   "guia_oficial_examen": {
     "version": "1.0",
-    "fecha_descarga": "2026-08-05",
-    "diff_vs_anterior": "sin cambios: el PDF re-descargado de la URL S3 es identico (SHA-256) al fuentes/exam-guide-oficial-v1.0.pdf existente; no se genera diff ni ficheros nuevos"
+    "fecha_descarga": "2026-08-07",
+    "diff_vs_anterior": "sin cambios: el PDF re-descargado de la URL S3 es identico (SHA-256) al de 2026-08-05; no se genera diff ni ficheros nuevos",
+    "nota": "2026-08-07: fuentes/ se perdio del disco durante la purga de historial (checkout de filter-branch + gc inmediato) y se restauro el mismo dia: PDF re-descargado de la URL canonica, txt re-extraido (pypdf, ligaduras normalizadas) y fuentes.yaml reconstruido desde corpus/notas. Prueba de humo: el index regenerado con las fuentes restauradas es byte-identico al previo. fuentes/ ya NO se versiona en git (.gitignore)."
   },
   "corpus": {
     "gate_general": {
