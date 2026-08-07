@@ -1,6 +1,6 @@
 ---
 name: consolidar-corpus
-description: Etapa 3 del pipeline CCAR-F - redacta el corpus por bloque desde las notas de extracción, lo verifica contra la guía oficial y produce el informe de contraste vs la referencia v1.2 congelada. Termina SIEMPRE en el gate del usuario. Uso - /consolidar-corpus [0-5|todos].
+description: Etapa 3 del pipeline CCAR-F - redacta el corpus por bloque desde las notas de extracción y lo verifica contra la guía oficial vigente y la doc oficial en vivo, con informe en corpus/contraste/. Termina SIEMPRE en el gate del usuario. Uso - /consolidar-corpus [0-5|todos].
 ---
 
 # /consolidar-corpus [bloque|todos]
