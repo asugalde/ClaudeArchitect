@@ -43,7 +43,7 @@
     --border:#E1E9F1;
     --border-strong:#C7D6E4;
     --text:#0E1B2C;
-    --text-muted:#51607A;
+    --text-muted:#45536C;
     --text-subtle:#8496A8;
 
     --accent:#0E82FF;
@@ -51,6 +51,7 @@
     --accent-active:#0857B4;
     --accent-weak:#E2F1FF;
     --accent-contrast:#06121F;
+    --on-accent:#F7FBFF;
 
     --success:#0E8546; --success-weak:#E2F6EA;
     --warning:#B5760F; --warning-weak:#FBEFD9;
@@ -65,7 +66,7 @@
     --border:#213244;
     --border-strong:#2E4257;
     --text:#E4EDF6;
-    --text-muted:#8C9DB4;
+    --text-muted:#B6C5D9;
     --text-subtle:#66788C;
 
     --accent:#3FA9FF;
@@ -73,6 +74,7 @@
     --accent-active:#2C93F0;
     --accent-weak:#0E2C48;
     --accent-contrast:#06101C;
+    --on-accent:#F7FBFF;
 
     --success:#37DA84; --success-weak:#123526;
     --warning:#F0A93C; --warning-weak:#33260F;
@@ -152,10 +154,12 @@
   .sp-row .bar{background:var(--accent);height:14px;border-radius:3px;}
   .sp-row .tag{font-family:var(--font-mono);color:var(--text-muted);min-width:90px;}
 
-  /* Buttons */
-  .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semibold);border-radius:var(--r-md);
-    padding:9px 16px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
-  .btn.primary{background:var(--accent);color:var(--accent-contrast);}
+  /* Buttons — tamaño por defecto "small" (botones de acción); .btn.cta un punto mayor
+     para la única acción principal de una vista (ver sección 04). */
+  .btn{font-family:inherit;font-size:var(--fs-caption);font-weight:var(--fw-semibold);border-radius:var(--r-md);
+    padding:6px 12px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
+  .btn.cta{font-size:var(--fs-sm);padding:8px 14px;}
+  .btn.primary{background:var(--accent);color:var(--on-accent);}
   .btn.primary:hover{background:var(--accent-hover);}
   .btn.primary:active{background:var(--accent-active);}
   .btn.secondary{background:transparent;color:var(--text);border-color:var(--border-strong);}
@@ -166,8 +170,8 @@
   .btn:disabled{opacity:.45;cursor:not-allowed;}
   .row{display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center;}
 
-  /* Badges / pills */
-  .badge{font-size:var(--fs-caption);font-weight:var(--fw-semibold);padding:3px 10px;border-radius:var(--r-pill);}
+  /* Badges / pills — peso medium, nunca semibold */
+  .badge{font-size:var(--fs-caption);font-weight:var(--fw-medium);padding:3px 10px;border-radius:var(--r-pill);}
   .badge.accent{background:var(--accent-weak);color:var(--accent);}
   .badge.success{background:var(--success-weak);color:var(--success);}
   .badge.warning{background:var(--warning-weak);color:var(--warning);}
@@ -217,6 +221,41 @@
   .dd h4{margin-bottom:var(--sp-2);}
   .dd ul{margin:0;padding-left:18px;font-size:var(--fs-sm);color:var(--text-muted);}
   .dd li{margin-bottom:6px;}
+
+  /* =====================================================================
+     PATRONES DEL CURSO (sección 07) — introducidos durante las iteraciones,
+     ya en producción en guia-interactiva/quiz/flashcards/index.template.html
+     ===================================================================== */
+  /* Foco visible — sustituye al anillo accent-weak documentado antes. */
+  :is(a,button,input,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* Marca de topbar: nombre completo + sigla entre corchetes en mono. */
+  .brand-sigla{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:var(--fw-medium);color:var(--text-muted);}
+
+  /* Callout de interacción (mini-check): fondo accent-weak, borde izquierdo accent. */
+  .minicheck{border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-left:3px solid var(--accent);
+    border-radius:var(--r-lg);padding:var(--sp-5);margin:var(--sp-4) 0;background:var(--accent-weak);color:var(--text);}
+  .minicheck p{margin:0 0 var(--sp-2);}
+
+  /* Bloques de código con etiqueta de lenguaje. */
+  pre[data-lang]{position:relative;padding-top:30px;}
+  pre[data-lang]::before{content:attr(data-lang);position:absolute;top:8px;right:12px;
+    font-size:var(--fs-caption);color:var(--text-subtle);letter-spacing:.05em;}
+
+  /* Tarjeta de referencia. */
+  .doc-link{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--r-md);
+    padding:10px 14px;font-size:var(--fs-sm);color:var(--text-muted);background:var(--surface);text-decoration:none;}
+  .doc-link:hover{border-color:var(--accent);}
+  .doc-link .ext{color:var(--text-subtle);font-size:var(--fs-caption);}
+
+  /* Sidebar de navegación para documentos largos (demo estática, en real sticky:260px). */
+  .side-demo{display:flex;gap:var(--sp-5);}
+  .side-demo .side-nav{flex:0 0 180px;border-right:1px solid var(--border);padding-right:var(--sp-4);
+    display:flex;flex-direction:column;gap:2px;}
+  .side-demo .side-nav a{display:block;padding:5px 0 5px 10px;border-left:2px solid transparent;
+    font-size:var(--fs-sm);color:var(--text-muted);text-decoration:none;}
+  .side-demo .side-nav a.active{color:var(--accent);font-weight:var(--fw-medium);border-left-color:var(--accent);}
+  .side-demo .side-body{flex:1 1 auto;font-size:var(--fs-sm);color:var(--text-muted);}
 </style>
 </head>
 <body>
@@ -230,6 +269,7 @@
     <a href="#components">Componentes</a>
     <a href="#a11y">Accesibilidad</a>
     <a href="#tokens">Tokens</a>
+    <a href="#patterns">Patrones</a>
   </nav>
   <button class="toggle" id="tg">◐ Oscuro</button>
 </header>
@@ -239,7 +279,7 @@
   <div class="hero">
     <div class="eyebrow">Sistema de diseño · v1.0</div>
     <div class="display">Volt</div>
-    <p class="lead">Lenguaje visual para documentos y recursos HTML. Tecnología y modernidad con un acento púrpura sobrio: formas nítidas, tipografía contemporánea y contraste cuidado en claro y oscuro.</p>
+    <p class="lead">Lenguaje visual para documentos y recursos HTML. Tecnología y modernidad con un acento azul sobrio: formas nítidas, tipografía contemporánea y contraste cuidado en claro y oscuro.</p>
     <p class="note"><b>Principios:</b> claridad sobre decoración · el peso visual recae en el borde, no en la sombra · un único color de acento, usado con moderación · accesible por defecto (contraste AA).</p>
   </div>
 
@@ -247,7 +287,7 @@
   <section class="block" id="color">
     <div class="eyebrow">01 — Color</div>
     <h2>Paleta</h2>
-    <p class="note">Un solo acento (púrpura Volt) sobre una base neutra fría. Reserva el acento para acciones y énfasis; el resto de la interfaz vive en neutros. Cada color tiene variante en modo claro y oscuro (activa el conmutador arriba para verlas).</p>
+    <p class="note">Un solo acento (azul Volt) sobre una base neutra fría. Reserva el acento para acciones y énfasis; el resto de la interfaz vive en neutros. Cada color tiene variante en modo claro y oscuro (activa el conmutador arriba para verlas).</p>
 
     <h4 style="margin-top:var(--sp-5)">Acento</h4>
     <div class="swatches">
@@ -255,6 +295,7 @@
       <div class="swatch"><div class="cap" style="background:var(--accent-hover)"></div><div class="meta"><b>accent-hover</b><span>--accent-hover</span></div></div>
       <div class="swatch"><div class="cap" style="background:var(--accent-active)"></div><div class="meta"><b>accent-active</b><span>--accent-active</span></div></div>
       <div class="swatch"><div class="cap" style="background:var(--accent-weak)"></div><div class="meta"><b>accent-weak</b><span>--accent-weak</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-family:var(--font-mono);font-size:var(--fs-caption)">Aa</div><div class="meta"><b>on-accent</b><span>--on-accent</span></div></div>
     </div>
 
     <h4 style="margin-top:var(--sp-5)">Neutros y superficies</h4>
@@ -324,6 +365,7 @@
     <h2>Biblioteca base</h2>
 
     <h3 style="margin-top:var(--sp-5)">Botones</h3>
+    <p class="note">Escala de dos pasos. <b>small</b> (por defecto, <code>--fs-caption</code>, 6px 12px) es el tamaño de los botones de <b>acción</b> — los que aparecen repetidos en una interfaz (tarjetas, tablas, mini-checks). <b>.btn.cta</b> (<code>--fs-sm</code>, 8px 14px), un punto mayor, se reserva para la <b>única acción principal de una vista</b> (portada, formulario, paso de un asistente).</p>
     <div class="demo">
       <div class="row">
         <button class="btn primary">Acción principal</button>
@@ -332,6 +374,12 @@
         <button class="btn danger">Destructiva</button>
         <button class="btn primary" disabled>Deshabilitada</button>
       </div>
+      <p class="caption" style="margin:var(--sp-3) 0 6px">small · botones de acción</p>
+      <div class="row">
+        <button class="btn cta primary">Continuar</button>
+        <button class="btn cta secondary">Cancelar</button>
+      </div>
+      <p class="caption" style="margin:6px 0 0">.btn.cta · acción principal de la vista</p>
     </div>
 
     <h3>Etiquetas y estados</h3>
@@ -399,7 +447,7 @@
           <li>Reserva el acento para 1 acción principal por vista.</li>
           <li>Texto normal ≥ 4.5:1 de contraste; controles y texto grande ≥ 3:1.</li>
           <li>Usa <code>--text-muted</code> para jerarquía, no gris arbitrario.</li>
-          <li>Focus siempre visible (anillo <code>--accent-weak</code>).</li>
+          <li>Focus siempre visible: <code>:is(a,button,input,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}</code> (ver sección 07).</li>
           <li>Comunica estado con color <b>e</b> icono/texto, nunca solo color.</li>
         </ul>
       </div>
@@ -407,14 +455,14 @@
         <h4>Evítalo</h4>
         <ul>
           <li>Varios botones primarios compitiendo en la misma zona.</li>
-          <li>Púrpura saturado como fondo de bloques grandes de texto.</li>
+          <li>Acento saturado como fondo de bloques grandes de texto.</li>
           <li>Sombras pesadas o degradados: rompen el registro sobrio.</li>
           <li>Texto sobre <code>--accent-weak</code> con colores que no sean el acento.</li>
           <li>Tamaños fuera de la escala tipográfica definida.</li>
         </ul>
       </div>
     </div>
-    <p class="note" style="margin-top:var(--sp-4)">Todos los pares texto/fondo de esta guía cumplen WCAG AA. El acento en verde/púrpura se aclara en modo oscuro para preservar el contraste sobre fondos oscuros.</p>
+    <p class="note" style="margin-top:var(--sp-4)">Todos los pares texto/fondo de esta guía cumplen WCAG AA. El acento en azul se aclara en modo oscuro para preservar el contraste sobre fondos oscuros.</p>
   </section>
 
   <!-- ============ TOKENS ============ -->
@@ -430,9 +478,9 @@
   /* Color · claro */
   --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
   --border:#E1E9F1; --border-strong:#C7D6E4;
-  --text:#0E1B2C; --text-muted:#51607A; --text-subtle:#8496A8;
+  --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
   --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
-  --accent-weak:#E2F1FF; --accent-contrast:#06121F;
+  --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
   --success:#0E8546; --warning:#B5760F; --danger:#CE4148; --info:#2E63FF;
 
   /* Espaciado / radios */
@@ -443,13 +491,72 @@
 [data-theme="dark"]{
   --bg:#06101C; --surface:#101927; --surface-2:#172230;
   --border:#213244; --border-strong:#2E4257;
-  --text:#E4EDF6; --text-muted:#8C9DB4; --text-subtle:#66788C;
+  --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
   --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
-  --accent-weak:#0E2C48; --accent-contrast:#06101C;
+  --accent-weak:#0E2C48; --accent-contrast:#06101C; --on-accent:#F7FBFF;
   --success:#37DA84; --warning:#F0A93C; --danger:#F0656C; --info:#6684FF;
 }</code></pre>
+    <p class="note"><b>--on-accent</b> es el texto (casi blanco) sobre fondo <code>--accent</code> — el mismo valor en ambos temas, a diferencia del resto de la paleta. Úsalo en <code>.btn.primary</code> y cualquier botón/chip con fondo de acento; no reutilices <code>--accent-contrast</code> para eso.</p>
     <p class="note">Fuentes vía Google Fonts:<br>
     <code>&lt;link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"&gt;</code></p>
+    <p class="note">Favicon (mismo SVG data-URI en todos los recursos):<br>
+    <code>&lt;link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E"&gt;</code></p>
+  </section>
+
+  <!-- ============ PATRONES DEL CURSO ============ -->
+  <section class="block" id="patterns">
+    <div class="eyebrow">07 — Patrones del curso</div>
+    <h2>Patrones introducidos en iteración</h2>
+    <p class="note">Patrones concretos que surgieron generando los recursos del curso (guía interactiva, quiz, flashcards, índice) y que ya son parte del sistema. Documentados aquí para que cualquier recurso nuevo los reutilice en vez de reinventarlos.</p>
+
+    <h3 style="margin-top:var(--sp-5)">Marca de topbar con sigla</h3>
+    <div class="demo">
+      <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+    </div>
+
+    <h3>Callout de interacción (mini-check)</h3>
+    <div class="demo">
+      <div class="minicheck">
+        <p><b>¿Qué scope de MCP persiste solo para la sesión actual?</b></p>
+        <p class="note" style="margin:0">Fondo <code>--accent-weak</code>, borde izquierdo 3px <code>--accent</code>, radio <code>--r-lg</code>; texto en <code>--text</code> (AA sobre el fondo weak).</p>
+      </div>
+    </div>
+
+    <h3>Bloque de código con etiqueta de lenguaje</h3>
+    <div class="demo">
+<pre data-lang="python"><code>def greet(name: str) -> str:
+    return f"Hello, {name}"</code></pre>
+    </div>
+
+    <h3>Tarjeta de referencia</h3>
+    <div class="demo">
+      <a class="doc-link" href="#">Docs oficiales — Claude API <span class="ext">↗</span></a>
+    </div>
+
+    <h3>Sidebar de navegación (documentos largos)</h3>
+    <div class="demo">
+      <div class="side-demo">
+        <nav class="side-nav">
+          <a href="#" class="active">01 — Introducción</a>
+          <a href="#">02 — Arquitectura</a>
+          <a href="#">03 — Seguridad</a>
+        </nav>
+        <div class="side-body">En el recurso real: sticky, 260px, dentro de <code>.layout</code> a dos columnas junto al contenido.</div>
+      </div>
+    </div>
+
+    <h3>Foco visible</h3>
+    <p class="note">Todo elemento interactivo recibe un anillo de foco sólido al navegar con teclado (no al hacer click). Prueba con Tab:</p>
+    <div class="demo">
+      <div class="row">
+        <a href="#">Enlace de ejemplo</a>
+        <button class="btn secondary">Botón de ejemplo</button>
+      </div>
+<pre><code>:is(a,button,input,select):focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}</code></pre>
+    </div>
   </section>
 
 </div>
