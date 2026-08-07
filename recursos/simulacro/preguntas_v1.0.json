@@ -1,0 +1,2473 @@
+{
+  "config": {
+    "titulo": "Simulacro de examen CCAR-F",
+    "version": "1.0",
+    "bloque": "simulacro",
+    "modo_defecto": "examen",
+    "solo_examen": true,
+    "duracion_examen_min": 120,
+    "generado_desde_corpus": "bloque-{0..5}-*.md v1.0 (simulacro agregado desde recursos/quiz/bloque-{0..5}/preguntas_v1.0.json)",
+    "fecha": "2026-08-07"
+  },
+  "preguntas": [
+    {
+      "id": "b2-q16",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.6",
+      "escenario": "A CI pipeline step invokes `claude` to summarize a build log, but the job hangs indefinitely and eventually times out, with no output ever produced.",
+      "enunciado": "What is the most likely cause and fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Claude Code was run in its default interactive mode, which can wait for input; adding `-p`/`--print` runs it non-interactively so it completes without hanging.",
+          "correcta": true,
+          "justificacion": "-p/--print is documented specifically to prevent the pipeline from stalling on interactive input; running without it is the documented cause of exactly this kind of hang."
+        },
+        {
+          "id": "B",
+          "texto": "The `--bare` flag was missing, and without it Claude always waits for hooks to be manually approved.",
+          "correcta": false,
+          "justificacion": "--bare skips auto-discovery of hooks, skills, plugins, MCP servers, auto memory, and CLAUDE.md for faster, more consistent startup; the documented cause of indefinite hangs is missing -p/--print, not --bare."
+        },
+        {
+          "id": "C",
+          "texto": "`--output-format json` must be set for any pipeline invocation to complete.",
+          "correcta": false,
+          "justificacion": "The output format flag controls the shape of the returned result; it has no bearing on whether the process hangs waiting for interactive input."
+        },
+        {
+          "id": "D",
+          "texto": "The stdin input exceeded 10 MB, causing the process to hang instead of erroring.",
+          "correcta": false,
+          "justificacion": "Exceeding the documented 10 MB stdin limit causes Claude to terminate with an error and non-zero exit status, not an indefinite hang."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-2-6",
+      "fuentes": [
+        "https://code.claude.com/docs/en/headless"
+      ]
+    },
+    {
+      "id": "b2-q07",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.3",
+      "escenario": "A team's test files (`*.test.ts`) are spread across dozens of directories throughout the codebase with no single common parent folder. They want a consistent testing convention (naming pattern, mocking rules) to apply to every one of them without maintaining a `CLAUDE.md` in every directory that happens to contain a test file.",
+      "enunciado": "What is the correct mechanism for this requirement?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "A path-scoped rule in `.claude/rules/` with `paths: [\"**/*.test.ts\"]`, loaded on-demand whenever Claude reads a matching file regardless of its location.",
+          "correcta": true,
+          "justificacion": "This is exactly the documented advantage of path-scoped rules over per-directory CLAUDE.md: applying a convention by file type across the whole tree without replicating CLAUDE.md in every folder."
+        },
+        {
+          "id": "B",
+          "texto": "A subdirectory `CLAUDE.md` placed at the repository root, since subdirectory files load recursively for every folder below it.",
+          "correcta": false,
+          "justificacion": "Subdirectory CLAUDE.md only loads on-demand for the specific subdirectory when Claude reads files there; it does not act as a type-based rule applied broadly across unrelated directories."
+        },
+        {
+          "id": "C",
+          "texto": "`claudeMdExcludes` configured to include all test directories.",
+          "correcta": false,
+          "justificacion": "claudeMdExcludes is used in monorepos to exclude other teams' CLAUDE.md files from loading; it does not apply or scope any conventions."
+        },
+        {
+          "id": "D",
+          "texto": "A single `.claude/rules/testing.md` with no `paths:` frontmatter, so it always loads at session start.",
+          "correcta": false,
+          "justificacion": "Loading unconditionally at session start wastes context on files where the rule is irrelevant; on-demand, path-matched loading requires the `paths:` field, which this option omits."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-3",
+      "fuentes": [
+        "https://code.claude.com/docs/en/memory"
+      ]
+    },
+    {
+      "id": "b4-q02",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "Your production agent enforces maxBudgetUsd: 2.00 to control cost. In one session, cumulative spend — including delegated subagent calls — crosses that ceiling mid-task. The application's result handler only branches on subtype === \"success\" vs. everything else, logging every non-success ResultMessage as \"hit turn limit, resume from session_id\" regardless of which limit was actually exceeded.",
+      "enunciado": "What is incorrect about this handling, and what is the correct fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The handler mislabels every non-success termination as a turn-limit event; it should branch explicitly on ResultMessage.subtype, since error_max_budget_usd (a cost ceiling that includes subagent spend) is a distinct condition from error_max_turns and warrants a different operator response.",
+          "correcta": true,
+          "justificacion": "The SDK documents distinct subtype values (success, error_max_turns, error_max_budget_usd, error_during_execution, error_max_structured_output_retries); collapsing them into a single generic branch loses the information needed to react correctly."
+        },
+        {
+          "id": "B",
+          "texto": "maxTurns should be removed entirely, since maxBudgetUsd already guards against runaway cost.",
+          "correcta": false,
+          "justificacion": "maxTurns and maxBudgetUsd are independent safety nets covering different concerns (turn count vs. estimated spend); removing one doesn't address the handler's real bug, which is not distinguishing subtypes."
+        },
+        {
+          "id": "C",
+          "texto": "Subagent spend should be excluded from the parent's budget so only the top-level agent's turns count against maxBudgetUsd.",
+          "correcta": false,
+          "justificacion": "Subagent spend counts against the same total budget as the parent by design; excluding it would contradict the documented behavior, not fix the handler."
+        },
+        {
+          "id": "D",
+          "texto": "Increase maxTurns so that subagent tool calls fit comfortably under the turn cap.",
+          "correcta": false,
+          "justificacion": "The scenario's limit that was exceeded is the cost ceiling (maxBudgetUsd), not the turn cap; raising maxTurns doesn't address a budget-related termination or the handler's failure to distinguish subtypes."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-1",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/agent-loop"
+      ]
+    },
+    {
+      "id": "b0-q09",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.3",
+      "escenario": "Claude's response contains two tool_use blocks in the same turn — check_inventory and get_shipping_cost. The check_inventory call fails with a database timeout. To \"save a round trip,\" the client sends a tool_result only for get_shipping_cost, silently skipping check_inventory, and separately sends a generic message of \"failed\" whenever an error does get reported.",
+      "enunciado": "Select TWO changes required to bring this handling in line with the documented tool_use/tool_result pattern.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Return a tool_result for every tool_use block emitted in that turn, including check_inventory, since each tool_use requires its own corresponding tool_result.",
+          "correcta": true,
+          "justificacion": "When Claude emits multiple tool_use blocks in parallel, the client must execute and return a tool_result for each one; omitting one breaks the required one-to-one correspondence and can break the loop."
+        },
+        {
+          "id": "B",
+          "texto": "Mark the check_inventory tool_result with is_error: true and a descriptive message (e.g., \"Database timeout after 30s, inventory service unavailable\") instead of a generic string.",
+          "correcta": true,
+          "justificacion": "Errors must be flagged with is_error and carry an instructive message so Claude can decide intelligently whether to retry or escalate; a generic message like \"failed\" gives it nothing to act on."
+        },
+        {
+          "id": "C",
+          "texto": "Buffer the whole batch and wait until check_inventory eventually succeeds before sending any tool_result.",
+          "correcta": false,
+          "justificacion": "This isn't the documented pattern; a failed execution should be reported as an error result, not withheld indefinitely, and get_shipping_cost's already-available result shouldn't be blocked on it."
+        },
+        {
+          "id": "D",
+          "texto": "Replace the failed call's tool_result with an empty content array to mark it as non-fatal.",
+          "correcta": false,
+          "justificacion": "An empty content array without is_error is reserved for a valid, genuinely empty (non-error) result, not for masking a real execution failure like a database timeout."
+        },
+        {
+          "id": "E",
+          "texto": "Increase max_tokens so Claude can produce a longer error message on the next turn.",
+          "correcta": false,
+          "justificacion": "max_tokens bounds the output token budget; it has no relationship to whether the client correctly reports tool execution errors back to Claude."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-0-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/how-tool-use-works",
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls"
+      ]
+    },
+    {
+      "id": "b1-q02",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.1",
+      "escenario": "A security review prompt defines severity levels critical/high/medium/low with a one-sentence textual description each. Despite these definitions, the same type of finding is classified as \"high\" in one run and \"medium\" in another.",
+      "enunciado": "What change is most likely to fix this severity classification inconsistency?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Add a concrete code example for each severity level so classification anchors to actual cases, not abstract labels.",
+          "correcta": true,
+          "justificacion": "Concrete code examples anchored to each severity level are what produce consistent classification across runs; textual labels alone leave the boundary between levels open to arbitrary interpretation."
+        },
+        {
+          "id": "B",
+          "texto": "Replace the four textual levels with a numeric score from 1 to 10.",
+          "correcta": false,
+          "justificacion": "A numeric scale without concrete anchoring examples is just as susceptible to inconsistent application as textual labels; it doesn't resolve the underlying ambiguity."
+        },
+        {
+          "id": "C",
+          "texto": "Add 10+ generic few-shot examples covering easy, unambiguous cases.",
+          "correcta": false,
+          "justificacion": "Piling on generic examples without targeting the actual severity boundary inflates context length without proportionally improving consistency, the documented anti-pattern of over-adding examples."
+        },
+        {
+          "id": "D",
+          "texto": "Increase max_tokens so severity descriptions can be longer.",
+          "correcta": false,
+          "justificacion": "max_tokens only bounds the output token budget; it has no bearing on how consistently the model applies severity criteria across runs."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+      ]
+    },
+    {
+      "id": "b5-q06",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.2",
+      "escenario": "While designing escalation logic, a team debates several signals to use for deciding whether a case needs human review.",
+      "enunciado": "Select TWO signals that are explicitly documented as unreliable proxies for actual case complexity.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Sentiment analysis detecting how frustrated the customer sounds.",
+          "correcta": true,
+          "justificacion": "Sentiment doesn't correlate reliably with complexity: a frustrated customer with a trivial issue doesn't need escalation, and a calm customer with a complex case might."
+        },
+        {
+          "id": "B",
+          "texto": "The model's own self-reported confidence score for the case.",
+          "correcta": true,
+          "justificacion": "Self-reported confidence is unreliable because the model can be incorrectly confident precisely on the difficult cases where it fails most."
+        },
+        {
+          "id": "C",
+          "texto": "Explicit escalation criteria with few-shot examples embedded in the system prompt.",
+          "correcta": false,
+          "justificacion": "This is the documented correct pattern for escalation, not an unreliable proxy signal."
+        },
+        {
+          "id": "D",
+          "texto": "The customer explicitly requesting a human agent.",
+          "correcta": false,
+          "justificacion": "This is one of the three legitimate, explicit escalation triggers, not an inferred proxy for complexity."
+        },
+        {
+          "id": "E",
+          "texto": "Detecting that the current policy doesn't address the customer's specific request.",
+          "correcta": false,
+          "justificacion": "This is also a legitimate, explicit trigger (a policy gap), not an indirect complexity proxy."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-2",
+      "fuentes": [
+        "https://www.anthropic.com/engineering/built-multi-agent-research-system"
+      ]
+    },
+    {
+      "id": "b5-q02",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "An order-lookup tool returns a JSON payload with 40+ fields (shipping carrier metadata, internal warehouse codes, audit timestamps, etc.), of which only order_id, status, amount, and ship_date matter for the current task. Across a ten-turn session, these payloads accumulate in context, and the team notices token usage climbing without any corresponding improvement in answer quality.",
+      "enunciado": "What is the correct fix for this pattern of context accumulation?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Trim each tool result to only the fields relevant to the task before it accumulates in context, rather than keeping the full 40+ field payload turn after turn.",
+          "correcta": true,
+          "justificacion": "Trimming verbose tool outputs to the relevant fields before they accumulate directly addresses irrelevant fields consuming token budget without adding value."
+        },
+        {
+          "id": "B",
+          "texto": "Progressively summarize the accumulated tool outputs into shorter, vaguer descriptions each time a new one arrives.",
+          "correcta": false,
+          "justificacion": "Vague progressive summarization is the same anti-pattern that destroys precise transactional values; it trades bulk for lost precision on the few fields that actually matter."
+        },
+        {
+          "id": "C",
+          "texto": "Increase the model's context window so all fields comfortably fit without any trimming.",
+          "correcta": false,
+          "justificacion": "Fitting isn't the problem; irrelevant fields still consume token budget turn after turn and add no value regardless of how much headroom the window has."
+        },
+        {
+          "id": "D",
+          "texto": "Insert a dedicated classifier model that scores each of the 40+ fields for relevance before every tool call.",
+          "correcta": false,
+          "justificacion": "Over-engineered; a simple deterministic filter to the known relevant fields achieves the same result without training or maintaining a separate model."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "id": "b5-q08",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.3",
+      "escenario": "A coordinator receives 'no data' both when a subagent's search timed out and when a subagent's search executed successfully but simply found zero matching records. In several cases it wrongly retries a query that had already legitimately returned zero results, and in others it wrongly accepts a timeout as a confirmed 'no results found.'",
+      "enunciado": "What is the correct architectural fix for this confusion?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Have subagents explicitly distinguish access failures (marked as errors, with a retryable flag) from valid empty results (a successful response with empty content) in their structured output.",
+          "correcta": true,
+          "justificacion": "Access failures and valid empty results require opposite responses; distinguishing them explicitly in the structured output is what lets the coordinator react correctly to each."
+        },
+        {
+          "id": "B",
+          "texto": "Increase every tool's timeout duration so access failures become rare enough to ignore.",
+          "correcta": false,
+          "justificacion": "Reduces frequency but not the underlying ambiguity in the report; a timeout can still occur and still be indistinguishable from a valid empty result without an explicit contract."
+        },
+        {
+          "id": "C",
+          "texto": "Have the subagent report 'likely no results' whenever it isn't fully certain what happened.",
+          "correcta": false,
+          "justificacion": "Introduces vague, fabricated uncertainty language instead of a structured, reliable signal; it still doesn't tell the coordinator whether a retry is warranted."
+        },
+        {
+          "id": "D",
+          "texto": "Have the coordinator retry any 'no data' response several times before accepting it, just to be safe.",
+          "correcta": false,
+          "justificacion": "Wastes calls on legitimate empty results and doesn't fix the reporting contract that caused the ambiguity in the first place."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-3",
+      "fuentes": [
+        "https://www.anthropic.com/engineering/built-multi-agent-research-system"
+      ]
+    },
+    {
+      "id": "b5-q18",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.6",
+      "escenario": "A final multi-source report renders every finding as uniform prose, and none of the structured outputs feeding into it include a publication or collection date field. Analysts complain that (1) they can't tell whether an apparent contradiction between two data points is a real conflict or just a difference in when each was collected, and (2) financial figures are hard to compare at a glance.",
+      "enunciado": "Select TWO changes that directly address both complaints.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Require every structured finding to include a publication or collection date field, so temporal differences aren't mistaken for real contradictions.",
+          "correcta": true,
+          "justificacion": "Missing publication dates is exactly what causes legitimate temporal differences to be misread as contradictions; requiring dates in every structured output fixes that."
+        },
+        {
+          "id": "B",
+          "texto": "Render different content types with formats suited to them — for example, tables for financial data and prose for narrative findings — instead of forcing everything into uniform prose.",
+          "correcta": true,
+          "justificacion": "Matching rendering to content type (tables for financial data, prose for narrative) is the documented fix for uniform prose losing the conventions that make comparison easy."
+        },
+        {
+          "id": "C",
+          "texto": "Assign a dedicated agent to rewrite all findings into a single consistent narrative voice.",
+          "correcta": false,
+          "justificacion": "Uniform prose is the documented problem for content types like financial data, not the fix."
+        },
+        {
+          "id": "D",
+          "texto": "Drop any data point whose collection date cannot be verified.",
+          "correcta": false,
+          "justificacion": "An overly aggressive fix that discards potentially valid data instead of simply requiring and preserving date metadata going forward."
+        },
+        {
+          "id": "E",
+          "texto": "Have the coordinator unilaterally decide which of two conflicting values to keep before synthesis, without annotating the other.",
+          "correcta": false,
+          "justificacion": "Contradicts the documented pattern of annotating both conflicting values with attribution rather than arbitrarily resolving to one."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-6",
+      "fuentes": [
+        "https://www.anthropic.com/engineering/built-multi-agent-research-system"
+      ]
+    },
+    {
+      "id": "b1-q07",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.3",
+      "escenario": "A document pipeline has separate extraction tools for invoices, receipts, and contracts, each with its own JSON schema. The incoming document's type is unknown ahead of time, but some extraction tool must always run.",
+      "enunciado": "Which tool_choice setting best matches this requirement?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "{\"type\": \"any\"}",
+          "correcta": true,
+          "justificacion": "\"any\" forces Claude to call some extraction tool while still letting it choose which schema fits the unknown document type, exactly the documented use case for an uncertain document type with multiple candidate schemas."
+        },
+        {
+          "id": "B",
+          "texto": "\"auto\"",
+          "correcta": false,
+          "justificacion": "\"auto\" allows Claude to respond with plain text instead of calling any extraction tool, which doesn't satisfy the requirement that some tool always runs."
+        },
+        {
+          "id": "C",
+          "texto": "{\"type\": \"tool\", \"name\": \"extract_invoice\"}",
+          "correcta": false,
+          "justificacion": "Forcing a single named tool removes the flexibility needed when the document type — and therefore the correct schema — is unknown in advance."
+        },
+        {
+          "id": "D",
+          "texto": "\"none\"",
+          "correcta": false,
+          "justificacion": "\"none\" prevents any tool call entirely, the opposite of the requirement that some extraction tool always runs."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-1-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "id": "b1-q14",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.5",
+      "escenario": "A pipeline must guarantee that extraction results are available within an SLA of 30 hours from document arrival, using the Message Batches API, which can take up to 24 hours to complete.",
+      "enunciado": "Per the documented calculation pattern, how frequently should batches be submitted to satisfy this SLA?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Every 4 hours",
+          "correcta": true,
+          "justificacion": "Per the documented pattern for calculating submission frequency against an SLA, guaranteeing results within 30 hours against a batch processing window of up to 24 hours requires submitting batches every 4 hours."
+        },
+        {
+          "id": "B",
+          "texto": "Every 24 hours",
+          "correcta": false,
+          "justificacion": "Submitting only every 24 hours — the maximum processing window itself — leaves no buffer to consistently guarantee the 30-hour SLA."
+        },
+        {
+          "id": "C",
+          "texto": "Every 30 hours",
+          "correcta": false,
+          "justificacion": "Submitting at the SLA boundary itself provides no margin and does not match the documented calculation for sustaining a 30-hour SLA."
+        },
+        {
+          "id": "D",
+          "texto": "Only once, at the start of the SLA window",
+          "correcta": false,
+          "justificacion": "A single submission doesn't account for documents arriving continuously throughout the SLA period."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-5",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+      ]
+    },
+    {
+      "id": "b3-q12",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.3",
+      "escenario": "In a multi-agent pipeline, a synthesis agent that only summarizes already-gathered findings has been given the full tool catalog, including web_search and fetch_url. Logs show it repeatedly attempting new web searches mid-summary instead of relying on the data already collected by upstream agents.",
+      "enunciado": "What is the most effective fix for this behavior, per the documented role-based scoping pattern?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Restrict the synthesis agent's tool list to only what its role needs (e.g., verify_fact, summarize), removing web_search and fetch_url entirely.",
+          "correcta": true,
+          "justificacion": "Role-based tool scoping assigns each agent only its specialization's catalog; giving a synthesis agent search tools outside its role is exactly the documented cause of this kind of misuse, and removing them is the fix."
+        },
+        {
+          "id": "B",
+          "texto": "Add a system prompt instruction telling the synthesis agent never to call web_search.",
+          "correcta": false,
+          "justificacion": "This relies on probabilistic prompt compliance for a decision that can be enforced structurally by simply not granting the tool at all."
+        },
+        {
+          "id": "C",
+          "texto": "Set tool_choice to \"none\" for the synthesis agent so it can never call any tool.",
+          "correcta": false,
+          "justificacion": "This is too restrictive; it would also block verify_fact, a legitimate cross-tool need documented for the synthesis role, not just the unwanted web_search."
+        },
+        {
+          "id": "D",
+          "texto": "Keep the full catalog but add strict: true to web_search and fetch_url so their inputs are validated more carefully.",
+          "correcta": false,
+          "justificacion": "strict governs input conformance once a tool is called; it does not address whether the agent should have access to the tool at all, which is the actual scoping problem."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools",
+        "https://code.claude.com/docs/en/mcp-quickstart"
+      ]
+    },
+    {
+      "id": "b1-q08",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.3",
+      "escenario": "An extract_invoice tool has strict: true, and 100% of production responses are valid JSON conforming to the schema. Despite this, a systemic issue persists: the sum of line_items frequently doesn't equal the reported total field.",
+      "enunciado": "What best explains this and what should be done about it?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "strict mode validates structure and types via grammar-constrained sampling, not semantic correctness; add an explicit semantic validation step (e.g., comparing calculated vs. stated total) outside the schema guarantee.",
+          "correcta": true,
+          "justificacion": "strict mode has no mechanism to check that field values are mutually consistent; that check requires an explicit semantic validation step outside the schema guarantee, since strict only eliminates syntax errors."
+        },
+        {
+          "id": "B",
+          "texto": "strict mode is misconfigured; add minimum/maximum constraints on the amount fields.",
+          "correcta": false,
+          "justificacion": "minimum/maximum numeric constraints are not supported in strict mode, and even if they were, they wouldn't verify that two independently reported numbers are mutually consistent."
+        },
+        {
+          "id": "C",
+          "texto": "Increase max_tokens so the model has more room to compute the correct sum.",
+          "correcta": false,
+          "justificacion": "max_tokens bounds the output token budget; it has no effect on whether the model computes or reports mutually consistent totals."
+        },
+        {
+          "id": "D",
+          "texto": "Switch tool_choice from \"any\" to a forced tool name to guarantee correctness.",
+          "correcta": false,
+          "justificacion": "tool_choice governs whether and which tool is called, not whether the values produced inside a valid call are semantically correct."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use",
+        "https://platform.claude.com/docs/en/build-with-claude/structured-outputs"
+      ]
+    },
+    {
+      "id": "b4-q07",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.3",
+      "escenario": "A team upgraded their Agent SDK from an older version to 2.1.63+. After the upgrade, their coordinator's calls to spawn subagents silently stop working; the coordinator's allowedTools list still contains only \"Task\", unchanged since before the upgrade.",
+      "enunciado": "What is the correct fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "In SDK 2.1.63+ the subagent-spawning tool was renamed from \"Task\" to \"Agent\"; allowedTools must include \"Agent\" for the coordinator to invoke subagents (SDKs prior to 2.1.63 use \"Task\" instead — both names refer to the same tool depending on version).",
+          "correcta": true,
+          "justificacion": "The Agent tool was renamed from \"Task\" in SDK version 2.1.63; allowedTools must reference the name matching the installed SDK version for subagent spawning to work."
+        },
+        {
+          "id": "B",
+          "texto": "\"Task\" was deprecated with no replacement; subagents must now be spawned exclusively via AgentDefinition.initialPrompt.",
+          "correcta": false,
+          "justificacion": "initialPrompt auto-sends a first user turn only when an agent runs as the primary agent of a thread; it is ignored when that agent is invoked as a subagent, and is not a subagent-spawning mechanism."
+        },
+        {
+          "id": "C",
+          "texto": "allowedTools no longer governs the Agent tool since 2.1.63; it must instead be listed under mcpServers.",
+          "correcta": false,
+          "justificacion": "The Agent tool is still gated by allowedTools like any other tool; mcpServers configures MCP server connections, an unrelated mechanism."
+        },
+        {
+          "id": "D",
+          "texto": "The coordinator must set permissionMode instead of allowedTools to enable subagent spawning.",
+          "correcta": false,
+          "justificacion": "permissionMode configures the permission mode for tool execution within an agent; it doesn't control whether the Agent/Task tool itself is available to be called."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-3",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/subagents"
+      ]
+    },
+    {
+      "id": "b3-q09",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.3",
+      "escenario": "A single research agent has access to 18 tools spanning web search, document analysis, fact verification, summarization, and file export, even though on a typical run it only ever needs 3-4 of them. Tool selection errors have increased since the catalog grew from 6 to 18.",
+      "enunciado": "What is the most effective fix for this reliability degradation?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Apply scoped tool access, splitting the catalog across specialized agents so each one only has the tools relevant to its role, with cross-tool access limited to specific high-frequency needs.",
+          "correcta": true,
+          "justificacion": "Giving an agent far more tools than its role needs is documented as degrading selection reliability by increasing decision complexity; scoped tool access by role is the documented structural fix."
+        },
+        {
+          "id": "B",
+          "texto": "Set tool_choice to \"any\" so the agent is forced to pick a tool instead of responding with plain text.",
+          "correcta": false,
+          "justificacion": "Forcing a call doesn't reduce the decision surface among 18 candidate tools; it addresses a different requirement (always calling some tool), not selection accuracy."
+        },
+        {
+          "id": "C",
+          "texto": "Add strict: true to every tool so malformed inputs are rejected.",
+          "correcta": false,
+          "justificacion": "strict enforces schema conformance of whatever tool is eventually called; it does not address selection accuracy degraded by an oversized catalog."
+        },
+        {
+          "id": "D",
+          "texto": "Write longer descriptions for each of the 18 tools to help the model differentiate them.",
+          "correcta": false,
+          "justificacion": "The root cause here is catalog size and role mismatch, not description quality; scoping the catalog per agent is the documented, lower-effort structural fix."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-3-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+      ]
+    },
+    {
+      "id": "b4-q12",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "An agent escalates a case to a human agent by pasting the raw conversation transcript with no summary, forcing the human to re-read the entire exchange to find the customer ID, root cause, and refund amount before acting.",
+      "enunciado": "What is the correct fix per the documented handoff pattern?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Compile a structured handoff summary (customer ID, root cause, amount, recommended action, plus relevant context) instead of forwarding raw prose, so the human agent has sufficient context without needing the full transcript.",
+          "correcta": true,
+          "justificacion": "The documented handoff protocol is a structured summary with exactly these fields, designed so the human agent doesn't need access to the full transcript to act."
+        },
+        {
+          "id": "B",
+          "texto": "Increase max_turns so the agent has more turns available to summarize on its own before escalating.",
+          "correcta": false,
+          "justificacion": "max_turns bounds the loop's turn budget; it has no bearing on whether the escalation content is structured or raw prose."
+        },
+        {
+          "id": "C",
+          "texto": "Add a hook that truncates the transcript to the last five messages before forwarding.",
+          "correcta": false,
+          "justificacion": "Truncated raw prose still isn't a structured summary and may omit the very fields (customer ID, root cause, amount) the human needs; it doesn't guarantee the required information is present."
+        },
+        {
+          "id": "D",
+          "texto": "Have the agent apologize more explicitly in the transcript before forwarding.",
+          "correcta": false,
+          "justificacion": "This doesn't address the actual problem, which is the lack of structured, extractable information in the handoff content."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-4",
+      "fuentes": [
+        "exam-guide-oficial-v1.0.txt (Task Statement 1.4)"
+      ]
+    },
+    {
+      "id": "b4-q04",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "A coordinator agent spawns three subagents to investigate a corporate merger. To \"save a round trip,\" one subagent is configured to forward its intermediate findings directly to a second subagent, without passing back through the coordinator first.",
+      "enunciado": "What is wrong with this design per the documented coordinator-subagent pattern?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The coordinator-subagent pattern is hub-and-spoke: all communication must flow through the coordinator; subagents communicating directly breaks the centralized routing, error handling, and observability the pattern relies on.",
+          "correcta": true,
+          "justificacion": "Subagents never communicate directly with each other by design; routing everything through the coordinator is what keeps the system observable and gives it consistent error handling."
+        },
+        {
+          "id": "B",
+          "texto": "There is no issue; direct subagent-to-subagent communication is more efficient and doesn't affect the pattern's guarantees.",
+          "correcta": false,
+          "justificacion": "This contradicts the hub-and-spoke definition of the pattern, which requires all routing to pass through the coordinator regardless of perceived efficiency gains."
+        },
+        {
+          "id": "C",
+          "texto": "The real problem is having only two subagents involved in the exchange instead of the documented range of 3–5 concurrent subagents.",
+          "correcta": false,
+          "justificacion": "The 3–5 concurrent subagent range describes lead-agent spawning for investigation breadth; it has nothing to do with whether two already-spawned subagents may talk directly to each other."
+        },
+        {
+          "id": "D",
+          "texto": "The fix is to insert a routing classifier between the two subagents to manage their direct exchange more reliably.",
+          "correcta": false,
+          "justificacion": "Adding a classifier layer to manage an exchange that shouldn't exist in the first place is over-engineering; the documented fix is simply routing the exchange back through the coordinator."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/subagents"
+      ]
+    },
+    {
+      "id": "b2-q11",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.4",
+      "escenario": "A developer needs to add a single null-check condition to one function, with the exact fix already clear from the stack trace. Before making the change, they activate plan mode with `Shift+Tab` and spend several minutes describing the investigation approach before letting Claude touch any file.",
+      "enunciado": "How should this use of plan mode be evaluated?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "It's unnecessary overhead — the change is simple and well-scoped enough to describe in one sentence, so direct execution would have been the appropriate choice.",
+          "correcta": true,
+          "justificacion": "The documented guidance is to skip planning when the diff can be described in one sentence; systematically planning trivial single-file edits introduces overhead without adding value."
+        },
+        {
+          "id": "B",
+          "texto": "It's correct, since any use of plan mode before an edit reduces the risk of incorrect changes, regardless of task size.",
+          "correcta": false,
+          "justificacion": "Planning systematically even for trivial single-file edits is explicitly documented as an anti-pattern that slows down the workflow unnecessarily."
+        },
+        {
+          "id": "C",
+          "texto": "It's incorrect because plan mode cannot be used for single-file changes at all.",
+          "correcta": false,
+          "justificacion": "Plan mode isn't restricted to multi-file changes; it can apply to single-file edits when warranted, but the issue here is task simplicity, not a hard technical restriction."
+        },
+        {
+          "id": "D",
+          "texto": "It's correct, because plan mode is required before any change involving a stack trace.",
+          "correcta": false,
+          "justificacion": "No such requirement exists; a stack-trace-driven fix with an evident, well-scoped solution is precisely the documented example where direct execution is the appropriate choice."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-4",
+      "fuentes": [
+        "https://code.claude.com/docs/en/best-practices"
+      ]
+    },
+    {
+      "id": "b1-q10",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.4",
+      "escenario": "An invoice extraction fails validation because the sum of item amounts ($1000) doesn't match the stated total ($1500). The retry prompt simply says \"The previous extraction was invalid, please try again.\" The retry reproduces the exact same error.",
+      "enunciado": "What is the most effective fix for this retry loop?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Rewrite the retry prompt to include the exact validation error (e.g., \"$1000 sum != $1500 stated total\"), the original document, and the failed extraction.",
+          "correcta": true,
+          "justificacion": "Including the exact validation error, the original document, and the failed extraction gives the model actionable information to correct the specific problem; a generic message gives it nothing to act on and tends to reproduce the same error."
+        },
+        {
+          "id": "B",
+          "texto": "Increase the retry count from 1 to 10 without changing the retry prompt content.",
+          "correcta": false,
+          "justificacion": "Increasing retry attempts without changing what information is fed back doesn't fix the underlying problem — the model will keep repeating the same mistake with the same generic prompt."
+        },
+        {
+          "id": "C",
+          "texto": "Switch tool_choice to \"any\" for the retry call.",
+          "correcta": false,
+          "justificacion": "tool_choice governs whether/which tool is called, not the quality of feedback the model receives about why its previous extraction failed validation."
+        },
+        {
+          "id": "D",
+          "texto": "Add strict: true to the tool definition to prevent invalid output on retry.",
+          "correcta": false,
+          "justificacion": "strict: true guarantees structural conformance, not that the model receives the specific semantic error needed to correct a totals mismatch on retry."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-4",
+      "fuentes": []
+    },
+    {
+      "id": "b4-q06",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "A coordinator delegates \"research this\" to three subagents with no further detail, hoping they'll divide the work themselves. Logs show significant overlap: two of the three subagents independently gather nearly identical sources.",
+      "enunciado": "What is the most effective fix for this duplication?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Give each subagent an explicit, partitioned research objective, output format, and tool guidance up front, dividing the query's scope by subtopic or source type before delegation rather than leaving it to each subagent to interpret independently.",
+          "correcta": true,
+          "justificacion": "Vague delegation instructions are the documented root cause of duplicated work between subagents; explicit objectives, format, and boundaries are what let the coordinator partition scope correctly."
+        },
+        {
+          "id": "B",
+          "texto": "Increase the number of subagents from three to five so more ground is covered overall.",
+          "correcta": false,
+          "justificacion": "Adding more subagents without clearer delegation would likely increase overlap rather than fix it, since the root cause is vague instructions, not insufficient subagent count."
+        },
+        {
+          "id": "C",
+          "texto": "Add a post-hoc deduplication step that removes repeated sources after synthesis.",
+          "correcta": false,
+          "justificacion": "This treats a symptom after the fact instead of the root cause; the documented fix is clearer upfront delegation that prevents the duplication of effort in the first place."
+        },
+        {
+          "id": "D",
+          "texto": "Restrict each subagent's tool access so that only one of them can use WebSearch.",
+          "correcta": false,
+          "justificacion": "Removing capability from subagents doesn't clarify scope; it risks under-covering the topic instead of resolving the ambiguity that caused the overlap."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/subagents"
+      ]
+    },
+    {
+      "id": "b2-q01",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.1",
+      "escenario": "A new engineer joins the team and reports that Claude Code doesn't follow the 'always run `make lint` before committing' rule that the rest of the team relies on daily, even though a senior engineer insists they added that instruction to CLAUDE.md months ago.",
+      "enunciado": "The senior engineer confirms the instruction lives in `~/.claude/CLAUDE.md` on their own machine. What is the most likely explanation, and the correct fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The instruction was added at user level, which is personal and never shared via version control; moving it into the project's `./CLAUDE.md` makes it load for every team member.",
+          "correcta": true,
+          "justificacion": "User-level CLAUDE.md is personal and not shared via version control, while project-level CLAUDE.md is shared with the team; an instruction meant for everyone must live at project level."
+        },
+        {
+          "id": "B",
+          "texto": "Claude Code caches CLAUDE.md content across machines via the API, and the cache needs to be cleared for the new engineer.",
+          "correcta": false,
+          "justificacion": "There is no cross-machine caching mechanism for CLAUDE.md; it is read from local files at session start, so no cache clearing step exists."
+        },
+        {
+          "id": "C",
+          "texto": "The rule exceeded the 200-line guideline and was silently truncated only for the new engineer's sessions.",
+          "correcta": false,
+          "justificacion": "Exceeding the line guideline dilutes adherence for everyone equally by adding noise, not something that selectively drops content for one specific team member."
+        },
+        {
+          "id": "D",
+          "texto": "The instruction should be moved to `.claude/rules/` with a `paths:` filter matching `**/*` so it applies everywhere.",
+          "correcta": false,
+          "justificacion": "This is unnecessary complexity for a universal, always-applicable convention; project-level CLAUDE.md already loads at session start for everyone without needing a path-scoped rule."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-2-1",
+      "fuentes": [
+        "https://code.claude.com/docs/en/memory"
+      ]
+    },
+    {
+      "id": "b4-q17",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.7",
+      "escenario": "You have three previous sessions from earlier this week in the same project directory. You want to return specifically to the session where you were comparing pagination strategies, not the most recent one, which was about an unrelated logging bug.",
+      "enunciado": "Which mechanism is correct for returning to that specific session?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "resume with that session's specific session ID (or --resume <session-name> if it was given a name), since continue would only pick up the most recent session, and this isn't it.",
+          "correcta": true,
+          "justificacion": "resume is documented specifically for returning to a session ID that is not the most recent, exactly this situation; continue always finds the most recent session in the directory instead."
+        },
+        {
+          "id": "B",
+          "texto": "continue, since it will find the correct session automatically among the three.",
+          "correcta": false,
+          "justificacion": "continue locates only the most recent session in the current directory, which in this scenario is the unrelated logging-bug session, not the pagination one."
+        },
+        {
+          "id": "C",
+          "texto": "forkSession, since it will create a new branch of the pagination session while leaving the current one untouched.",
+          "correcta": false,
+          "justificacion": "forkSession is documented for branching an existing session to explore a divergent approach, not for retrieving and returning directly to a specific prior session by identity; resume is the documented mechanism for that."
+        },
+        {
+          "id": "D",
+          "texto": "Start a brand-new session and paste in a summary of the pagination discussion so far.",
+          "correcta": false,
+          "justificacion": "This discards the actual persisted session state unnecessarily when resume can retrieve that exact session directly by ID."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-7",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/sessions"
+      ]
+    },
+    {
+      "id": "b3-q16",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.5",
+      "escenario": "An engineer needs to find every file in the repository whose name ends in .test.tsx, so they run a Grep search with the pattern \".test.tsx\" across the codebase. The search returns zero matches even though dozens of matching files exist.",
+      "enunciado": "What is the correct fix for this search?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Use Glob with the pattern **/*.test.tsx, since finding files by name pattern is Glob's purpose, while Grep searches file contents (lines), not file names.",
+          "correcta": true,
+          "justificacion": "Grep matches patterns within file content, while Glob matches file paths by name pattern; a file-name search like this one is exactly what Glob's ** recursive matching is documented for."
+        },
+        {
+          "id": "B",
+          "texto": "Escape the pattern for ripgrep syntax, e.g., \\.test\\.tsx, and rerun the same Grep search.",
+          "correcta": false,
+          "justificacion": "Escaping helps when searching for literal special characters within file content, but it doesn't change the fact that Grep searches content, not names; a file's own name doesn't appear as text inside its content."
+        },
+        {
+          "id": "C",
+          "texto": "Add the glob parameter to the Grep call to restrict the search to .tsx files, keeping the same content pattern.",
+          "correcta": false,
+          "justificacion": "This configures which files Grep searches within, but the task is to find files by name, which is Glob's role, not a content search restricted by extension."
+        },
+        {
+          "id": "D",
+          "texto": "Set multiline: true on the Grep call so it can match across the whole file.",
+          "correcta": false,
+          "justificacion": "multiline affects whether a content pattern can span multiple lines within a file; it has no effect on matching file names."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-5",
+      "fuentes": [
+        "https://code.claude.com/docs/en/tools-reference"
+      ]
+    },
+    {
+      "id": "b2-q10",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.4",
+      "escenario": "A team is migrating from one HTTP client library to another across roughly 60 files in the codebase, and two viable integration approaches exist with different infrastructure implications (one requires a new connection-pooling service, the other doesn't).",
+      "enunciado": "What is the appropriate way to start this task?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Start in plan mode to explore the codebase and evaluate both approaches before committing to changes, given the scale and the divergent infrastructure implications.",
+          "correcta": true,
+          "justificacion": "This matches the documented signals for plan mode: a large-scale, multi-file change (well past the 45+ file threshold) with multiple valid approaches carrying different infrastructure requirements."
+        },
+        {
+          "id": "B",
+          "texto": "Skip planning and start editing files directly, correcting course if the wrong approach becomes apparent partway through.",
+          "correcta": false,
+          "justificacion": "This is the documented anti-pattern for architecturally significant, multi-file changes with several viable approaches: skipping exploration risks costly rework if the wrong approach was chosen first."
+        },
+        {
+          "id": "C",
+          "texto": "Use `tool_choice: \"any\"` to force Claude to call a migration tool on every file.",
+          "correcta": false,
+          "justificacion": "tool_choice is a Messages API tool-selection parameter unrelated to Claude Code's plan mode vs. direct execution decision for a codebase migration."
+        },
+        {
+          "id": "D",
+          "texto": "Write a detailed `CLAUDE.md` describing both approaches and let Claude pick one automatically without further review.",
+          "correcta": false,
+          "justificacion": "CLAUDE.md is non-binding contextual guidance; it doesn't provide the explicit exploration-then-approval step that plan mode offers for a decision of this scale and infrastructure impact."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-4",
+      "fuentes": [
+        "https://code.claude.com/docs/en/permission-modes",
+        "https://code.claude.com/docs/en/best-practices"
+      ]
+    },
+    {
+      "id": "b5-q12",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.4",
+      "escenario": "A team is deciding how to combine compaction and subagent delegation while exploring a large codebase.",
+      "enunciado": "Which statement correctly distinguishes the two mechanisms?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Compaction automatically summarizes the accumulated conversation once a token threshold is crossed (a platform-level mechanism), while subagent delegation isolates verbose exploration output so it never enters the main agent's context at all; they are complementary, not interchangeable.",
+          "correcta": true,
+          "justificacion": "Compaction and delegation are two distinct, complementary mechanisms — automatic summarization at a threshold versus isolation of verbose output — and neither substitutes for the other."
+        },
+        {
+          "id": "B",
+          "texto": "They are functionally identical — both simply delete old context to free up tokens.",
+          "correcta": false,
+          "justificacion": "Compaction summarizes rather than deletes, and delegation isolates rather than either summarizing or deleting; neither description matches 'simply deleting.'"
+        },
+        {
+          "id": "C",
+          "texto": "Compaction requires scratchpad files to function, while delegation needs no persistence mechanism at all.",
+          "correcta": false,
+          "justificacion": "Compaction operates independently of scratchpad files; the two are separate, complementary tools, not dependent on each other."
+        },
+        {
+          "id": "D",
+          "texto": "Subagent delegation is triggered automatically once a token threshold is reached, exactly like compaction.",
+          "correcta": false,
+          "justificacion": "Delegation is a deliberate decision by the coordinating agent to spin off a subagent for a specific question, not an automatic threshold-triggered mechanism like compaction."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-4",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/compaction"
+      ]
+    },
+    {
+      "id": "b2-q17",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.6",
+      "escenario": "A team switches their CI job to `claude --bare -p \"Run the test suite\"` for faster, more consistent startup. Immediately after the switch, every invocation fails with an authentication error, even though the exact same command without `--bare` worked fine on the same runner.",
+      "enunciado": "What is the most likely cause and fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "`--bare` mode does not read OAuth credentials or the system keychain; setting `ANTHROPIC_API_KEY` in the environment restores authentication.",
+          "correcta": true,
+          "justificacion": "--bare is documented to skip reading OAuth credentials and the system keychain, so authenticating to the Anthropic API in that mode requires explicitly setting ANTHROPIC_API_KEY."
+        },
+        {
+          "id": "B",
+          "texto": "`--bare` disables the Anthropic API entirely and only supports Bedrock/GCP deployments.",
+          "correcta": false,
+          "justificacion": "No such restriction is documented; --bare's effect is skipping auto-discovery of hooks/skills/plugins/MCP/CLAUDE.md/auto memory, and it still works with the Anthropic API given an explicit key."
+        },
+        {
+          "id": "C",
+          "texto": "`--bare` requires `--output-format json` to be set simultaneously or authentication is skipped.",
+          "correcta": false,
+          "justificacion": "No documented dependency exists between --bare and --output-format regarding authentication; they are independent flags."
+        },
+        {
+          "id": "D",
+          "texto": "`--bare` only works with `--json-schema` provided, since it assumes structured output mode.",
+          "correcta": false,
+          "justificacion": "There is no documented requirement tying --bare to --json-schema; --bare's effect is on auto-discovery and credential reading, unrelated to output schema enforcement."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-6",
+      "fuentes": [
+        "https://code.claude.com/docs/en/headless"
+      ]
+    },
+    {
+      "id": "b3-q14",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.4",
+      "escenario": "A project's .mcp.json file, checked into the team's git repository, hardcodes the value of GITHUB_TOKEN directly as a literal string in the env block, rather than referencing an environment variable.",
+      "enunciado": "What is the correct fix for this configuration?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Replace the literal token with environment variable expansion syntax, e.g., \"env\": {\"GITHUB_TOKEN\": \"${GITHUB_TOKEN}\"}, so the credential is resolved at connection time and never committed to version control.",
+          "correcta": true,
+          "justificacion": "The ${VAR} expansion syntax in .mcp.json is the documented mechanism for managing credentials without committing them, resolved at connection time rather than stored as literal values."
+        },
+        {
+          "id": "B",
+          "texto": "Move the entire mcpServers block into ~/.claude.json instead, since user-level configuration is not checked into git.",
+          "correcta": false,
+          "justificacion": "Moving the server to user scope loses the team-wide sharing that .mcp.json provides for a standard integration; it sidesteps the credential problem rather than fixing it and changes the intended sharing scope."
+        },
+        {
+          "id": "C",
+          "texto": "Add a \"type\": \"http\" field, since only HTTP servers support secure credential handling.",
+          "correcta": false,
+          "justificacion": "The type field determines transport (http vs stdio), not credential security; it does nothing to address a hardcoded secret in the env block."
+        },
+        {
+          "id": "D",
+          "texto": "Rename the server to avoid using any of the reserved names like workspace or computer-use.",
+          "correcta": false,
+          "justificacion": "Reserved-name restrictions are a distinct, unrelated validity rule for server names; renaming does nothing about a hardcoded credential."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-4",
+      "fuentes": [
+        "https://code.claude.com/docs/en/mcp"
+      ]
+    },
+    {
+      "id": "b1-q16",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.6",
+      "escenario": "The same Claude instance that generated a code fix is then asked, in the same session, to review its own output for bugs before merging.",
+      "enunciado": "Is this the recommended pattern for reviewing generated code?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "No — a same-instance self-review retains the reasoning used to generate the code and is less likely to question its own decisions; an independent reviewer instance without that context is more effective at catching subtle issues.",
+          "correcta": true,
+          "justificacion": "A same-instance self-review retains the reasoning used to generate the code and is documented as less likely to question its own prior decisions; an independent reviewer instance is documented as more effective at catching subtle issues."
+        },
+        {
+          "id": "B",
+          "texto": "Yes, as long as extended thinking is enabled for the review step.",
+          "correcta": false,
+          "justificacion": "Extended thinking within the same instance is explicitly documented as not matching the effectiveness of an independent reviewer instance, since the model still retains its generation-time reasoning."
+        },
+        {
+          "id": "C",
+          "texto": "Yes, because the same instance has full context of what it just wrote.",
+          "correcta": false,
+          "justificacion": "Retaining full context of what it just wrote is exactly why the same instance is less likely to challenge its own decisions, not a reason self-review is adequate."
+        },
+        {
+          "id": "D",
+          "texto": "No — the fix is to add tool_choice: \"any\" to force additional scrutiny.",
+          "correcta": false,
+          "justificacion": "tool_choice governs whether/which tool is called; it has no bearing on whether the reviewing instance has independent context from the generator."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-1-6",
+      "fuentes": []
+    },
+    {
+      "id": "b4-q08",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.3",
+      "escenario": "A synthesis subagent is invoked with a prompt that says only \"synthesize the research findings into a report.\" It has no access to the coordinator's earlier conversation turns, so it produces a generic report with no actual findings. The engineer assumed the subagent would automatically see the coordinator's conversation history.",
+      "enunciado": "What is the correct fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Explicitly inject the full findings from the earlier subagents into the synthesis subagent's prompt text (e.g., the search results and document analysis output), since subagents have isolated context and never automatically inherit the coordinator's conversation history or prior tool results.",
+          "correcta": true,
+          "justificacion": "Subagents operate with isolated context by design; assuming automatic inheritance of the coordinator's history is a documented anti-pattern, and the correct pattern is explicit injection of prior findings into the prompt."
+        },
+        {
+          "id": "B",
+          "texto": "Set AgentDefinition.memory to 'project' so the subagent reads the coordinator's conversation history from shared project memory.",
+          "correcta": false,
+          "justificacion": "memory configures the subagent's own memory scope; it is not the documented mechanism for passing a coordinator's conversation history into a subagent invocation."
+        },
+        {
+          "id": "C",
+          "texto": "Set forkSession: true on the synthesis subagent invocation so it forks the coordinator's session and inherits the history.",
+          "correcta": false,
+          "justificacion": "forkSession creates an independent branch of a session's conversation history for exploring divergent approaches; it is not the documented mechanism for passing context into an Agent tool invocation."
+        },
+        {
+          "id": "D",
+          "texto": "List \"conversationHistory\" in the subagent's skills array so it precedes the invocation with the coordinator's context.",
+          "correcta": false,
+          "justificacion": "skills preloads named skill content into a subagent's context; there is no documented \"conversationHistory\" skill or equivalent feature for inheriting the parent's conversation."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-3",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/subagents"
+      ]
+    },
+    {
+      "id": "b2-q05",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.2",
+      "escenario": "A compliance team builds a `security-audit` skill meant to run only when a developer explicitly types `/security-audit`, never automatically, and that must only ever read code (never edit files or run shell commands) while it executes.",
+      "enunciado": "Select TWO frontmatter settings that together enforce both requirements.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "`disable-model-invocation: true`, so Claude never auto-invokes the skill and it isn't preloaded into subagents.",
+          "correcta": true,
+          "justificacion": "This flag prevents Claude from loading the skill automatically, reserving it for manual, disable-model-invocation-style trigger workflows, which matches the 'only via explicit /security-audit' requirement."
+        },
+        {
+          "id": "B",
+          "texto": "`allowed-tools: \"Read,Grep\"`, so only read-only tools are pre-approved during the invocation, excluding Write, Edit, and Bash.",
+          "correcta": true,
+          "justificacion": "allowed-tools preapproves a specific, restricted tool set for the invocation; limiting it to Read and Grep satisfies the read-only-execution requirement."
+        },
+        {
+          "id": "C",
+          "texto": "Omit the `description` field entirely, since a skill without a description is never auto-invocable.",
+          "correcta": false,
+          "justificacion": "Omitting description does not disable auto-invocation; Claude falls back to the first paragraph of the skill's markdown body as a lower-quality description, so it remains a candidate for auto-invocation."
+        },
+        {
+          "id": "D",
+          "texto": "`context: fork`, so the skill's execution is isolated from the main conversation.",
+          "correcta": false,
+          "justificacion": "context: fork isolates verbose or exploratory output from contaminating the main conversation; it does not restrict tool access or control automatic invocation, the two stated requirements here."
+        },
+        {
+          "id": "E",
+          "texto": "Rename the skill's `name` field to something Claude is unlikely to guess.",
+          "correcta": false,
+          "justificacion": "The name field only changes the label displayed for the skill; it has no effect on whether the skill is auto-invoked or on which tools it can access."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/skills"
+      ]
+    },
+    {
+      "id": "b0-q10",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.4",
+      "escenario": "An agent uses the web_search server tool. After several internal search iterations, a response comes back with stop_reason: \"pause_turn\", and the client immediately renders response.content to the end user as the final answer.",
+      "enunciado": "What is wrong with this handling of pause_turn?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "pause_turn is not a terminal state — the internal server-tool iteration limit was reached but Claude hasn't finished; the client must resend the assistant message as-is so Claude can continue where it paused.",
+          "correcta": true,
+          "justificacion": "pause_turn signals that server tools hit their internal iteration cap (default 10) without the model finishing; treating it as final serves an incomplete answer, exactly the documented anti-pattern of confusing pause_turn with end_turn."
+        },
+        {
+          "id": "B",
+          "texto": "This is expected; pause_turn and end_turn carry the same semantics for rendering purposes.",
+          "correcta": false,
+          "justificacion": "The two are explicitly different: end_turn is a terminal state ready to use, while pause_turn requires the client to resend and continue the loop."
+        },
+        {
+          "id": "C",
+          "texto": "The client should increase max_tokens on the next request to force an end_turn result.",
+          "correcta": false,
+          "justificacion": "max_tokens governs the output token budget of a single response; it does not change server tool iteration limits or convert pause_turn into end_turn."
+        },
+        {
+          "id": "D",
+          "texto": "The client should discard the paused assistant message and start a fresh user turn instead.",
+          "correcta": false,
+          "justificacion": "Discarding the paused work loses the server tool progress already made; the documented pattern is to resend the assistant message, including the already-received server_tool_use results, unchanged."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-4",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons"
+      ]
+    },
+    {
+      "id": "b2-q09",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.3",
+      "escenario": "A platform team maintains rules at both `~/.claude/rules/` (shared across every project on the machine) and `.claude/rules/` inside a specific project, with some overlapping guidance between the two, plus several `paths:` entries using brace expansion like `src/**/*.{ts,tsx,js,jsx}` across many rule files.",
+      "enunciado": "Select TWO statements that correctly describe documented behavior in this setup.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "User-level rules load before project-level rules, so on a conflict the project-level rule takes precedence.",
+          "correcta": true,
+          "justificacion": "User-level rules under ~/.claude/rules/ load before project rules, giving project rules higher precedence when they conflict."
+        },
+        {
+          "id": "B",
+          "texto": "Patterns using brace expansion count against a shared budget of 1,000 expanded patterns and 4 MiB per rule, while patterns without braces don't count against that budget.",
+          "correcta": true,
+          "justificacion": "The 1,000-pattern/4 MiB budget applies specifically to brace-expanded patterns; patterns without braces are excluded from that shared budget."
+        },
+        {
+          "id": "C",
+          "texto": "Project-level rules load before user-level rules, so the user-level rule always wins on conflict.",
+          "correcta": false,
+          "justificacion": "This reverses the documented load order: user-level rules load first, and project-level rules take precedence, not the other way around."
+        },
+        {
+          "id": "D",
+          "texto": "Once a rule matches and loads, its guidance is enforced like a `PreToolUse` hook, blocking any conflicting action.",
+          "correcta": false,
+          "justificacion": "Rules are non-binding contextual guidance, not enforcement; only a PreToolUse hook provides a guaranteed hard block on an action."
+        },
+        {
+          "id": "E",
+          "texto": "Every glob pattern, whether or not it uses brace expansion, counts against the 1,000-pattern/4 MiB budget.",
+          "correcta": false,
+          "justificacion": "Only patterns that use brace expansion count against that budget; patterns without braces are explicitly excluded from it."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-2-3",
+      "fuentes": [
+        "https://code.claude.com/docs/en/memory"
+      ]
+    },
+    {
+      "id": "b5-q01",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "A customer support agent resends the full conversation history on every request, as required by the stateless Messages API. After 15 turns, a mid-conversation summary compresses the details of an order dispute into 'the customer has a shipping issue,' and the agent can no longer state the order ID, refund amount, or the 5-business-day commitment it made earlier.",
+      "enunciado": "What is the most effective fix for this loss of transactional detail?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Extract the order ID, amount, dates, and the stated customer expectation into a persistent 'case facts' block included in every prompt, kept outside the resumable history, so no later summary can dilute those values.",
+          "correcta": true,
+          "justificacion": "A persistent case-facts block extracted apart from the resumable history is precisely the pattern that prevents progressive summarization from ever touching the critical transactional values."
+        },
+        {
+          "id": "B",
+          "texto": "Continue resending the full history unchanged and trust the model to re-derive the details from earlier turns each time.",
+          "correcta": false,
+          "justificacion": "This is what already happened; relying on recall from a long, resummarized history is exactly what let progressive summarization dilute the values in the first place."
+        },
+        {
+          "id": "C",
+          "texto": "Stop resending the full conversation history and send only the latest user message to reduce token usage and force the model to focus on what's current.",
+          "correcta": false,
+          "justificacion": "The stateless API requires the client to resend the full desired history for coherence; sending only the latest message breaks that requirement instead of fixing the summarization issue."
+        },
+        {
+          "id": "D",
+          "texto": "Load the entire customer order database into context at session start so any order detail is always available if needed.",
+          "correcta": false,
+          "justificacion": "Loading data 'just in case' consumes tokens and accelerates context rot; the correct approach is just-in-time exploration plus persisting the few facts about this specific case, not preloading everything."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-5-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "id": "b3-q06",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.2",
+      "escenario": "A payment tool call fails twice in the same session: once because the payment gateway timed out after 30 seconds, and once because the requested refund amount exceeds the customer's single-transaction limit. The current implementation returns isRetryable: false for both cases and no errorCategory field.",
+      "enunciado": "Select TWO corrections needed to bring these two error responses in line with documented practice.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Mark the gateway timeout as errorCategory: \"transient\" with isRetryable: true, since a temporary infrastructure failure can reasonably succeed on retry.",
+          "correcta": true,
+          "justificacion": "Transient errors such as timeouts are exactly the category documented as reasonably retryable, unlike validation, business, or permission failures."
+        },
+        {
+          "id": "B",
+          "texto": "Mark the transaction-limit violation as errorCategory: \"business\" with isRetryable: false, and include a user-facing explanation of the limit so the agent can communicate it rather than retry.",
+          "correcta": true,
+          "justificacion": "Business rule violations never change outcome on retry; the documented pattern is isRetryable: false plus a client-facing explanation so the agent can inform the user instead of retrying in vain."
+        },
+        {
+          "id": "C",
+          "texto": "Mark both errors as errorCategory: \"validation\" with isRetryable: false, since neither call ultimately succeeded.",
+          "correcta": false,
+          "justificacion": "This mislabels the timeout, which is a transient infrastructure issue, not a validation problem, and conflates two distinct documented categories."
+        },
+        {
+          "id": "D",
+          "texto": "Mark both errors as isRetryable: true, since retrying can never make the situation worse.",
+          "correcta": false,
+          "justificacion": "Retrying a business rule violation like an over-limit refund cannot change the outcome and wastes the agent's effort; treating all errors as retryable is a documented anti-pattern."
+        },
+        {
+          "id": "E",
+          "texto": "Omit errorCategory for the transaction-limit case and rely on the human-readable text alone.",
+          "correcta": false,
+          "justificacion": "Omitting the category forces the agent to parse free text to decide whether to retry, defeating the purpose of structured error metadata."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-2",
+      "fuentes": [
+        "https://modelcontextprotocol.io/docs/develop/build-server"
+      ]
+    },
+    {
+      "id": "b3-q04",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.1",
+      "escenario": "A tool's response returns every field the underlying database exposes, including internal fields like row_uuid and 256px_thumbnail_url, for every call. Separately, the team wrote the tool's description once during initial development and has not touched it since, despite six months of production transcripts showing repeated selection errors.",
+      "enunciado": "What is the most effective combination of fixes for this tool?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Replace opaque identifiers with semantic field names (e.g., name, image_url) and apply pagination or truncation by default to reduce irrelevant payload, and treat the tool's description as part of an iterative cycle: revise it and the input_schema from the accumulated production transcripts, then validate against a held-out set of tasks not used during iteration.",
+          "correcta": true,
+          "justificacion": "Semantic field names and default pagination/truncation are the documented output design rules that reduce token consumption and irrelevant payload, while revising the description and schema from real transcripts and validating against a held-out set is the documented iterative process for correcting a stale description; together they address both root causes described in the scenario."
+        },
+        {
+          "id": "B",
+          "texto": "Add strict: true so the schema forces smaller output payloads.",
+          "correcta": false,
+          "justificacion": "strict governs conformance of the tool's input JSON to its schema; it has no documented effect on the shape or size of the tool's output payload."
+        },
+        {
+          "id": "C",
+          "texto": "Set tool_choice to \"any\" so the tool's output is trimmed automatically by the API.",
+          "correcta": false,
+          "justificacion": "tool_choice controls whether and which tool gets called; it has no relationship to output payload shape or size."
+        },
+        {
+          "id": "D",
+          "texto": "Rename the tool with a namespace prefix to reduce token consumption.",
+          "correcta": false,
+          "justificacion": "Namespacing helps differentiate tools across multiple coexisting services; it does not reduce token consumption caused by a bloated output payload."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-3-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools",
+        "https://www.anthropic.com/engineering/writing-tools-for-agents"
+      ]
+    },
+    {
+      "id": "b3-q11",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.3",
+      "escenario": "A data-extraction workflow must guarantee two things every turn: (1) the model always calls one of its extraction tools rather than replying with text, and (2) whatever input it produces conforms exactly to the tool's schema. A teammate also insists on adding a prompt instruction asking the model to briefly explain its reasoning in a sentence before the tool call, expecting that sentence to still appear once the guarantees are in place.",
+      "enunciado": "Select TWO statements that correctly describe how to achieve this, per the documented tool_choice and strict behavior.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Setting tool_choice to {\"type\": \"any\"} together with strict: true on the tools provides the compound guarantee: a tool is always called, and its input conforms exactly to the schema.",
+          "correcta": true,
+          "justificacion": "\"any\" guarantees a tool is called, and strict guarantees schema conformance of the input; combined they give exactly the documented compound guarantee this workflow needs."
+        },
+        {
+          "id": "B",
+          "texto": "The explanatory sentence will not appear before the tool_use block, because \"any\" (like a forced tool) triggers an automatic assistant-message prefill that prevents any preceding text regardless of prompt wording.",
+          "correcta": true,
+          "justificacion": "Forced tool_choice values (\"any\" or a named tool) trigger an automatic prefill of the assistant message, which is documented to suppress any preceding text even when the prompt explicitly requests it."
+        },
+        {
+          "id": "C",
+          "texto": "Keeping tool_choice at \"auto\" with strict: true achieves both guarantees while also preserving the explanatory sentence.",
+          "correcta": false,
+          "justificacion": "\"auto\" does not guarantee that a tool is called at all, since the model can still respond with plain text; it fails the first required guarantee even though it would preserve the preceding sentence."
+        },
+        {
+          "id": "D",
+          "texto": "The explanatory sentence will still appear, since strict only affects the input schema and has no relationship with tool_choice's prefill behavior.",
+          "correcta": false,
+          "justificacion": "strict indeed doesn't cause the prefill, but the prefill still comes from \"any\" itself; this option incorrectly concludes the sentence will appear when it will not."
+        },
+        {
+          "id": "E",
+          "texto": "A forced named tool, e.g., {\"type\": \"tool\", \"name\": \"extract_data\"}, should be used instead of \"any\" so the reasoning sentence can appear before the call.",
+          "correcta": false,
+          "justificacion": "A forced named tool triggers the same automatic prefill behavior as \"any\"; it does not allow preceding text either."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-3-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+      ]
+    },
+    {
+      "id": "b1-q13",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.5",
+      "escenario": "A nightly job regenerates unit tests for the entire codebase. It is not user-facing and can tolerate waiting several hours for results before the next business day.",
+      "enunciado": "Which API should be used for this workload, and why?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The Message Batches API, since the workload is non-blocking and latency-tolerant, offering a 50% cost saving in exchange for a processing window of up to 24 hours with no latency SLA.",
+          "correcta": true,
+          "justificacion": "This workload matches exactly the documented profile for the Message Batches API: non-blocking, latency-tolerant, and eligible for the 50% cost saving in exchange for a window of up to 24 hours."
+        },
+        {
+          "id": "B",
+          "texto": "The synchronous Messages API, for guaranteed low latency.",
+          "correcta": false,
+          "justificacion": "The synchronous API is the right choice for blocking, real-time-feedback workloads; using it here would forgo the batch API's cost saving for a workload that doesn't need low latency."
+        },
+        {
+          "id": "C",
+          "texto": "The Message Batches API with stream: true enabled for progress updates.",
+          "correcta": false,
+          "justificacion": "stream: true is explicitly not supported on batch requests; requesting it would be invalid for this workload."
+        },
+        {
+          "id": "D",
+          "texto": "The synchronous API with max_tokens: 0 to reduce cost.",
+          "correcta": false,
+          "justificacion": "max_tokens: 0 is explicitly not supported on batch requests, and using the synchronous API here would forgo the batch API's cost advantage for a workload that tolerates waiting."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-1-5",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/batch-processing"
+      ]
+    },
+    {
+      "id": "b1-q05",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.2",
+      "escenario": "A team added 12 few-shot examples covering simple, uncontroversial cases to a tool-selection prompt. Genuinely ambiguous cases — where two overlapping tools could plausibly apply — are still handled inconsistently.",
+      "enunciado": "What change is most likely to fix the ambiguous-case handling?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Replace the generic examples with 2-4 examples specifically targeting the ambiguous decision points, including explicit reasoning for why one tool was chosen over the other.",
+          "correcta": true,
+          "justificacion": "Few, well-targeted examples covering the actual ambiguous decision points, including explicit reasoning, generalize judgment to new ambiguous cases better than broad, uncontroversial examples."
+        },
+        {
+          "id": "B",
+          "texto": "Add 10 more generic examples to increase overall coverage.",
+          "correcta": false,
+          "justificacion": "More generic examples covering easy, uncontroversial cases don't teach the model how to handle the genuinely ambiguous cases; example count isn't the lever — targeting is."
+        },
+        {
+          "id": "C",
+          "texto": "Remove all examples and rely purely on detailed textual instructions.",
+          "correcta": false,
+          "justificacion": "Removing examples abandons the technique most effective for consistency and judgment generalization; detailed instructions alone were already shown to be insufficient."
+        },
+        {
+          "id": "D",
+          "texto": "Increase the example count to 20 to be safe.",
+          "correcta": false,
+          "justificacion": "Simply increasing example count further, without targeting the actual ambiguous cases, is the documented anti-pattern of adding examples without proportional gain in clarity."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-2",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+      ]
+    },
+    {
+      "id": "b4-q10",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "Production logs for your refund workflow show that in 12% of cases the agent calls process_refund without having first called get_customer to verify identity, occasionally causing refunds against unverified accounts. The current system prompt already states \"always verify the customer before issuing a refund.\"",
+      "enunciado": "What is the most effective fix for this reliability issue?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Add a programmatic prerequisite gate that blocks process_refund until get_customer has returned a verified customer ID, since prompt-based instructions alone have a documented non-zero failure rate for exactly this kind of critical ordering requirement.",
+          "correcta": true,
+          "justificacion": "This is a financially consequential step where the documented 12% skip rate shows prompt-only guidance is insufficient; programmatic enforcement provides the deterministic guarantee prompting cannot."
+        },
+        {
+          "id": "B",
+          "texto": "Rewrite the system prompt sentence more emphatically (\"ALWAYS verify before refunding, no exceptions\").",
+          "correcta": false,
+          "justificacion": "This still relies on probabilistic prompt compliance for a non-negotiable ordering requirement — the exact anti-pattern documented to fail in a meaningful fraction of cases regardless of phrasing."
+        },
+        {
+          "id": "C",
+          "texto": "Add several few-shot examples demonstrating the correct call order.",
+          "correcta": false,
+          "justificacion": "Few-shot examples still leave compliance probabilistic; they don't provide the deterministic guarantee needed when the protected step has financial consequences."
+        },
+        {
+          "id": "D",
+          "texto": "Force tool_choice to \"any\" so the agent must call some tool every turn.",
+          "correcta": false,
+          "justificacion": "\"any\" only guarantees that some tool is called, not which one or in what order; it does nothing to prevent process_refund from being called before get_customer."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-decision",
+      "fuentes": [
+        "exam-guide-oficial-v1.0.txt (Task Statement 1.4)"
+      ]
+    },
+    {
+      "id": "b4-q03",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "In a single AssistantMessage, Claude requests four tool calls in the same turn: two Read calls, one Grep call, and one Edit call targeting the same file. An engineer assumes the SDK executes all four concurrently to save latency, and separately assumes that because two different tool categories (read vs. write) were exercised, this counts as two separate turns.",
+      "enunciado": "Select TWO corrections to these assumptions, per the documented lifecycle.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The SDK executes the two Read calls and the Grep call concurrently since they are read-only, but runs the Edit call sequentially relative to the others, since it modifies state and could conflict with reads of the same file — not all four run concurrently.",
+          "correcta": true,
+          "justificacion": "The SDK executes read-only tool calls (Read, Glob, Grep, read-only MCP) concurrently within a turn but serializes state-modifying calls (Edit, Write, Bash) to avoid write conflicts."
+        },
+        {
+          "id": "B",
+          "texto": "All four tool calls, their execution, and the resulting tool results returned to Claude constitute a single turn, regardless of how many distinct tool types were involved.",
+          "correcta": true,
+          "justificacion": "A turn is one full round — response with tool calls, execution, and results returned — without the application ceding control; the number of distinct tool categories exercised inside it doesn't split it into multiple turns."
+        },
+        {
+          "id": "C",
+          "texto": "Because Edit modifies state, the SDK executes all four tool calls sequentially, one at a time, to guarantee no conflicts of any kind.",
+          "correcta": false,
+          "justificacion": "This over-serializes: the SDK still runs the read-only calls concurrently with each other; only the state-modifying call is handled sequentially relative to the batch, not the entire set one-at-a-time."
+        },
+        {
+          "id": "D",
+          "texto": "Because three of the four calls are read-only, the SDK treats the entire batch as read-only and executes all four concurrently, including the Edit call.",
+          "correcta": false,
+          "justificacion": "This is the documented anti-pattern of assuming full-batch concurrency; state-modifying calls are always serialized regardless of how many read-only calls accompany them."
+        },
+        {
+          "id": "E",
+          "texto": "This is two turns, since the read-only tool calls and the state-modifying tool call are dispatched in separate lifecycle phases.",
+          "correcta": false,
+          "justificacion": "Concurrent vs. sequential execution within a turn is an internal scheduling detail; it doesn't split the turn, which is defined by one full response-execute-return cycle."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-1",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/agent-loop"
+      ]
+    },
+    {
+      "id": "b4-q18",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.7",
+      "escenario": "An engineer forks a session with fork_session=True to explore an OAuth2 alternative to an already-implemented JWT approach. The forked agent edits several files in the project directory to prototype the OAuth2 flow. Meanwhile, someone else resumes the original, non-forked session in the same directory and is surprised to see the OAuth2 file edits already present, since they expected the fork to be fully isolated.",
+      "enunciado": "What is the correct explanation for this behavior?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Forking branches only the conversation history into an independent copy; it does not fork the filesystem — file edits made by the forked agent are real, on-disk changes visible to any other session working in the same directory, including the original.",
+          "correcta": true,
+          "justificacion": "Fork branches the conversation history, not the filesystem; achieving filesystem isolation as well would require separate file checkpointing, which is documented as a distinct, additional mechanism."
+        },
+        {
+          "id": "B",
+          "texto": "This is a bug; fork_session=True should have prevented any filesystem changes from being visible outside the forked session.",
+          "correcta": false,
+          "justificacion": "This is documented, expected behavior, not a bug: fork only branches conversation history, and full isolation of file changes needs separate file checkpointing."
+        },
+        {
+          "id": "C",
+          "texto": "The original session's session_id must have been reused for the fork instead of getting an independent ID, causing the file changes to bleed through.",
+          "correcta": false,
+          "justificacion": "Forking produces two independent session IDs; the file visibility issue is about the shared filesystem between sessions, not about session ID reuse."
+        },
+        {
+          "id": "D",
+          "texto": "continue_conversation=True was set instead of fork_session=True, which shares state fully.",
+          "correcta": false,
+          "justificacion": "The scenario explicitly used fork_session=True; continue is an unrelated mechanism for finding the most recent session and isn't what caused the shared file visibility here."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-4-7",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/sessions"
+      ]
+    },
+    {
+      "id": "b0-q05",
+      "bloque": 0,
+      "dominio": null,
+      "taskStatement": "0.2",
+      "escenario": "A compliance workflow requires two independent guarantees for its extract_data tool: (1) Claude must call some tool on that turn, never respond with plain text, and (2) the input it produces must conform exactly to the JSON Schema, with no missing required fields or type mismatches.",
+      "enunciado": "Select TWO configuration changes that together provide both guarantees, per the documented behavior of tool definitions and tool_choice.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Set tool_choice to {\"type\": \"any\"} so Claude must call one of the available tools.",
+          "correcta": true,
+          "justificacion": "\"any\" forces Claude to call a tool rather than respond with text only, which is exactly the first required guarantee."
+        },
+        {
+          "id": "B",
+          "texto": "Set strict: true on the tool's definition so its input is validated via grammar-constrained sampling against the schema.",
+          "correcta": true,
+          "justificacion": "strict guarantees schema conformance of the input whenever the tool is called, independent of tool_choice, satisfying the second required guarantee; combined with \"any\" it gives the documented compound guarantee of call + schema compliance."
+        },
+        {
+          "id": "C",
+          "texto": "Add 10 or more input_examples so the model reliably infers the required fields.",
+          "correcta": false,
+          "justificacion": "input_examples improves the model's understanding of formats and optional parameters but is not a validation mechanism and provides no hard guarantee of schema conformance or that the tool will be called."
+        },
+        {
+          "id": "D",
+          "texto": "Keep tool_choice at \"auto\" and add a strongly worded system prompt insisting the tool must always be called.",
+          "correcta": false,
+          "justificacion": "\"auto\" leaves the decision to the model; prompt-based insistence is probabilistic compliance, not the deterministic guarantee the scenario requires."
+        },
+        {
+          "id": "E",
+          "texto": "Consolidate extract_data with related tools under a single action parameter.",
+          "correcta": false,
+          "justificacion": "Consolidation addresses tool-selection ambiguity across a large catalog; it does not, by itself, guarantee that a tool is always called or that its input conforms to the schema."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "media",
+      "refSeccion": "#ts-0-2",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools",
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/strict-tool-use"
+      ]
+    },
+    {
+      "id": "b4-q11",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.4",
+      "escenario": "A customer message mixes three concerns: a billing dispute, a shipping complaint, and a product defect report. The agent currently treats it as a single monolithic request and produces one long combined resolution, missing the shipping complaint entirely in its final response.",
+      "enunciado": "What is the correct approach per the documented multi-step workflow pattern?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Decompose the request into separate items (billing, shipping, defect), investigate each with shared context, and synthesize a single unified resolution that explicitly addresses all three.",
+          "correcta": true,
+          "justificacion": "The documented pattern for multi-concern requests is exactly this: decompose into items, investigate in parallel sharing context, then synthesize one unified resolution, which prevents concerns like the shipping complaint from being dropped."
+        },
+        {
+          "id": "B",
+          "texto": "Escalate the entire message to a human agent, since it mixes multiple concerns.",
+          "correcta": false,
+          "justificacion": "Mixing concerns doesn't by itself require human escalation; the documented pattern is decomposition and synthesis, reserving escalation for cases with financial or security consequences or unresolved gaps."
+        },
+        {
+          "id": "C",
+          "texto": "Process only the first concern mentioned and ask the customer to submit separate messages for the others.",
+          "correcta": false,
+          "justificacion": "This isn't the documented pattern and creates poor customer experience by ignoring concerns that could be resolved in one pass with shared context."
+        },
+        {
+          "id": "D",
+          "texto": "Route the whole message to a single specialized billing subagent, since billing was mentioned first.",
+          "correcta": false,
+          "justificacion": "This ignores the shipping and defect concerns entirely instead of decomposing the request into separate items to be investigated and synthesized."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-4",
+      "fuentes": [
+        "exam-guide-oficial-v1.0.txt (Task Statement 1.4)"
+      ]
+    },
+    {
+      "id": "b1-q06",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.2",
+      "escenario": "An extraction schema already marks middle_name as optional/nullable, since not every source document includes it. Logs still show the model occasionally producing plausible-looking fabricated middle names when the field is absent from the source.",
+      "enunciado": "What additional fix, per documented few-shot guidance, best addresses this residual fabrication?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Add a few-shot example demonstrating a document where the field is legitimately absent, with the expected output showing null rather than a fabricated value.",
+          "correcta": true,
+          "justificacion": "A few-shot example showing legitimate absence mapped to null teaches the distinction between 'absent' and 'must be invented' — the documented use of examples to reduce hallucination in extraction, on top of the field already being optional."
+        },
+        {
+          "id": "B",
+          "texto": "Mark the field as required instead of optional, forcing an explicit decision.",
+          "correcta": false,
+          "justificacion": "Marking the field required would reintroduce the pressure to fabricate a value whenever the source lacks it — the opposite of the needed fix."
+        },
+        {
+          "id": "C",
+          "texto": "Enable strict: true on the tool if not already enabled.",
+          "correcta": false,
+          "justificacion": "strict: true validates structural/type conformance of whatever value is produced; it does not stop the model from producing a plausible-looking fabricated value that still conforms to the schema."
+        },
+        {
+          "id": "D",
+          "texto": "Add more examples of common, non-edge documents that do include the field.",
+          "correcta": false,
+          "justificacion": "More examples of common, non-edge cases don't teach the specific 'field can be legitimately absent' distinction; only an example demonstrating that exact case does."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-1-2",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+      ]
+    },
+    {
+      "id": "b3-q07",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.2",
+      "escenario": "A search_records tool executes successfully against a well-formed query but finds zero matching rows. The current implementation returns isError: true with the text \"No results found\", causing a supervising agent to treat every empty search as a failed subtask and escalate to a human reviewer.",
+      "enunciado": "What is the correct fix for this behavior?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Return isError: false with empty content, since a successfully executed query with no matches is a valid success outcome, distinct from an execution failure.",
+          "correcta": true,
+          "justificacion": "A query that runs successfully but finds no results is documented as a success case with empty content, not an error; conflating the two breaks the agent's ability to interpret what actually happened."
+        },
+        {
+          "id": "B",
+          "texto": "Keep isError: true but add errorCategory: \"business\" so the coordinator can distinguish it from a timeout.",
+          "correcta": false,
+          "justificacion": "This still misrepresents a valid success as an error; adding a category doesn't correct the core mislabeling of a zero-result success as a failure."
+        },
+        {
+          "id": "C",
+          "texto": "Add isRetryable: true so the agent retries the query in case results appear later.",
+          "correcta": false,
+          "justificacion": "Treating a legitimate zero-result outcome as retryable causes wasteful repeated retries for a query that already executed correctly."
+        },
+        {
+          "id": "D",
+          "texto": "Return isError: true only when the search runs three times with no results, to filter out transient index lag.",
+          "correcta": false,
+          "justificacion": "This introduces an arbitrary retry cap unrelated to the documented isError contract, and still doesn't fix that a successfully executed zero-match query is not an error at all."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-2",
+      "fuentes": [
+        "https://modelcontextprotocol.io/docs/develop/build-server"
+      ]
+    },
+    {
+      "id": "b5-q14",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.5",
+      "escenario": "A field-level confidence score of 0.95 is reported for a batch of extracted values, but a manual audit of that same high-confidence batch finds true accuracy closer to 60%.",
+      "enunciado": "What is the correct fix so these confidence scores can be trusted for routing extractions to human review?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Calibrate the confidence scores against a labeled validation set before using them to route review decisions, since an uncalibrated score can report high confidence even when true accuracy is much lower.",
+          "correcta": true,
+          "justificacion": "Calibration against a labeled validation set is the documented fix for a confidence score that reports high confidence while true accuracy is much lower."
+        },
+        {
+          "id": "B",
+          "texto": "Report confidence scores with more decimal precision (e.g., 0.953 instead of 0.95) to support finer-grained routing decisions.",
+          "correcta": false,
+          "justificacion": "Added precision doesn't fix the underlying miscalibration; a more precise but still uncalibrated number is just as misleading."
+        },
+        {
+          "id": "C",
+          "texto": "Replace field-level confidence scores with a single document-level score to simplify the routing logic.",
+          "correcta": false,
+          "justificacion": "This regresses toward the same aggregation problem confidence calibration is meant to avoid — a document-level average can mask poor performance on specific fields."
+        },
+        {
+          "id": "D",
+          "texto": "Have a second model independently re-score each extraction and average the two scores as the final confidence.",
+          "correcta": false,
+          "justificacion": "Without calibration against ground truth, averaging two uncalibrated scores doesn't establish any real relationship between the reported number and actual accuracy."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-5-5"
+    },
+    {
+      "id": "b1-q04",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.2",
+      "escenario": "A review tool's prompt lists the required output fields (location, issue, severity, suggested_fix) in detailed text instructions, but the JSON produced still varies in structure across runs, especially for multi-line issues.",
+      "enunciado": "What is the most effective fix per documented few-shot guidance?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Add 2-4 targeted <example> blocks showing the exact output_format for representative edge cases, including multi-line issues.",
+          "correcta": true,
+          "justificacion": "2-4 targeted examples showing the exact output_format for representative edge cases is the documented fix for output that remains inconsistent despite detailed instructions; the tags clearly separate examples from instructions."
+        },
+        {
+          "id": "B",
+          "texto": "Repeat and intensify the same textual instructions about required fields.",
+          "correcta": false,
+          "justificacion": "Repeating or intensifying the same instructions doesn't give the model a concrete pattern to match; examples, not more emphatic instructions, are what fix format inconsistency."
+        },
+        {
+          "id": "C",
+          "texto": "Switch to a more capable model for this task.",
+          "correcta": false,
+          "justificacion": "Switching models doesn't address a prompt design problem; the inconsistency stems from the prompt lacking concrete examples, not from model capability."
+        },
+        {
+          "id": "D",
+          "texto": "Increase max_tokens so the JSON has more room to be formatted correctly.",
+          "correcta": false,
+          "justificacion": "max_tokens caps the output token budget; it has no effect on whether the JSON format itself is applied consistently across runs."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-1-2",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices"
+      ]
+    },
+    {
+      "id": "b3-q01",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.1",
+      "escenario": "Your search_docs tool has the description \"Searches documents.\" Production traces show Claude invoking it for questions about internal HR policies, historical financial reports, and live customer support tickets alike, then failing when the underlying index doesn't cover certain content types.",
+      "enunciado": "What is the most effective fix for this tool selection problem?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Rewrite the description to state exactly what corpus the tool indexes, what it returns, and the boundary cases where it should not be used.",
+          "correcta": true,
+          "justificacion": "description is the model's only channel for deciding when and how to call a tool; a minimal description without scope or boundaries directly causes this kind of misrouting across unrelated content types."
+        },
+        {
+          "id": "B",
+          "texto": "Add input_examples covering typical HR, financial, and support queries.",
+          "correcta": false,
+          "justificacion": "input_examples clarify ambiguous input formats and patterns; they don't communicate what corpus the tool actually covers, which is the real cause of misrouting here."
+        },
+        {
+          "id": "C",
+          "texto": "Set tool_choice to \"any\" so the tool is always called.",
+          "correcta": false,
+          "justificacion": "\"any\" only forces some tool to be called; it does nothing to fix which content types search_docs is appropriate for, and would force a call even when no tool applies."
+        },
+        {
+          "id": "D",
+          "texto": "Consolidate search_docs into a broader search_everything tool.",
+          "correcta": false,
+          "justificacion": "Widening scope further would make the ambiguity worse, not better; the documented fix for an underspecified description is to tighten and clarify its boundaries, not broaden them."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-3-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+      ]
+    },
+    {
+      "id": "b2-q15",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.5",
+      "escenario": "A code review surfaces two issues in the same caching module: the cache invalidation logic doesn't account for a new eviction policy, and the eviction policy itself has an off-by-one error that only manifests once invalidation is triggered correctly. The developer reports the eviction bug in one message, waits for a fix and confirmation, then reports the invalidation issue in a second, separate message.",
+      "enunciado": "Is this the correct way to sequence these two corrections, per documented guidance on grouping feedback?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "No — because the two issues interact (the invalidation fix can't be verified without the eviction bug fixed, and vice versa), they should have been reported together in a single detailed message.",
+          "correcta": true,
+          "justificacion": "The documented criterion is that problems which interact with each other should be communicated together in one detailed message, while independent problems are corrected sequentially; these two issues clearly interact."
+        },
+        {
+          "id": "B",
+          "texto": "Yes — any two bugs found in the same code review should always be reported in separate sequential messages to keep each fix isolated.",
+          "correcta": false,
+          "justificacion": "The documented rule depends on whether the issues interact, not on always separating feedback; interacting issues are specifically meant to be bundled together."
+        },
+        {
+          "id": "C",
+          "texto": "No — but only because eviction should always be fixed before invalidation, regardless of whether the issues interact.",
+          "correcta": false,
+          "justificacion": "The documented criterion for combining feedback is interaction between problems, not a fixed ordering rule that favors one particular type of issue over another."
+        },
+        {
+          "id": "D",
+          "texto": "Yes — sequential messages are correct because giving Claude more than one issue at a time contaminates the context, regardless of whether the issues are related.",
+          "correcta": false,
+          "justificacion": "The documented guidance doesn't treat multiple issues in one message as inherently contaminating; it explicitly recommends bundling interacting issues into a single detailed message."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-2-5",
+      "fuentes": [
+        "https://code.claude.com/docs/en/best-practices"
+      ]
+    },
+    {
+      "id": "b3-q10",
+      "bloque": 3,
+      "dominio": "Tool Design & MCP Integration",
+      "taskStatement": "2.3",
+      "escenario": "A refund workflow relies on tool_choice: \"auto\" and a system prompt instructing the agent to always call authenticate_customer before process_refund. Logs show that in a meaningful fraction of sessions, the agent calls process_refund directly.",
+      "enunciado": "What is the most effective fix, per the documented pattern for enforcing critical order?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "For the required first step, force the exact tool with tool_choice: {\"type\": \"tool\", \"name\": \"authenticate_customer\"}, guaranteeing the sequence rather than relying on prompt compliance alone.",
+          "correcta": true,
+          "justificacion": "When step order is critical, forcing the specific first tool guarantees the sequence; relying on \"auto\" plus prompt instructions is documented as insufficient for non-negotiable ordering."
+        },
+        {
+          "id": "B",
+          "texto": "Strengthen the system prompt wording and add several few-shot examples reinforcing the required order, while keeping tool_choice at \"auto\".",
+          "correcta": false,
+          "justificacion": "This still relies on probabilistic prompt compliance for a non-negotiable order requirement, which is documented to fail in a meaningful fraction of cases."
+        },
+        {
+          "id": "C",
+          "texto": "Set tool_choice to \"any\" so the agent must call some tool on every turn.",
+          "correcta": false,
+          "justificacion": "\"any\" guarantees that some tool is called, but not which one or in what order; it does not prevent process_refund from being called before authenticate_customer."
+        },
+        {
+          "id": "D",
+          "texto": "Consolidate authenticate_customer and process_refund into a single tool with an action parameter.",
+          "correcta": false,
+          "justificacion": "Consolidation addresses catalog granularity, not enforcement of a required call order; it does not guarantee that authentication happens before the refund is processed."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-3-3",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools"
+      ]
+    },
+    {
+      "id": "b4-q05",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.2",
+      "escenario": "Your research coordinator always invokes all five available subagents (search, analysis, synthesis, fact-check, formatting) for every incoming query, including simple ones like \"what is the capital of France,\" which needs only a single lookup.",
+      "enunciado": "What change best aligns with the documented coordinator responsibilities?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Have the coordinator perform dynamic subagent selection, invoking only the subagents warranted by the query's actual complexity, reserving the full pipeline for genuinely complex queries.",
+          "correcta": true,
+          "justificacion": "Dynamic subagent selection based on complexity is one of the coordinator's four core responsibilities; always routing through the full pipeline regardless of complexity is the documented anti-pattern of unnecessary cost and latency."
+        },
+        {
+          "id": "B",
+          "texto": "Increase the concurrency limit so all five subagents complete faster in parallel.",
+          "correcta": false,
+          "justificacion": "Running the unnecessary subagents faster doesn't address the actual problem: they shouldn't be invoked at all for a trivial single-lookup query."
+        },
+        {
+          "id": "C",
+          "texto": "Consolidate the five subagents into a single subagent with an internal action parameter it selects itself.",
+          "correcta": false,
+          "justificacion": "This solves a tool-selection ambiguity problem; it doesn't address the coordinator's failure to scale subagent invocation to query complexity."
+        },
+        {
+          "id": "D",
+          "texto": "Cap the number of subagents that can be invoked per query at two, regardless of complexity.",
+          "correcta": false,
+          "justificacion": "An arbitrary fixed cap is the same category of anti-pattern as an iteration cap used as a primary control mechanism; it doesn't adapt to actual query complexity in either direction."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/subagents",
+        "https://www.anthropic.com/engineering/built-multi-agent-research-system"
+      ]
+    },
+    {
+      "id": "b4-q14",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.5",
+      "escenario": "Multiple MCP tools return timestamps in inconsistent formats — some as Unix epoch integers, others as ISO 8601 strings — before Claude ever sees them. An engineer wants every timestamp normalized to ISO 8601 before the model processes the tool's output, without asking Claude to do the conversion itself.",
+      "enunciado": "What is the correct implementation for this normalization requirement?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Register a PostToolUse hook that inspects the raw tool output and returns hookSpecificOutput.updatedToolOutput with the normalized ISO 8601 value, replacing the output before Claude receives it.",
+          "correcta": true,
+          "justificacion": "PostToolUse runs after the tool returns and updatedToolOutput is exactly the documented field for replacing the tool's output before the model processes it, matching the normalization use case."
+        },
+        {
+          "id": "B",
+          "texto": "Register a PreToolUse hook that rewrites tool_input before execution to request pre-formatted timestamps.",
+          "correcta": false,
+          "justificacion": "The timestamps to normalize appear in the tool's output, not its input; PreToolUse runs before execution and cannot see a result that doesn't exist yet."
+        },
+        {
+          "id": "C",
+          "texto": "Add updatedInput to a PreToolUse hook's hookSpecificOutput to reformat the expected output ahead of time.",
+          "correcta": false,
+          "justificacion": "updatedInput modifies the tool's input before execution, not its output; it cannot be used to reformat a result that hasn't been produced yet."
+        },
+        {
+          "id": "D",
+          "texto": "Instruct Claude via the system prompt to always convert timestamps to ISO 8601 before using them in reasoning.",
+          "correcta": false,
+          "justificacion": "This is a prompt-based, probabilistic approach to a deterministic normalization need that a PostToolUse hook can guarantee outside the model's reasoning entirely."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-5",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/hooks"
+      ]
+    },
+    {
+      "id": "b5-q03",
+      "bloque": 5,
+      "dominio": "Context Management & Reliability",
+      "taskStatement": "5.1",
+      "escenario": "A team building on Claude Sonnet 4.5 adds custom logic that tracks estimated token usage after every tool call and manually injects warning text into the prompt when a threshold is crossed, believing this tracking must be built by hand.",
+      "enunciado": "Is this custom tracking layer necessary given the documented behavior of context awareness on this model family?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "No — Claude Sonnet 5, Sonnet 4.6, Sonnet 4.5, and Haiku 4.5 already inject a token budget tag at conversation start and a system_warning update after each tool call automatically, letting the model track its own remaining budget without developer intervention.",
+          "correcta": true,
+          "justificacion": "Context awareness on these models is automatic: the API injects <budget:token_budget> at the start and <system_warning> updates after each tool call, so a hand-built duplicate layer is unnecessary."
+        },
+        {
+          "id": "B",
+          "texto": "Yes — context awareness is an opt-in flag that must be explicitly enabled per request, so without it no budget tracking happens at all.",
+          "correcta": false,
+          "justificacion": "Context awareness is automatic on the supported models, not a request-level opt-in flag; no such setting exists in the documented behavior."
+        },
+        {
+          "id": "C",
+          "texto": "Yes — context awareness only mitigates lost-in-the-middle degradation, not token budget truncation, so a separate tracking layer is still required for budget awareness.",
+          "correcta": false,
+          "justificacion": "This mischaracterizes context awareness, which is specifically the mechanism for tracking remaining token budget via the injected tags, not a lost-in-the-middle fix."
+        },
+        {
+          "id": "D",
+          "texto": "No — but only because the team already maintains a persistent case-facts block, which makes budget tracking unnecessary.",
+          "correcta": false,
+          "justificacion": "Case-facts blocks and context awareness solve different problems (preserving specific transactional values vs. tracking overall token budget); one doesn't substitute for the other."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-5-1",
+      "fuentes": [
+        "https://platform.claude.com/docs/en/build-with-claude/context-windows"
+      ]
+    },
+    {
+      "id": "b4-q01",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.1",
+      "escenario": "Your team built a custom wrapper around the Agent SDK's query() generator. The wrapper treats the agentic loop as finished as soon as an AssistantMessage contains any text block, even when that same message also contains tool_use blocks in its content array. QA reports the wrapper exits mid-task in roughly 15% of runs while Claude is still mid-investigation.",
+      "enunciado": "What is the root cause of this premature termination, and the correct fix?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The wrapper conflates presence of text with completion; Claude can return text and tool calls in the same turn. The correct signal is the absence of tool calls in the response, not the presence of text, so the wrapper should check whether the content array contains any tool_use blocks.",
+          "correcta": true,
+          "justificacion": "The loop continues while Claude's response includes tool calls and ends only when it doesn't; treating any text as a completion signal ignores that Claude frequently returns text alongside tool calls in the same turn."
+        },
+        {
+          "id": "B",
+          "texto": "Increase maxTurns so the wrapper has more turns available before it decides to stop.",
+          "correcta": false,
+          "justificacion": "maxTurns is a safety net against runaway loops, not the mechanism that determines whether a given turn is finished; raising it doesn't fix a flawed per-turn completion check."
+        },
+        {
+          "id": "C",
+          "texto": "Parse the assistant's text for completion phrases like \"I'm done\" or \"finished\" before deciding to stop.",
+          "correcta": false,
+          "justificacion": "Parsing natural-language signals to infer loop termination is a documented anti-pattern: an agent doesn't reliably produce those explicit phrases."
+        },
+        {
+          "id": "D",
+          "texto": "Treat every AssistantMessage as complete once its content array is non-empty, since an empty array indicates the loop hasn't started.",
+          "correcta": false,
+          "justificacion": "Content array emptiness doesn't distinguish a finished turn from one still requesting tool calls; the correct check is specifically for the presence or absence of tool_use blocks."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-1",
+      "fuentes": [
+        "https://code.claude.com/docs/en/agent-sdk/agent-loop"
+      ]
+    },
+    {
+      "id": "b2-q04",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.2",
+      "escenario": "A project has both a custom slash command at `.claude/commands/deploy.md` and, added later by another engineer, a skill at `.claude/skills/deploy/SKILL.md`. Both are meant to handle the same `/deploy` workflow but now have diverging content.",
+      "enunciado": "When a user runs `/deploy`, which one is invoked per documented precedence rules?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The skill at `.claude/skills/deploy/SKILL.md` takes precedence over the command with the same name.",
+          "correcta": true,
+          "justificacion": "When a skill and a command share the same name, the skill has documented precedence over the command."
+        },
+        {
+          "id": "B",
+          "texto": "The command takes precedence because commands were introduced before skills.",
+          "correcta": false,
+          "justificacion": "No such precedence rule based on introduction order exists; the documented behavior is that the skill wins on a naming collision."
+        },
+        {
+          "id": "C",
+          "texto": "Both run, in the order they were created.",
+          "correcta": false,
+          "justificacion": "There is no documented stacking behavior where both a command and a same-named skill execute together."
+        },
+        {
+          "id": "D",
+          "texto": "Neither runs, and Claude Code raises a naming-conflict error.",
+          "correcta": false,
+          "justificacion": "No error is raised for this collision; the skill silently takes precedence over the identically named command."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-2-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/skills"
+      ]
+    },
+    {
+      "id": "b2-q06",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.2",
+      "escenario": "An engineer maintains a personal variant of a project skill in `~/.claude/skills/deploy-personal/SKILL.md` and changes its frontmatter `name: quick-deploy`, expecting the invocable command to become `/quick-deploy` instead of `/deploy-personal`.",
+      "enunciado": "After the change, typing `/quick-deploy` does nothing, while `/deploy-personal` still works. What explains this?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "The `name` field only changes the label displayed for the skill; the invocable command is determined by the skill's directory (or file) name, so renaming the directory to `quick-deploy` is required.",
+          "correcta": true,
+          "justificacion": "This is the documented anti-pattern: name only changes what's shown, not the invoked command, which is tied to the directory or file name and requires actually renaming it."
+        },
+        {
+          "id": "B",
+          "texto": "`disable-model-invocation` was implicitly set to `true` by adding a custom `name`, blocking manual invocation.",
+          "correcta": false,
+          "justificacion": "There is no documented interaction between setting name and disable-model-invocation; disable-model-invocation only affects automatic invocation by the model, not manual /command usage."
+        },
+        {
+          "id": "C",
+          "texto": "Personal skills under `~/.claude/skills/` cannot define a custom `name` field at all.",
+          "correcta": false,
+          "justificacion": "No such restriction exists; name is an ordinary frontmatter field usable regardless of whether the skill is at user or project scope."
+        },
+        {
+          "id": "D",
+          "texto": "The skill must also define an `argument-hint` before a renamed command becomes invocable.",
+          "correcta": false,
+          "justificacion": "argument-hint only controls the hint shown during autocompletion; it has no bearing on which command name actually triggers the skill."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-2",
+      "fuentes": [
+        "https://code.claude.com/docs/en/skills",
+        "https://code.claude.com/docs/en/claude-directory"
+      ]
+    },
+    {
+      "id": "b1-q12",
+      "bloque": 1,
+      "dominio": "Prompt Engineering & Structured Output",
+      "taskStatement": "4.4",
+      "escenario": "A code review extraction pipeline needs to (1) later analyze systematically which finding categories developers dismiss most often, and (2) auto-detect when an invoice's declared total conflicts with the sum of its line items.",
+      "enunciado": "Select TWO schema/field design changes that directly enable these two capabilities.",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Add a detected_pattern field to each finding labeling which code construct triggered it.",
+          "correcta": true,
+          "justificacion": "A detected_pattern field labeling the code construct that triggered each finding is the documented design that enables systematic analysis later of which finding categories get dismissed at what rate."
+        },
+        {
+          "id": "B",
+          "texto": "Extract calculated_total, stated_total, and a conflict_detected boolean in the invoice schema.",
+          "correcta": true,
+          "justificacion": "Extracting both the calculated and stated totals plus a conflict_detected boolean is the documented pattern for surfacing inconsistent data at the source, letting the conflict be detected automatically."
+        },
+        {
+          "id": "C",
+          "texto": "Mark every field in both schemas as required.",
+          "correcta": false,
+          "justificacion": "Marking every field required forces the model to fabricate values whenever the source is incomplete; it does nothing to enable dismissal-rate analysis or total-conflict detection."
+        },
+        {
+          "id": "D",
+          "texto": "Increase max_tokens on both extraction calls.",
+          "correcta": false,
+          "justificacion": "max_tokens bounds the output budget; it has no relationship to enabling categorical dismissal analysis or detecting total mismatches."
+        },
+        {
+          "id": "E",
+          "texto": "Add strict: true to both tools without adding any new fields.",
+          "correcta": false,
+          "justificacion": "strict: true alone guarantees schema conformance of whatever fields already exist; without adding the specific fields needed, it provides neither capability the scenario requires."
+        }
+      ],
+      "seleccionar": 2,
+      "dificultad": "dificil",
+      "refSeccion": "#ts-1-4",
+      "fuentes": []
+    },
+    {
+      "id": "b4-q15",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.6",
+      "escenario": "You need to run a standard code review across 40 files, checking each individually for bugs and security issues, followed by a cross-file integration pass — a review structure your team runs the same way every sprint.",
+      "enunciado": "Which decomposition strategy fits this task, per the documented selection criteria?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Prompt chaining — a fixed sequence of a per-file analysis pass followed by a separate integration pass — since this is a predictable, multi-aspect review, not open-ended investigation.",
+          "correcta": true,
+          "justificacion": "Prompt chaining is reserved for predictable, multi-aspect reviews; splitting into a local per-file pass and a separate cross-file integration pass is the documented fix for the attention dilution of a single monolithic pass."
+        },
+        {
+          "id": "B",
+          "texto": "Dynamic adaptive decomposition, since the plan should adapt as file dependencies are discovered.",
+          "correcta": false,
+          "justificacion": "Dynamic decomposition is reserved for open-ended tasks; this recurring, predictable review structure is exactly the case where a fixed prompt-chaining sequence is the documented correct choice."
+        },
+        {
+          "id": "C",
+          "texto": "A single monolithic pass across all 40 files at once to save tool calls.",
+          "correcta": false,
+          "justificacion": "A monolithic single pass over a whole codebase is the documented anti-pattern that produces attention dilution and inconsistent findings."
+        },
+        {
+          "id": "D",
+          "texto": "Coordinator-subagent orchestration with one subagent spawned per file in parallel.",
+          "correcta": false,
+          "justificacion": "This addresses multi-agent orchestration, a different mechanism than the task decomposition strategy (sequencing analysis into per-file and integration passes) the scenario calls for."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "facil",
+      "refSeccion": "#ts-4-6",
+      "fuentes": [
+        "exam-guide-oficial-v1.0.txt (Task Statement 1.6)"
+      ]
+    },
+    {
+      "id": "b4-q16",
+      "bloque": 4,
+      "dominio": "Agentic Architecture & Orchestration",
+      "taskStatement": "1.6",
+      "escenario": "You're asked to \"add exhaustive tests to this legacy codebase\" with no existing coverage data, no known priority order, and undocumented cross-module dependencies that only emerge as you look deeper into the code.",
+      "enunciado": "What is the correct decomposition strategy here?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Dynamic adaptive decomposition — first map the codebase structure and identify high-impact untested areas, generate a prioritized plan, and adapt that plan as previously unknown dependencies are discovered.",
+          "correcta": true,
+          "justificacion": "This open-ended task is exactly the documented case for dynamic decomposition: mapping structure, prioritizing high-impact areas, and adapting the plan as dependencies emerge, since they can't be anticipated upfront."
+        },
+        {
+          "id": "B",
+          "texto": "Prompt chaining with a fixed per-module test-writing sequence decided entirely upfront.",
+          "correcta": false,
+          "justificacion": "Fixing the decomposition rigidly for an open-ended task fails because findings discovered during the work can reveal needs not anticipated at the start."
+        },
+        {
+          "id": "C",
+          "texto": "A single pass instructing the agent to \"write tests for the whole codebase\" in one shot.",
+          "correcta": false,
+          "justificacion": "A monolithic single pass produces the documented attention dilution problem and inconsistent, incomplete coverage on a task of this scope."
+        },
+        {
+          "id": "D",
+          "texto": "Fix the test-writing order strictly by alphabetical file name to keep the plan deterministic.",
+          "correcta": false,
+          "justificacion": "An arbitrary ordering ignores actual impact and discovered dependencies, which is precisely what dynamic decomposition is meant to prioritize instead."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-4-6",
+      "fuentes": [
+        "exam-guide-oficial-v1.0.txt (Task Statement 1.6)"
+      ]
+    },
+    {
+      "id": "b2-q02",
+      "bloque": 2,
+      "dominio": "Claude Code Configuration & Workflows",
+      "taskStatement": "3.1",
+      "escenario": "The team's project-level CLAUDE.md has grown to 340 lines covering build commands, testing conventions, three different deployment procedures, and API design guidelines. Engineers report that Claude increasingly ignores the deployment section entirely, even though it hasn't changed in months.",
+      "enunciado": "What is the most effective fix, per the documented behavior of CLAUDE.md sizing?",
+      "opciones": [
+        {
+          "id": "A",
+          "texto": "Split the deployment procedures and other topic-specific sections into `@import`-ed files or `.claude/rules/`, reducing the main CLAUDE.md below the ~200-line guideline.",
+          "correcta": true,
+          "justificacion": "Files above the ~200-line guideline dilute adherence because important instructions get lost in the noise; the documented fix is modularizing with @import or moving content to .claude/rules/."
+        },
+        {
+          "id": "B",
+          "texto": "Rewrite the deployment section in more forceful language (\"YOU MUST always follow these steps exactly\").",
+          "correcta": false,
+          "justificacion": "The documented cause here is file length diluting adherence, not phrasing strength; a longer, more emphatic section would make the size problem worse, not better."
+        },
+        {
+          "id": "C",
+          "texto": "Move the entire CLAUDE.md to `~/.claude/CLAUDE.md` so it loads earlier in the hierarchy.",
+          "correcta": false,
+          "justificacion": "User-level CLAUDE.md is personal and isn't shared via version control, so this would stop the team from receiving the content at all; it also doesn't address the length-dilution problem."
+        },
+        {
+          "id": "D",
+          "texto": "Enable `disable-model-invocation: true` on the CLAUDE.md file.",
+          "correcta": false,
+          "justificacion": "That frontmatter field is documented for skills, not CLAUDE.md; CLAUDE.md has no such field and always loads at session start."
+        }
+      ],
+      "seleccionar": 1,
+      "dificultad": "media",
+      "refSeccion": "#ts-2-1",
+      "fuentes": [
+        "https://code.claude.com/docs/en/memory"
+      ]
+    }
+  ]
+}
