@@ -45,7 +45,7 @@
 
     --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
     --accent-weak:#E2F1FF; --accent-contrast:#06121F;
-    --btn-primary-text:#F7FBFF;
+    --on-accent:#F7FBFF;
 
     --success:#0E8546; --success-weak:#E2F6EA;
     --warning:#B5760F; --warning-weak:#FBEFD9;
@@ -60,7 +60,7 @@
 
     --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
     --accent-weak:#0E2C48; --accent-contrast:#06101C;
-    --btn-primary-text:#FFFFFF;
+    --on-accent:#F7FBFF;
 
     --success:#37DA84; --success-weak:#123526;
     --warning:#F0A93C; --warning-weak:#33260F;
@@ -143,9 +143,9 @@
   .field-inline select:hover,.field-inline select:focus{border-color:var(--accent);outline:none;}
 
   /* CTA principal de pantalla (Empezar sesion / Otra sesion): un punto mayor que el resto de botones de accion. */
-  .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-medium);border-radius:var(--r-md);
+  .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semibold);border-radius:var(--r-md);
     padding:8px 14px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
-  .btn.primary{background:var(--accent);color:var(--btn-primary-text);}
+  .btn.primary{background:var(--accent);color:var(--on-accent);}
   .btn.primary:hover{background:var(--accent-hover);}
   .btn.primary:active{background:var(--accent-active);}
   .btn.ghost{background:none;color:var(--text-muted);border:none;text-decoration:underline;cursor:pointer;
