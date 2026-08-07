@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Official exam guide and source catalog — never distributed nor versioned in the public repo
+fuentes/
+
 # Python
 __pycache__/
 *.pyc
