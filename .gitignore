@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Build output (assembled by herramientas/construir-dist.py; published via the site branch)
+dist/
+
 # Official exam guide and source catalog — never distributed nor versioned in the public repo
 fuentes/
 
