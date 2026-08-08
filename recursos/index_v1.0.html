@@ -133,6 +133,12 @@
   .usecase-card .badge { align-self:flex-start; }
   .usecase-card p { margin:0; font-size:var(--fs-sm); color:var(--text); }
 
+  /* ============ TUTOR DE ESTUDIO ============ */
+  .tutor-steps { font-size:var(--fs-sm); color:var(--text-muted); margin:var(--sp-3) 0; padding-left:22px; }
+  .tutor-steps li { margin-bottom:4px; }
+  .tutor-steps code { font-size:.92em; }
+  .tutor-note { font-size:var(--fs-caption); color:var(--text-subtle); margin-top:var(--sp-3); }
+
   /* ============ PROGRESO GLOBAL ============ */
   .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5); box-shadow:var(--shadow-sm); }
   .bar-row { display:flex; align-items:center; gap:var(--sp-4); }
@@ -284,8 +290,33 @@
     <div class="blocks-grid" id="simulacro-grid"></div>
   </section>
 
+  <!--
+    TUTOR DE ESTUDIO — contenido curado a mano (como la intro y los casos de
+    uso), no se extrae por regex. Descripción, pasos y enlaces resumen sin
+    duplicar el detalle de recursos/tutor/instrucciones-tutor.md (rol de
+    tutor, jerarquía de fuentes, 6 modos de trabajo) y recursos/tutor/README.md
+    (montaje en 4 pasos); ese detalle vive solo en esos dos ficheros, enlazados
+    abajo con ruta relativa desde la raíz del sitio.
+  -->
+  <section class="block" id="tutor">
+    <div class="eyebrow">06 — Estudio asistido</div>
+    <h2>Tutor de estudio (Proyectos de Claude)</h2>
+    <p class="note">Un tutor interactivo que montas tú mismo en un Project de claude.ai con el material de este curso: resuelve dudas ancladas al corpus citando bloque y task statement, hace preguntas de práctica oral, diagnostica el patrón de tus errores y puede guiarte en modo socrático. Complementa al curso, no lo sustituye — los quizzes y el simulacro dan la nota escalada; el tutor te la explica.</p>
+    <ol class="tutor-steps">
+      <li>Crea un Project en claude.ai (Projects → Create project).</li>
+      <li>Pega el contenido de <code>instrucciones-tutor.md</code> en "Instructions".</li>
+      <li>Sube el material desde tu copia local (corpus imprescindible; guías y bancos de preguntas opcionales — detalle en la guía de montaje).</li>
+      <li>Pruébalo: <code>pregúntame sobre el bloque 3</code>.</li>
+    </ol>
+    <div class="doc-links" id="tutor-links">
+      <a class="doc-link" href="tutor/instrucciones-tutor.md">Instrucciones del tutor (para pegar en el Project) <span class="ext">↗</span></a>
+      <a class="doc-link" href="tutor/README.md">Guía de montaje <span class="ext">↗</span></a>
+    </div>
+    <p class="tutor-note">El material que subes al Project sale de tu copia local del repositorio (corpus, guías, bancos de preguntas); la guía oficial del examen no está en este sitio publicado.</p>
+  </section>
+
   <section class="block" id="referencias">
-    <div class="eyebrow">06 — Documentación</div>
+    <div class="eyebrow">07 — Documentación</div>
     <h2>Referencias oficiales</h2>
     <div class="doc-links" id="doc-links">
       <a class="doc-link" target="_blank" rel="noopener" href="https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2F6nizmqk8tpzpfjvt6qmmav7rh%2Fpublic%2F1783542750%2FClaude+Certified+Architect+%E2%80%93+Foundations+Exam+Guide.pdf">Guía oficial del examen (PDF) <span class="ext">↗</span></a>
