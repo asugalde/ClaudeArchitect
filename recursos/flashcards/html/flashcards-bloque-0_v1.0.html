@@ -9,11 +9,12 @@
   Layout: sistema Volt (ver plantillas/volt-style-guide.html) — topbar limpia,
   hero sin cajas, contenido en tarjetas .card. Sin marcos/rejillas heredados.
 -->
-<html lang="es" data-theme="light">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flashcards CCAR-F · Bloque 0 — Fundamentos: API de Claude, tool use y bucle agéntico</title>
+<script>try{if(localStorage.getItem("ccarf-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E82FF'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -40,27 +41,36 @@
 
     /* ---- Color · modo claro ---- */
     --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
-    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --border:#E1E9F1; --border-strong:#7E93AB;
     --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
 
     --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
     --accent-weak:#E2F1FF; --accent-contrast:#06121F;
     --on-accent:#F7FBFF;
 
+    /* --accent-text: texto acentuado (enlaces, eyebrows). --accent queda para rellenos/bordes/barras. */
+    --accent-text:#0857B4;
+    /* --accent-btn: fondo de botones/CTAs de acento (.btn.primary). */
+    --accent-btn:#0A6BDB; --accent-btn-hover:#0857B4;
+
     --success:#0E8546; --success-weak:#E2F6EA;
-    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --warning:#8F5D0B; --warning-weak:#FBEFD9;
     --danger:#CE4148;  --danger-weak:#FBE7E8;
     --info:#2E63FF;    --info-weak:#EAF0FF;
+    color-scheme: light;
   }
   [data-theme="dark"]{
     /* ---- Color · modo oscuro ---- */
     --bg:#06101C; --surface:#101927; --surface-2:#172230;
-    --border:#213244; --border-strong:#2E4257;
+    --border:#213244; --border-strong:#55708C;
     --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
 
     --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
     --accent-weak:#0E2C48; --accent-contrast:#06101C;
     --on-accent:#F7FBFF;
+
+    --accent-text:#3FA9FF;
+    --accent-btn:#0A6BDB; --accent-btn-hover:#0857B4;
 
     --success:#37DA84; --success-weak:#123526;
     --warning:#F0A93C; --warning-weak:#33260F;
@@ -69,6 +79,7 @@
 
     --shadow-sm:0 1px 2px rgba(0,0,0,.4);
     --shadow-md:0 6px 18px rgba(0,0,0,.4);
+    color-scheme: dark;
   }
 
   /* =====================================================================
@@ -79,32 +90,35 @@
     background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
     transition:background var(--ease),color var(--ease);}
   h1{margin:0;line-height:1.1;}
-  a{color:var(--accent);font-weight:var(--fw-medium);text-decoration:none;}
+  a{color:var(--accent-text);font-weight:var(--fw-medium);text-decoration:none;}
   a:hover{text-decoration:underline;}
-  code{font-family:var(--font-mono);font-size:.95em;background:var(--accent-weak);color:var(--accent);
-    border-radius:var(--r-sm);padding:1px 6px;overflow-wrap:anywhere;}
+  code{font-family:var(--font-mono);font-size:.95em;background:var(--surface-2);color:var(--text);
+    border:1px solid var(--border);border-radius:var(--r-sm);padding:1px 6px;overflow-wrap:anywhere;}
+  :is(a,button,input,select):focus-visible,.tarjeta[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 
   /* =====================================================================
      TOPBAR
      ===================================================================== */
   .topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
-    gap:var(--sp-4);padding:14px 24px;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    gap:var(--sp-4);padding:14px 24px;flex-wrap:nowrap;background:color-mix(in srgb,var(--bg) 86%,transparent);
     backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
-  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:var(--fw-bold);letter-spacing:-.01em;}
+  .topbar .brand{display:flex;align-items:center;gap:10px;font-weight:var(--fw-bold);letter-spacing:-.01em;min-width:0;overflow:hidden;}
   .dot{width:20px;height:20px;border-radius:6px;background:var(--accent);flex:none;}
-  .brand-sigla{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:var(--fw-medium);color:var(--text-muted);}
-  .topbar .controles-top{display:flex;gap:8px;align-items:center;}
+  .brand-full{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .brand-sigla{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:var(--fw-medium);color:var(--text-muted);flex:0 0 auto;}
+  .topbar .controles-top{display:flex;gap:8px;align-items:center;flex:0 0 auto;}
   .toggle{cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);
     padding:8px 13px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:var(--fw-medium);
     font-family:inherit;transition:border-color var(--ease),color var(--ease);}
   .toggle:hover{border-color:var(--accent);color:var(--accent);}
+  @media (max-width:420px){ .brand-full{display:none;} }
 
   /* =====================================================================
      LAYOUT / HERO
      ===================================================================== */
   .wrap{max-width:960px;margin:0 auto;padding:var(--sp-6) 24px 90px;}
   .hero{padding-bottom:var(--sp-6);}
-  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent);
+  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent-text);
     text-transform:uppercase;letter-spacing:.08em;margin-bottom:var(--sp-2);}
   .display{font-size:var(--fs-display);font-weight:var(--fw-extra);letter-spacing:-.03em;
     line-height:1.05;margin:0 0 var(--sp-4);}
@@ -112,7 +126,7 @@
   .badge{font-size:var(--fs-caption);font-weight:var(--fw-medium);padding:4px 11px;border-radius:var(--r-pill);
     white-space:nowrap;}
   .badge.neutral{background:var(--surface-2);color:var(--text-muted);border:1px solid var(--border);}
-  .badge.accent{background:var(--accent-weak);color:var(--accent);}
+  .badge.accent{background:var(--accent-weak);color:var(--accent-text);}
   .badge.neutral.dif-facil{color:var(--success);} .badge.neutral.dif-media{color:var(--warning);} .badge.neutral.dif-dificil{color:var(--danger);}
 
   /* =====================================================================
@@ -140,13 +154,13 @@
   .field-inline select{font-family:inherit;font-size:var(--fs-sm);padding:9px 12px;border-radius:var(--r-md);
     border:1px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;
     transition:border-color var(--ease);}
-  .field-inline select:hover,.field-inline select:focus{border-color:var(--accent);outline:none;}
+  .field-inline select:hover,.field-inline select:focus{border-color:var(--accent);}
 
   /* CTA principal de pantalla (Empezar sesion / Otra sesion): un punto mayor que el resto de botones de accion. */
   .btn{font-family:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semibold);border-radius:var(--r-md);
     padding:8px 14px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
-  .btn.primary{background:var(--accent);color:var(--on-accent);}
-  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.primary{background:var(--accent-btn);color:var(--on-accent);}
+  .btn.primary:hover{background:var(--accent-btn-hover);}
   .btn.primary:active{background:var(--accent-active);}
   .btn.ghost{background:none;color:var(--text-muted);border:none;text-decoration:underline;cursor:pointer;
     font-family:inherit;font-size:var(--fs-caption);padding:0;}
@@ -207,12 +221,15 @@
     .stats-row{gap:var(--sp-4);}
     .stat{flex:1 1 100px;}
   }
+  @media (pointer:coarse){
+    .btn, .toggle, .valorar button { min-height:44px; }
+  }
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="brand"><span class="dot"></span> <span class="brand-full">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></div>
   <div class="controles-top">
     <button class="toggle" id="btnTema" title="Cambiar tema">◐ Oscuro</button>
   </div>

@@ -41,7 +41,7 @@
     --surface:#FFFFFF;
     --surface-2:#F1F5FA;
     --border:#E1E9F1;
-    --border-strong:#C7D6E4;
+    --border-strong:#7E93AB;
     --text:#0E1B2C;
     --text-muted:#45536C;
     --text-subtle:#8496A8;
@@ -52,9 +52,17 @@
     --accent-weak:#E2F1FF;
     --accent-contrast:#06121F;
     --on-accent:#F7FBFF;
+    /* --accent-text: color de TEXTO acentuado (enlaces, eyebrow, badge.accent,
+       hover de secondary/doc-link/ghost) sobre fondos bg/surface/accent-weak.
+       --accent-btn (+ hover): fondo de botones primarios, con --on-accent
+       encima (contraste verificado, ver sección 05). --accent queda reservado
+       a rellenos, bordes, barras y superficies — nunca a texto directo. */
+    --accent-text:#0857B4;
+    --accent-btn:#0A6BDB;
+    --accent-btn-hover:#0857B4;
 
     --success:#0E8546; --success-weak:#E2F6EA;
-    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --warning:#8F5D0B; --warning-weak:#FBEFD9;
     --danger:#CE4148;  --danger-weak:#FBE7E8;
     --info:#2E63FF;    --info-weak:#EAF0FF;
   }
@@ -64,7 +72,7 @@
     --surface:#101927;
     --surface-2:#172230;
     --border:#213244;
-    --border-strong:#2E4257;
+    --border-strong:#55708C;
     --text:#E4EDF6;
     --text-muted:#B6C5D9;
     --text-subtle:#66788C;
@@ -75,6 +83,7 @@
     --accent-weak:#0E2C48;
     --accent-contrast:#06101C;
     --on-accent:#F7FBFF;
+    --accent-text:#3FA9FF;
 
     --success:#37DA84; --success-weak:#123526;
     --warning:#F0A93C; --warning-weak:#33260F;
@@ -84,6 +93,8 @@
     --shadow-sm:0 1px 2px rgba(0,0,0,.4);
     --shadow-md:0 6px 18px rgba(0,0,0,.4);
   }
+  :root{ color-scheme:light; }
+  [data-theme="dark"]{ color-scheme:dark; }
 
   /* =====================================================================
      BASE
@@ -101,11 +112,13 @@
   h3{font-size:var(--fs-h3);font-weight:var(--fw-bold);letter-spacing:-.015em;}
   h4{font-size:var(--fs-h4);font-weight:var(--fw-bold);}
   p{margin:0 0 var(--sp-4);}
-  a{color:var(--accent);text-decoration:none;font-weight:var(--fw-medium);}
+  a{color:var(--accent-text);text-decoration:none;font-weight:var(--fw-medium);}
   a:hover{text-decoration:underline;}
   small,.caption{font-size:var(--fs-caption);color:var(--text-muted);}
+  /* Tratamiento neutro: el azul queda reservado a enlaces (ver sección 05);
+     el código inline usa superficie y borde neutros, nunca acento. */
   code,kbd{font-family:var(--font-mono);font-size:var(--fs-code);
-    background:var(--accent-weak);color:var(--accent);padding:1px 6px;border-radius:var(--r-sm);}
+    background:var(--surface-2);color:var(--text);border:1px solid var(--border);padding:1px 6px;border-radius:var(--r-sm);}
   hr{border:none;border-top:1px solid var(--border);margin:var(--sp-6) 0;}
 
   /* =====================================================================
@@ -119,7 +132,7 @@
   .topbar nav{display:none;gap:var(--sp-4);font-size:var(--fs-sm);}
   @media(min-width:900px){.topbar nav{display:flex;}}
   .topbar nav a{color:var(--text-muted);font-weight:var(--fw-medium);}
-  .topbar nav a:hover{color:var(--accent);text-decoration:none;}
+  .topbar nav a:hover{color:var(--accent-text);text-decoration:none;}
   .toggle{cursor:pointer;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);
     padding:8px 13px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:var(--fw-semibold);font-family:inherit;}
 
@@ -128,7 +141,7 @@
 
   section.block{padding-top:56px;}
   section.block > h2{scroll-margin-top:80px;}
-  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent);
+  .eyebrow{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--accent-text);
     text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
   .note{font-size:var(--fs-sm);color:var(--text-muted);max-width:90ch;}
 
@@ -159,12 +172,12 @@
   .btn{font-family:inherit;font-size:var(--fs-caption);font-weight:var(--fw-semibold);border-radius:var(--r-md);
     padding:6px 12px;border:1px solid transparent;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease);}
   .btn.cta{font-size:var(--fs-sm);padding:8px 14px;}
-  .btn.primary{background:var(--accent);color:var(--on-accent);}
-  .btn.primary:hover{background:var(--accent-hover);}
+  .btn.primary{background:var(--accent-btn);color:var(--on-accent);}
+  .btn.primary:hover{background:var(--accent-btn-hover);}
   .btn.primary:active{background:var(--accent-active);}
   .btn.secondary{background:transparent;color:var(--text);border-color:var(--border-strong);}
-  .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
-  .btn.ghost{background:transparent;color:var(--accent);}
+  .btn.secondary:hover{border-color:var(--accent);color:var(--accent-text);}
+  .btn.ghost{background:transparent;color:var(--accent-text);}
   .btn.ghost:hover{background:var(--accent-weak);}
   .btn.danger{background:var(--danger);color:#fff;}
   .btn:disabled{opacity:.45;cursor:not-allowed;}
@@ -172,7 +185,7 @@
 
   /* Badges / pills — peso medium, nunca semibold */
   .badge{font-size:var(--fs-caption);font-weight:var(--fw-medium);padding:3px 10px;border-radius:var(--r-pill);}
-  .badge.accent{background:var(--accent-weak);color:var(--accent);}
+  .badge.accent{background:var(--accent-weak);color:var(--accent-text);}
   .badge.success{background:var(--success-weak);color:var(--success);}
   .badge.warning{background:var(--warning-weak);color:var(--warning);}
   .badge.danger{background:var(--danger-weak);color:var(--danger);}
@@ -245,7 +258,7 @@
   /* Tarjeta de referencia. */
   .doc-link{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--r-md);
     padding:10px 14px;font-size:var(--fs-sm);color:var(--text-muted);background:var(--surface);text-decoration:none;}
-  .doc-link:hover{border-color:var(--accent);}
+  .doc-link:hover{border-color:var(--accent);color:var(--accent-text);}
   .doc-link .ext{color:var(--text-subtle);font-size:var(--fs-caption);}
 
   /* Sidebar de navegación para documentos largos (demo estática, en real sticky:260px). */
@@ -254,7 +267,7 @@
     display:flex;flex-direction:column;gap:2px;}
   .side-demo .side-nav a{display:block;padding:5px 0 5px 10px;border-left:2px solid transparent;
     font-size:var(--fs-sm);color:var(--text-muted);text-decoration:none;}
-  .side-demo .side-nav a.active{color:var(--accent);font-weight:var(--fw-medium);border-left-color:var(--accent);}
+  .side-demo .side-nav a.active{color:var(--accent-text);font-weight:var(--fw-medium);border-left-color:var(--accent);}
   .side-demo .side-body{flex:1 1 auto;font-size:var(--fs-sm);color:var(--text-muted);}
 </style>
 </head>
@@ -288,6 +301,7 @@
     <div class="eyebrow">01 — Color</div>
     <h2>Paleta</h2>
     <p class="note">Un solo acento (azul Volt) sobre una base neutra fría. Reserva el acento para acciones y énfasis; el resto de la interfaz vive en neutros. Cada color tiene variante en modo claro y oscuro (activa el conmutador arriba para verlas).</p>
+    <p class="note"><b>--accent</b> queda reservado a rellenos, bordes, barras y superficies (puntos, barras de progreso, bordes de foco). Para <b>texto</b> acentuado — enlaces, <code>.eyebrow</code>, <code>.badge.accent</code>, estados hover de <code>.btn.secondary</code>/<code>.doc-link</code>/<code>.btn.ghost</code> — usa siempre <b>--accent-text</b>, más oscuro en claro (6.8:1 sobre <code>--bg</code>) para no depender del engrosado con <code>font-weight</code> para cumplir AA. Para el <b>fondo de botones primarios</b> usa <b>--accent-btn</b> (con <code>--accent-btn-hover</code> en hover): el texto <code>--on-accent</code> encima pasa de 3.65:1 (con el <code>--accent</code> plano de antes) a <b>4.88:1</b>. El código inline (sección 04) ya no usa acento — ver nota en Componentes.</p>
 
     <h4 style="margin-top:var(--sp-5)">Acento</h4>
     <div class="swatches">
@@ -296,6 +310,8 @@
       <div class="swatch"><div class="cap" style="background:var(--accent-active)"></div><div class="meta"><b>accent-active</b><span>--accent-active</span></div></div>
       <div class="swatch"><div class="cap" style="background:var(--accent-weak)"></div><div class="meta"><b>accent-weak</b><span>--accent-weak</span></div></div>
       <div class="swatch"><div class="cap" style="background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-family:var(--font-mono);font-size:var(--fs-caption)">Aa</div><div class="meta"><b>on-accent</b><span>--on-accent</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--accent-text);font-family:var(--font-mono);font-size:var(--fs-caption)">Aa</div><div class="meta"><b>accent-text</b><span>--accent-text</span></div></div>
+      <div class="swatch"><div class="cap" style="background:var(--accent-btn);display:flex;align-items:center;justify-content:center;color:var(--on-accent);font-family:var(--font-mono);font-size:var(--fs-caption)">Aa</div><div class="meta"><b>accent-btn</b><span>--accent-btn</span></div></div>
     </div>
 
     <h4 style="margin-top:var(--sp-5)">Neutros y superficies</h4>
@@ -365,7 +381,7 @@
     <h2>Biblioteca base</h2>
 
     <h3 style="margin-top:var(--sp-5)">Botones</h3>
-    <p class="note">Escala de dos pasos. <b>small</b> (por defecto, <code>--fs-caption</code>, 6px 12px) es el tamaño de los botones de <b>acción</b> — los que aparecen repetidos en una interfaz (tarjetas, tablas, mini-checks). <b>.btn.cta</b> (<code>--fs-sm</code>, 8px 14px), un punto mayor, se reserva para la <b>única acción principal de una vista</b> (portada, formulario, paso de un asistente).</p>
+    <p class="note">Escala de dos pasos. <b>small</b> (por defecto, <code>--fs-caption</code>, 6px 12px) es el tamaño de los botones de <b>acción</b> — los que aparecen repetidos en una interfaz (tarjetas, tablas, mini-checks). <b>.btn.cta</b> (<code>--fs-sm</code>, 8px 14px), un punto mayor, se reserva para la <b>única acción principal de una vista</b> (portada, formulario, paso de un asistente). <b>.btn.primary</b> usa <code>--accent-btn</code>/<code>--accent-btn-hover</code> como fondo (no <code>--accent</code> directamente) — ver sección 01.</p>
     <div class="demo">
       <div class="row">
         <button class="btn primary">Acción principal</button>
@@ -422,6 +438,7 @@
     </div>
 
     <h3>Tarjeta, cita y código</h3>
+    <p class="note">El código inline (<code>code</code>/<code>kbd</code>) usa tratamiento <b>neutro</b> — <code>background:var(--surface-2)</code>, <code>color:var(--text)</code>, <code>border:1px solid var(--border)</code> — no acento: el azul queda reservado a enlaces y a los usos de <code>--accent-text</code>/<code>--accent-btn</code> descritos en la sección 01, para que <code>&lt;code&gt;</code> dentro de un párrafo no compita visualmente con los enlaces de ese mismo párrafo.</p>
     <div class="demo">
       <div class="card" style="margin-bottom:var(--sp-4)">
         <h4 style="margin-bottom:6px">Tarjeta de contenido</h4>
@@ -457,12 +474,12 @@
           <li>Varios botones primarios compitiendo en la misma zona.</li>
           <li>Acento saturado como fondo de bloques grandes de texto.</li>
           <li>Sombras pesadas o degradados: rompen el registro sobrio.</li>
-          <li>Texto sobre <code>--accent-weak</code> con colores que no sean el acento.</li>
+          <li>Texto sobre <code>--accent-weak</code> con colores que no sean <code>--accent-text</code>.</li>
           <li>Tamaños fuera de la escala tipográfica definida.</li>
         </ul>
       </div>
     </div>
-    <p class="note" style="margin-top:var(--sp-4)">Todos los pares texto/fondo de esta guía cumplen WCAG AA. El acento en azul se aclara en modo oscuro para preservar el contraste sobre fondos oscuros.</p>
+    <p class="note" style="margin-top:var(--sp-4)">Todos los pares texto/fondo de esta guía cumplen WCAG AA: <code>--accent-text</code> da 6.8:1 (claro, sobre <code>--bg</code>) / 7.6:1 (oscuro) para enlaces y eyebrow, 6.0:1 sobre <code>--accent-weak</code> en <code>.badge.accent</code>; <code>--on-accent</code> sobre <code>--accent-btn</code> da 4.9:1 en <code>.btn.primary</code> (6.7:1 en hover); <code>--warning</code> sobre <code>--warning-weak</code> da 4.9:1 en claro. El acento en azul se aclara en modo oscuro para preservar el contraste sobre fondos oscuros; <code>--border-strong</code> (no textual, 3:1+ frente a superficies) marca campos y separadores con más énfasis que <code>--border</code>.</p>
   </section>
 
   <!-- ============ TOKENS ============ -->
@@ -477,11 +494,12 @@
 
   /* Color · claro */
   --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
-  --border:#E1E9F1; --border-strong:#C7D6E4;
+  --border:#E1E9F1; --border-strong:#7E93AB;
   --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
   --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
   --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
-  --success:#0E8546; --warning:#B5760F; --danger:#CE4148; --info:#2E63FF;
+  --accent-text:#0857B4; --accent-btn:#0A6BDB; --accent-btn-hover:#0857B4;
+  --success:#0E8546; --warning:#8F5D0B; --danger:#CE4148; --info:#2E63FF;
 
   /* Espaciado / radios */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
@@ -490,13 +508,15 @@
 }
 [data-theme="dark"]{
   --bg:#06101C; --surface:#101927; --surface-2:#172230;
-  --border:#213244; --border-strong:#2E4257;
+  --border:#213244; --border-strong:#55708C;
   --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
   --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
   --accent-weak:#0E2C48; --accent-contrast:#06101C; --on-accent:#F7FBFF;
+  --accent-text:#3FA9FF;
   --success:#37DA84; --warning:#F0A93C; --danger:#F0656C; --info:#6684FF;
 }</code></pre>
-    <p class="note"><b>--on-accent</b> es el texto (casi blanco) sobre fondo <code>--accent</code> — el mismo valor en ambos temas, a diferencia del resto de la paleta. Úsalo en <code>.btn.primary</code> y cualquier botón/chip con fondo de acento; no reutilices <code>--accent-contrast</code> para eso.</p>
+    <p class="note"><b>--on-accent</b> es el texto (casi blanco) sobre fondo <code>--accent</code>/<code>--accent-btn</code> — el mismo valor en ambos temas, a diferencia del resto de la paleta. Úsalo en <code>.btn.primary</code> y cualquier botón/chip con fondo de acento; no reutilices <code>--accent-contrast</code> para eso.</p>
+    <p class="note"><b>--accent-btn</b> y <b>--accent-btn-hover</b> también valen lo mismo en ambos temas (a diferencia de <code>--accent-hover</code>/<code>--accent-active</code>, que sí varían): son el fondo de <code>.btn.primary</code>, calibrados para que <code>--on-accent</code> encima cumpla AA (4.9:1) sin depender del tema. <b>--accent-text</b> sí varía por tema (más oscuro en claro, igual a <code>--accent</code> en oscuro) y es el que debes usar para cualquier texto acentuado — nunca <code>--accent</code> directamente.</p>
     <p class="note">Fuentes vía Google Fonts:<br>
     <code>&lt;link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"&gt;</code></p>
     <p class="note">Favicon (mismo SVG data-URI en todos los recursos):<br>
