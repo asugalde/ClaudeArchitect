@@ -268,6 +268,14 @@
       "plantilla": "plantillas/index.template.html",
       "herramienta": "herramientas/generar-index-html.py",
       "nota": "Index del curso (decisiones del usuario 2026-08-07): intro + blueprint de dominios con pesos + enlaces oficiales publicos (nunca el PDF de fuentes/) + fichas de bloque con metadatos de versiones.json y progreso MIXTO en localStorage (auto: ccarf-sum-guia-N secciones leidas, ccarf-sum-quiz-N mejor resultado, ccarf-fc-bN-vX cartas en caja 3; manual: ccarf-index-bloque-N-done, unico que alimenta la media global). Bloques sin HTML se muestran como Proximamente segun existencia real en disco. Se regenera con generar-index-html.py al cambiar versiones.json. Pendiente del gate de formato del usuario."
+    },
+    "tutor": {
+      "version": "1.0",
+      "estado": "generado",
+      "fecha": "2026-08-08",
+      "instrucciones": "recursos/tutor/instrucciones-tutor.md",
+      "readme": "recursos/tutor/README.md",
+      "nota": "Tutor para Proyectos de Claude: instrucciones (rol, jerarquia de fuentes, reglas de anclaje al material, 6 modos de trabajo) + README de montaje (que subir: 6 corpus imprescindibles, guias md recomendadas, bancos JSON opcionales). Redactado por el orquestador desde las reglas del proyecto; sin gate de formato (es texto plano, no HTML)."
     }
   },
   "historial": [
