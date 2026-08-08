@@ -126,6 +126,13 @@
   .doc-link:hover { border-color:var(--accent); }
   .doc-link .ext { color:var(--text-subtle); font-size:var(--fs-caption); }
 
+  /* ============ CASOS DE USO ============ */
+  .usecase-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:var(--sp-4); margin-top:var(--sp-4); }
+  .usecase-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:var(--sp-5); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:var(--sp-3); }
+  .usecase-card .badge { align-self:flex-start; }
+  .usecase-card p { margin:0; font-size:var(--fs-sm); color:var(--text); }
+
   /* ============ PROGRESO GLOBAL ============ */
   .progress-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:var(--sp-5); box-shadow:var(--shadow-sm); }
   .bar-row { display:flex; align-items:center; gap:var(--sp-4); }
@@ -195,14 +202,64 @@
   </div>
 
   <section class="block" id="blueprint">
-    <div class="eyebrow">Blueprint del examen</div>
+    <div class="eyebrow">01 — Blueprint del examen</div>
     <h2>Dominios y pesos</h2>
     <p class="note">Cinco dominios evaluables suman el 100% de la puntuación; el Bloque 0 de este curso es transversal y no tiene peso propio en el blueprint, pero sustenta la mecánica de base (API, tool use, bucle agéntico) que aparece como distractor en preguntas de los cinco dominios.</p>
     <div class="blueprint-grid" id="blueprint-grid"></div>
   </section>
 
+  <!--
+    CASOS DE USO — contenido curado a mano (como la intro del hero), NO se
+    extrae por regex desde ninguna fuente. Cada tarjeta corresponde 1:1 a uno
+    de los 6 "Exam Scenarios" oficiales de fuentes/exam-guide-oficial-v1.0.txt
+    (sección "5. Exam Scenarios", líneas 67-111): son los escenarios de
+    producción reales que el examen usa para plantear sus preguntas (se
+    seleccionan 4 de los 6 al azar en cada intento). Redacción y orden de las
+    tarjetas: propios; los hechos (qué hace cada sistema, qué herramientas
+    usa, qué dominios cubre) son los del escenario citado en el comentario de
+    cada tarjeta, sin añadir nada que la guía no diga. El badge de dominio usa
+    el primero de los "Primary domains" que lista el escenario oficial.
+  -->
+  <section class="block" id="casos-uso">
+    <div class="eyebrow">02 — Casos de uso</div>
+    <h2>Qué sabrás construir</h2>
+    <p class="note">Al terminar este curso serás capaz de diseñar y configurar sistemas como estos — calcados de los escenarios de producción reales que usa el propio examen para plantear sus preguntas:</p>
+    <div class="usecase-grid">
+      <!-- Escenario oficial 1: "Customer Support Resolution Agent" (líneas 71-78) -->
+      <div class="usecase-card">
+        <span class="badge accent">D1 · Agentic Architecture &amp; Orchestration</span>
+        <p>Un agente de soporte al cliente que consulta pedidos y datos de cliente por MCP, aplica la política de reembolsos y devoluciones, y escala a un humano con un resumen completo del caso cuando la ambigüedad lo requiere.</p>
+      </div>
+      <!-- Escenario oficial 3: "Multi-Agent Research System" (líneas 86-92) -->
+      <div class="usecase-card">
+        <span class="badge accent">D1 · Agentic Architecture &amp; Orchestration</span>
+        <p>Un sistema multiagente de investigación donde un coordinador reparte búsqueda web, análisis de documentos y síntesis entre subagentes especializados, y entrega informes citados aunque las fuentes se contradigan entre sí.</p>
+      </div>
+      <!-- Escenario oficial 4: "Developer Productivity with Claude" (líneas 93-99) -->
+      <div class="usecase-card">
+        <span class="badge accent">D2 · Tool Design &amp; MCP Integration</span>
+        <p>Un agente de productividad que explora un codebase heredado y desconocido, entiende su estructura y genera código repetitivo o refactors, combinando herramientas nativas (Read, Bash, Grep) con servidores MCP propios.</p>
+      </div>
+      <!-- Escenario oficial 2: "Code Generation with Claude Code" (líneas 79-85) -->
+      <div class="usecase-card">
+        <span class="badge accent">D3 · Claude Code Configuration &amp; Workflows</span>
+        <p>Un flujo de trabajo de Claude Code a medida del equipo, con CLAUDE.md, comandos personalizados y reglas por carpeta, decidiendo cuándo dejarlo planificar antes de tocar código y cuándo darle vía libre para ejecutar directamente.</p>
+      </div>
+      <!-- Escenario oficial 5: "Claude Code for Continuous Integration" (líneas 100-105) -->
+      <div class="usecase-card">
+        <span class="badge accent">D3 · Claude Code Configuration &amp; Workflows</span>
+        <p>Una integración de Claude Code en el pipeline de CI/CD que revisa cada pull request, genera casos de prueba y da feedback útil sin saturar al equipo de falsos positivos.</p>
+      </div>
+      <!-- Escenario oficial 6: "Structured Data Extraction" (líneas 106-111) -->
+      <div class="usecase-card">
+        <span class="badge accent">D4 · Prompt Engineering &amp; Structured Output</span>
+        <p>Un sistema de extracción que convierte documentos no estructurados (facturas, contratos, formularios) en datos validados contra un esquema JSON, listos para el sistema aguas abajo, gestionando los casos límite sin romper la cadena.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="progreso">
-    <div class="eyebrow">Tu avance</div>
+    <div class="eyebrow">03 — Tu avance</div>
     <h2>Progreso del curso</h2>
     <div class="progress-card">
       <div class="continue-slot" id="continue-slot"></div>
@@ -216,19 +273,19 @@
   </section>
 
   <section class="block" id="bloques">
-    <div class="eyebrow">Contenido</div>
+    <div class="eyebrow">04 — Contenido</div>
     <h2>Bloques del curso</h2>
     <div class="blocks-grid" id="blocks-grid"></div>
   </section>
 
   <section class="block" id="simulacro">
-    <div class="eyebrow">04 — Evaluación</div>
+    <div class="eyebrow">05 — Evaluación</div>
     <h2>Simulacro de examen</h2>
     <div class="blocks-grid" id="simulacro-grid"></div>
   </section>
 
   <section class="block" id="referencias">
-    <div class="eyebrow">05 — Documentación</div>
+    <div class="eyebrow">06 — Documentación</div>
     <h2>Referencias oficiales</h2>
     <div class="doc-links" id="doc-links">
       <a class="doc-link" target="_blank" rel="noopener" href="https://everpath-course-content.s3-accelerate.amazonaws.com/instructor%2F6nizmqk8tpzpfjvt6qmmav7rh%2Fpublic%2F1783542750%2FClaude+Certified+Architect+%E2%80%93+Foundations+Exam+Guide.pdf">Guía oficial del examen (PDF) <span class="ext">↗</span></a>
@@ -249,7 +306,7 @@
 // contra los ficheros que existen de verdad en corpus/ y recursos/.
 const INDEX_DATA =
 // __INDEX_DATA_START__
-{"generado":"2026-08-05","examenVersion":"1.0","dominios":[{"n":1,"nombre":"Agentic Architecture & Orchestration","peso":27,"bloqueCurso":4},{"n":2,"nombre":"Tool Design & MCP Integration","peso":18,"bloqueCurso":3},{"n":3,"nombre":"Claude Code Configuration & Workflows","peso":20,"bloqueCurso":2},{"n":4,"nombre":"Prompt Engineering & Structured Output","peso":20,"bloqueCurso":1},{"n":5,"nombre":"Context Management & Reliability","peso":15,"bloqueCurso":5}],"bloques":[{"n":0,"titulo":"Fundamentos: API de Claude, tool use y bucle agéntico","dominioNum":null,"peso":null,"dominioNombre":null,"corpusVersion":"1.0","descripcion":"Este bloque no tiene preguntas propias en el blueprint oficial —no aparece como dominio ni lleva peso asignado—, pero el examen da por sentado su dominio como base mecánica de los cinco dominios evaluables y lo explota como fuente de distractores en preguntas de nivel superior.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-0/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-0/quiz_v1.0.html"},"flashcards":{"version":"1.0","cartas":31,"html":"flashcards/html/flashcards-bloque-0_v1.0.html"},"resumen":{"version":"1.0","html":"pdf/resumen-bloque-0_v1.0.html","pdf":"pdf/resumen-bloque-0_v1.0.pdf"}},{"n":1,"titulo":"Prompt Engineering y salida estructurada","dominioNum":4,"peso":20,"dominioNombre":"Prompt Engineering & Structured Output","corpusVersion":"1.0","descripcion":"Las preguntas de este dominio giran alrededor de un mismo problema de fondo: convertir la salida probabilística de Claude en algo que un pipeline downstream pueda consumir sin sorpresas.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-1/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-1/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":2,"titulo":"Claude Code: configuración y flujos","dominioNum":3,"peso":20,"dominioNombre":"Claude Code Configuration & Workflows","corpusVersion":"1.0","descripcion":"Este bloque cubre Claude Code como herramienta de desarrollo, no la mecánica de la Messages API: cómo se configura su memoria persistente, cómo se extiende con comandos y skills, cómo se acotan convenciones a subconjuntos de archivos, cuándo conviene planificar antes de…","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-2/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-2/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":3,"titulo":"Diseño de tools y MCP","dominioNum":2,"peso":18,"dominioNombre":"Tool Design & MCP Integration","corpusVersion":"1.0","descripcion":"El Domain 2 pesa el 18% del examen y mide un tipo de juicio muy concreto: no basta con conocer la sintaxis de tool_choice o el flag isError, hay que reconocer cuándo un diseño de tool concreto producirá misrouting (enrutado incorrecto hacia la tool equivocada), cuándo un error…","guia":{"version":"1.0","lecciones":5,"html":"guias/bloque-3/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-3/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":4,"titulo":"Agent SDK: arquitectura agéntica y orquestación","dominioNum":1,"peso":27,"dominioNombre":"Agentic Architecture & Orchestration","corpusVersion":"1.0","descripcion":"Este bloque cubre el dominio de mayor peso del examen y cuya evaluación gira, sobre todo, alrededor del juicio arquitectónico: dado un escenario concreto, decidir si un agente dirigido por el modelo es la elección correcta o si la garantía debe forzarse de forma programática.","guia":{"version":"1.0","lecciones":7,"html":"guias/bloque-4/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-4/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":5,"titulo":"Gestión de contexto y fiabilidad","dominioNum":5,"peso":15,"dominioNombre":"Context Management & Reliability","corpusVersion":"1.0","descripcion":"Este bloque cierra el temario con la pregunta que atraviesa a los otros cuatro dominios: qué pasa cuando la conversación, la exploración de código o el sistema multi-agente se alargan lo suficiente como para que el contexto deje de ser fiable.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-5/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-5/quiz_v1.0.html"},"flashcards":null,"resumen":null}],"simulacro":{"version":"1.0","html":"simulacro/simulacro_v1.0.html","preguntas":60,"duracionMin":120,"passing":720,"composicion":[{"dominioNum":1,"nombre":"Agentic Architecture & Orchestration","count":16},{"dominioNum":2,"nombre":"Tool Design & MCP Integration","count":10},{"dominioNum":3,"nombre":"Claude Code Configuration & Workflows","count":12},{"dominioNum":4,"nombre":"Prompt Engineering & Structured Output","count":11},{"dominioNum":5,"nombre":"Context Management & Reliability","count":8},{"dominioNum":null,"nombre":"Transversal (Bloque 0)","count":3}]}}
+{"generado":"2026-08-07","examenVersion":"1.0","dominios":[{"n":1,"nombre":"Agentic Architecture & Orchestration","peso":27,"bloqueCurso":4},{"n":2,"nombre":"Tool Design & MCP Integration","peso":18,"bloqueCurso":3},{"n":3,"nombre":"Claude Code Configuration & Workflows","peso":20,"bloqueCurso":2},{"n":4,"nombre":"Prompt Engineering & Structured Output","peso":20,"bloqueCurso":1},{"n":5,"nombre":"Context Management & Reliability","peso":15,"bloqueCurso":5}],"bloques":[{"n":0,"titulo":"Fundamentos: API de Claude, tool use y bucle agéntico","dominioNum":null,"peso":null,"dominioNombre":null,"corpusVersion":"1.0","descripcion":"Este bloque no tiene preguntas propias en el blueprint oficial —no aparece como dominio ni lleva peso asignado—, pero el examen da por sentado su dominio como base mecánica de los cinco dominios evaluables y lo explota como fuente de distractores en preguntas de nivel superior.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-0/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-0/quiz_v1.0.html"},"flashcards":{"version":"1.0","cartas":31,"html":"flashcards/html/flashcards-bloque-0_v1.0.html"},"resumen":{"version":"1.0","html":"pdf/resumen-bloque-0_v1.0.html","pdf":"pdf/resumen-bloque-0_v1.0.pdf"}},{"n":1,"titulo":"Prompt Engineering y salida estructurada","dominioNum":4,"peso":20,"dominioNombre":"Prompt Engineering & Structured Output","corpusVersion":"1.0","descripcion":"Las preguntas de este dominio giran alrededor de un mismo problema de fondo: convertir la salida probabilística de Claude en algo que un pipeline downstream pueda consumir sin sorpresas.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-1/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-1/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":2,"titulo":"Claude Code: configuración y flujos","dominioNum":3,"peso":20,"dominioNombre":"Claude Code Configuration & Workflows","corpusVersion":"1.0","descripcion":"Este bloque cubre Claude Code como herramienta de desarrollo, no la mecánica de la Messages API: cómo se configura su memoria persistente, cómo se extiende con comandos y skills, cómo se acotan convenciones a subconjuntos de archivos, cuándo conviene planificar antes de…","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-2/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-2/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":3,"titulo":"Diseño de tools y MCP","dominioNum":2,"peso":18,"dominioNombre":"Tool Design & MCP Integration","corpusVersion":"1.0","descripcion":"El Domain 2 pesa el 18% del examen y mide un tipo de juicio muy concreto: no basta con conocer la sintaxis de tool_choice o el flag isError, hay que reconocer cuándo un diseño de tool concreto producirá misrouting (enrutado incorrecto hacia la tool equivocada), cuándo un error…","guia":{"version":"1.0","lecciones":5,"html":"guias/bloque-3/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-3/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":4,"titulo":"Agent SDK: arquitectura agéntica y orquestación","dominioNum":1,"peso":27,"dominioNombre":"Agentic Architecture & Orchestration","corpusVersion":"1.0","descripcion":"Este bloque cubre el dominio de mayor peso del examen y cuya evaluación gira, sobre todo, alrededor del juicio arquitectónico: dado un escenario concreto, decidir si un agente dirigido por el modelo es la elección correcta o si la garantía debe forzarse de forma programática.","guia":{"version":"1.0","lecciones":7,"html":"guias/bloque-4/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-4/quiz_v1.0.html"},"flashcards":null,"resumen":null},{"n":5,"titulo":"Gestión de contexto y fiabilidad","dominioNum":5,"peso":15,"dominioNombre":"Context Management & Reliability","corpusVersion":"1.0","descripcion":"Este bloque cierra el temario con la pregunta que atraviesa a los otros cuatro dominios: qué pasa cuando la conversación, la exploración de código o el sistema multi-agente se alargan lo suficiente como para que el contexto deje de ser fiable.","guia":{"version":"1.0","lecciones":6,"html":"guias/bloque-5/guia_v1.0.html"},"quiz":{"version":"1.0","preguntas":18,"html":"quiz/bloque-5/quiz_v1.0.html"},"flashcards":null,"resumen":null}],"simulacro":{"version":"1.0","html":"simulacro/simulacro_v1.0.html","preguntas":60,"duracionMin":120,"passing":720,"composicion":[{"dominioNum":1,"nombre":"Agentic Architecture & Orchestration","count":16},{"dominioNum":2,"nombre":"Tool Design & MCP Integration","count":10},{"dominioNum":3,"nombre":"Claude Code Configuration & Workflows","count":12},{"dominioNum":4,"nombre":"Prompt Engineering & Structured Output","count":11},{"dominioNum":5,"nombre":"Context Management & Reliability","count":8},{"dominioNum":null,"nombre":"Transversal (Bloque 0)","count":3}]}}
 // __INDEX_DATA_END__
 ;
 
