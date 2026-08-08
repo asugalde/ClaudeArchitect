@@ -30,24 +30,29 @@
     --ease:150ms cubic-bezier(.4,0,.2,1);
 
     --bg:#FCFDFF; --surface:#FFFFFF; --surface-2:#F1F5FA;
-    --border:#E1E9F1; --border-strong:#C7D6E4;
+    --border:#E1E9F1; --border-strong:#7E93AB;
     --text:#0E1B2C; --text-muted:#45536C; --text-subtle:#8496A8;
 
     --accent:#0E82FF; --accent-hover:#0A6BDB; --accent-active:#0857B4;
     --accent-weak:#E2F1FF; --accent-contrast:#06121F; --on-accent:#F7FBFF;
+    --accent-text:#0857B4;
+    --accent-btn:#0A6BDB; --accent-btn-hover:#0857B4;
 
     --success:#0E8546; --success-weak:#E2F6EA;
-    --warning:#B5760F; --warning-weak:#FBEFD9;
+    --warning:#8F5D0B; --warning-weak:#FBEFD9;
     --danger:#CE4148;  --danger-weak:#FBE7E8;
     --info:#2E63FF;    --info-weak:#EAF0FF;
+
+    color-scheme:light;
   }
   [data-theme="dark"] {
     --bg:#06101C; --surface:#101927; --surface-2:#172230;
-    --border:#213244; --border-strong:#2E4257;
+    --border:#213244; --border-strong:#55708C;
     --text:#E4EDF6; --text-muted:#B6C5D9; --text-subtle:#66788C;
 
     --accent:#3FA9FF; --accent-hover:#63BBFF; --accent-active:#2C93F0;
     --accent-weak:#0E2C48; --accent-contrast:#06101C;
+    --accent-text:#3FA9FF;
 
     --success:#37DA84; --success-weak:#123526;
     --warning:#F0A93C; --warning-weak:#33260F;
@@ -56,6 +61,8 @@
 
     --shadow-sm:0 1px 2px rgba(0,0,0,.4);
     --shadow-md:0 6px 18px rgba(0,0,0,.4);
+
+    color-scheme:dark;
   }
   * { box-sizing:border-box; }
   body { margin:0; font-family:var(--font-sans); font-size:var(--fs-body); line-height:1.6; font-weight:var(--fw-regular); color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; }
@@ -70,27 +77,30 @@
   .toggle, .theme-toggle, .fs-toggle, .lang-toggle { cursor:pointer; border:1px solid var(--border-strong); background:var(--surface);
     color:var(--text); padding:8px 13px; border-radius:var(--r-md); font-size:var(--fs-sm); font-weight:var(--fw-semibold);
     font-family:inherit; line-height:1.2; transition:border-color var(--ease), color var(--ease); }
-  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent); }
+  .toggle:hover, .theme-toggle:hover, .fs-toggle:hover, .lang-toggle:hover { border-color:var(--accent); color:var(--accent-text); }
+  @media (pointer:coarse) {
+    .toggle, .theme-toggle, .fs-toggle, .lang-toggle, .minicheck button { min-height:44px; }
+  }
 
   /* Layout de dos columnas — patrón Volt (topbar + hero de ancho completo; debajo, sidebar de TOC + contenido). */
   .wrap { max-width:1240px; margin:0 auto; padding:48px 24px 90px; }
 
-  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+  .eyebrow { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent-text);
     text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
   .hero { padding-bottom:var(--sp-5); }
   .hero h1 { font-size:var(--fs-display); font-weight:var(--fw-extra); letter-spacing:-.03em; line-height:1.08; margin:0 0 var(--sp-4); color:var(--text); }
-  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; }
+  .hero .lead { font-size:1.125rem; color:var(--text-muted); margin:0; max-width:72ch; overflow-wrap:break-word; }
 
   /* Layout: fila hero de ancho completo + sidebar de TOC (izquierda, sticky) y columna de contenido. */
   .layout { display:flex; align-items:flex-start; gap:var(--sp-7); margin-top:0; padding-top:var(--sp-6); border-top:1px solid var(--border); }
-  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:84px; max-height:calc(100vh - 104px); overflow-y:auto;
+  .sidebar { flex:0 0 260px; width:260px; position:sticky; top:calc(var(--topbar-h,64px) + 20px); max-height:calc(100vh - 104px); overflow-y:auto;
     border-right:1px solid var(--border); padding-right:var(--sp-5); }
   .sidebar #toc-links { display:flex; flex-direction:column; gap:2px; }
   .sidebar #toc-links a { display:block; padding:5px 0 5px 10px; border-left:2px solid transparent; font-size:var(--fs-sm); color:var(--text-muted); text-decoration:none;
     white-space:normal; transition:color var(--ease),border-color var(--ease); }
   .sidebar #toc-links a.l3 { padding-left:24px; font-size:var(--fs-caption); }
-  .sidebar #toc-links a:hover { color:var(--accent); text-decoration:none; }
-  .sidebar #toc-links a.active { color:var(--accent); font-weight:var(--fw-medium); border-left-color:var(--accent); }
+  .sidebar #toc-links a:hover { color:var(--accent-text); text-decoration:none; }
+  .sidebar #toc-links a.active { color:var(--accent-text); font-weight:var(--fw-medium); border-left-color:var(--accent); }
   .content-wrap { flex:1 1 auto; min-width:0; max-width:900px; }
 
   @media (max-width:900px) {
@@ -105,27 +115,28 @@
   /* overflow-wrap tambien en la prosa: secuencias unidas por barra sin espacios
      (consolidation/namespacing/renaming/splitting) son una sola palabra sin
      punto de corte y se salian de la caja en movil. Solo parte si desborda. */
-  p, li { max-width:72ch; overflow-wrap:break-word; }
-  a { color:var(--accent); text-decoration:none; font-weight:var(--fw-medium); }
+  #contenido p, #contenido li { max-width:58ch; overflow-wrap:break-word; }
+  a { color:var(--accent-text); text-decoration:none; font-weight:var(--fw-medium); }
   a:hover { text-decoration:underline; }
   strong { font-weight:var(--fw-semibold); }
 
   /* overflow-wrap: los tokens de code inline unidos por barra sin espacios
      (errorCategory/isRetryable/suggestedAction) forman una secuencia sin punto
      de corte que desbordaba el ancho en movil. */
-  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--accent-weak); color:var(--accent); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
+  code { font-family:var(--font-mono); font-size:var(--fs-code); background:var(--surface-2); color:var(--text); border:1px solid var(--border); padding:1px 6px; border-radius:var(--r-sm); overflow-wrap:anywhere; }
   pre { background:var(--surface-2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:var(--fs-code); line-height:1.6; margin:var(--sp-4) 0; }
   pre code { background:none; border:none; color:inherit; padding:0; }
   pre.mermaid { background:var(--surface); color:var(--text); border:1px solid var(--border); text-align:center; }
   /* Etiqueta de lenguaje en bloques de código (data-lang en el pre). */
   pre[data-lang] { position:relative; padding-top:30px; }
-  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-subtle); letter-spacing:.05em; }
+  pre[data-lang]::before { content:attr(data-lang); position:absolute; top:8px; right:12px; font-size:var(--fs-caption); color:var(--text-muted); letter-spacing:.05em; }
   /* Referencias oficiales al cierre de cada lección. */
   .doc-link { border:1px solid var(--border); border-radius:var(--r-md); padding:10px 14px; font-size:var(--fs-sm); color:var(--text-muted); background:var(--surface); }
   /* Foco visible (regla de accesibilidad Volt). */
   :is(a, button, input, select):focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
-  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); margin:1.2em 0; display:block; overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-sm); }
+  .table-wrap { overflow-x:auto; margin:1.2em 0; }
   th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
   thead th { font-size:var(--fs-caption); text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
   tbody tr:hover { background:var(--surface-2); }
@@ -137,8 +148,9 @@
   .minicheck { border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-left:3px solid var(--accent); border-radius:var(--r-lg); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--accent-weak); }
   .minicheck .mc-q { margin-top:0; }
   .minicheck label { display:block; padding:5px 0; cursor:pointer; }
-  .minicheck button { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
-  .minicheck button:hover { background:var(--accent-hover); }
+  .minicheck input[type="radio"], .minicheck input[type="checkbox"] { accent-color:var(--accent); }
+  .minicheck button, .mc-check { font:inherit; font-size:var(--fs-caption); font-weight:var(--fw-semibold); border:1px solid transparent; background:var(--accent-btn); color:var(--accent-contrast); border-radius:var(--r-md); padding:6px 12px; margin-top:10px; cursor:pointer; transition:background var(--ease); }
+  .minicheck button:hover, .mc-check:hover { background:var(--accent-btn-hover); }
   .mc-feedback { display:none; margin-top:12px; padding:14px 16px; border-radius:var(--r-md); border:1px solid transparent; font-size:var(--fs-sm); opacity:0; transition:opacity var(--ease); }
   .mc-feedback.ok { display:block; opacity:1; background:var(--success-weak); border-color:color-mix(in srgb, var(--success) 30%, transparent); color:var(--text); }
   .mc-feedback.ko { display:block; opacity:1; background:var(--warning-weak); border-color:color-mix(in srgb, var(--warning) 35%, transparent); color:var(--text); }
@@ -147,6 +159,7 @@
   .creditos { max-width:72ch; margin:28px 0 0; padding-top:12px; border-top:1px solid var(--border); color:var(--text-muted); font-size:var(--fs-caption); }
   .print-only { display:none; }
   @media (max-width: 700px) { .wrap { padding:32px 18px 70px; } .hero h1 { font-size:1.75rem; } .topbar { padding:12px 16px; } }
+  @media (max-width: 420px) { .brand-name { display:none; } }
   @media (prefers-reduced-motion: reduce) {
     * { transition:none !important; }
   }
@@ -174,27 +187,27 @@
 
   /* Secciones del contenido — numeradas con eyebrow (patrón Volt), aire vertical --sp-7. */
   #contenido { counter-reset:sec; }
-  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:84px; }
+  #contenido > h2 { counter-increment:sec; margin-top:var(--sp-7); scroll-margin-top:calc(var(--topbar-h,64px) + 20px); }
   #contenido > h2::before { content:counter(sec, decimal-leading-zero) " —"; display:block;
-    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent);
+    font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--accent-text);
     letter-spacing:.08em; margin-bottom:6px; }
 
   /* Botón primario (fondo accent): texto casi blanco en ambos temas. */
-  .minicheck button { color:var(--on-accent); }
+  .minicheck button, .mc-check { color:var(--on-accent); }
 
   /* Impreso: sin topbar ni tarjeta; hero sobre blanco con la paleta clara de Volt. */
   @media print {
     .hero { padding-bottom:14px; border-bottom:2px solid #C7D6E4; margin-bottom:20px; }
-    .eyebrow { color:#0E82FF; }
+    .eyebrow { color:#0857B4; }
     .hero h1 { color:#0E1B2C; }
     .hero .lead { color:#45536C; }
-    #contenido > h2::before { color:#0E82FF; }
+    #contenido > h2::before { color:#0857B4; }
   }
 </style>
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> Claude Certified Architect – Foundations <span class="brand-sigla">[CCAR-F]</span></div>
+  <div class="brand"><span class="dot"></span> <span class="brand-name">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></div>
   <div class="topbar-controls" id="topbar-controls"></div>
 </header>
 <div class="wrap">
@@ -542,6 +555,26 @@ claude -p "Run the test suite and fix any failures" \
     document.body.classList.add("print-mode");
     document.documentElement.dataset.lang = "typescript";
   }
+
+  // La topbar puede ocupar mas de una fila (controles envueltos en movil):
+  // medir su altura real evita que .sidebar y los anchors del TOC queden
+  // tapados cuando el fallback fijo de una fila no coincide con la real.
+  function setTopbarH() {
+    var tb = document.querySelector(".topbar");
+    if (tb) document.documentElement.style.setProperty("--topbar-h", tb.offsetHeight + "px");
+  }
+  window.addEventListener("load", setTopbarH);
+  window.addEventListener("resize", setTopbarH);
+
+  // Las tablas anchas se envuelven para desplazarse en horizontal en vez de
+  // triturar sus celdas: el ancho intrinseco de la tabla se conserva y es el
+  // wrapper el que scrollea.
+  document.querySelectorAll("#contenido table").forEach(function (t) {
+    var wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    t.parentNode.insertBefore(wrap, t);
+    wrap.appendChild(t);
+  });
 
   var darkTheme = document.documentElement.dataset.theme === "dark";
   if (window.mermaid) mermaid.initialize({
