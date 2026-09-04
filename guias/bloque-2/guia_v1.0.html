@@ -70,7 +70,10 @@
   .topbar { position:sticky; top:0; z-index:20; display:flex; justify-content:space-between; align-items:center;
     gap:var(--sp-4); padding:14px 24px; background:color-mix(in srgb, var(--bg) 86%, transparent);
     backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
-  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); }
+  .topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold); letter-spacing:-.01em; color:var(--text); text-decoration:none; }
+  .topbar .brand:hover { text-decoration:none; color:var(--accent-text); }
+  a.home-link { display:inline-flex; align-items:center; text-decoration:none; }
+  a.home-link:hover { text-decoration:none; }
   .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
   .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); }
   .topbar-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
@@ -207,9 +210,15 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> <span class="brand-name">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></div>
-  <div class="topbar-controls" id="topbar-controls"></div>
+  <a class="brand" id="brand-home" href="../../index_v1.0.html" title="Volver al índice del curso"><span class="dot"></span> <span class="brand-name">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></a>
+  <div class="topbar-controls" id="topbar-controls"><a class="toggle home-link" id="home-link" href="../../index_v1.0.html" title="Volver al índice del curso">← Índice</a></div>
 </header>
+<script>
+// Enlace de vuelta al índice del curso: el href se calcula según la profundidad
+// del recurso (guias/quiz/flashcards están a dos niveles del índice, simulacro a
+// uno). Se apunta al fichero versionado, presente tanto en recursos/ como en dist/.
+(function(){var p=location.pathname.split("/");var i=-1;for(var k=p.length-1;k>=0;k--){if(/^(guias|quiz|flashcards|simulacro)$/.test(p[k])){i=k;break;}}if(i<0)return;var href=new Array(p.length-i).join("../")+"index_v1.0.html";["brand-home","home-link"].forEach(function(id){var a=document.getElementById(id);if(a)a.setAttribute("href",href);});})();
+</script>
 <div class="wrap">
   <div class="hero">
     <div class="eyebrow">CCAR-F · Guía de estudio</div>
@@ -681,15 +690,25 @@ claude -p "Run the test suite and fix any failures" \
     try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
   }
   var t = null;
+  var contenido = document.getElementById("contenido");
+  // Visible height: visualViewport tracks the area the reader actually sees
+  // (mobile browsers shrink it by the retractable URL bar); innerHeight is
+  // the fallback.
+  function viewportH() {
+    return (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  }
+  // Bottom detection is geometric, not arithmetic: the end of #contenido is on
+  // screen. The previous rule compared scrollY + viewport height against the
+  // document height, and on tablets those three numbers disagree with each
+  // other (layout vs visual viewport, rubber-band clamping of scrollY), so the
+  // bottom was never detected and the last section stayed unread (90% cap).
+  // The legacy comparison is kept as a second chance, never as the only path.
   function atBottom() {
+    var vh = viewportH();
+    if (contenido && contenido.getBoundingClientRect().bottom <= vh + 24) return true;
     var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-    // innerHeight is the *visible* height: mobile browsers shrink it by the
-    // retractable URL bar, but the maximum scroll offset is computed against the
-    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
-    // the document by the bar's height and the bottom was never detected on a
-    // phone or tablet -- which left the closing sections unread for good.
-    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
-    return window.scrollY + viewportH >= docHeight - 24;
+    var layoutH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + layoutH >= docHeight - 24;
   }
   // A section counts as read once its heading has scrolled above the middle of
   // the viewport, and every heading above that line is marked on each sample --
@@ -697,24 +716,35 @@ claude -p "Run the test suite and fix any failures" \
   // between two samples. At the very bottom the trailing headings can never
   // reach the middle (everything below the fold is already on screen), so they
   // are marked there; otherwise 100% would be unreachable.
+  function sample() {
+    var bottom = atBottom();
+    var middle = viewportH() / 2;
+    var was = Object.keys(st.visited).length + "|" + st.lastSection;
+    var cur = null;
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+      else if (bottom) { st.visited[h.id] = 1; }
+    });
+    if (bottom && heads.length) cur = heads[heads.length - 1];
+    if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+    if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+  }
   function track() {
     if (t) return;
-    t = setTimeout(function () {
-      t = null;
-      var bottom = atBottom();
-      var middle = window.innerHeight / 2;
-      var was = Object.keys(st.visited).length + "|" + st.lastSection;
-      var cur = null;
-      heads.forEach(function (h) {
-        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
-        else if (bottom) { st.visited[h.id] = 1; }
-      });
-      if (bottom && heads.length) cur = heads[heads.length - 1];
-      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
-      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
-    }, 800);
+    t = setTimeout(function () { t = null; sample(); }, 800);
+  }
+  // Leaving the page (back to the index, tab switch) samples synchronously:
+  // a pending throttle timer would otherwise be dropped and the final scroll
+  // position -- typically the bottom -- would never be recorded.
+  function flush() {
+    if (t) { clearTimeout(t); t = null; }
+    sample();
   }
   window.addEventListener("scroll", track, { passive: true });
+  window.addEventListener("touchend", track, { passive: true });
+  window.addEventListener("resize", track);
+  window.addEventListener("pagehide", flush);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); });
   track();
   function nombreDe(mc) {
     var inp = mc.querySelector("input");
