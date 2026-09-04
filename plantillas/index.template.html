@@ -738,11 +738,21 @@ const INDEX_DATA =
     });
   }
 
-  renderBlocks();
-  updateGlobalBar();
-  renderContinueButton();
-  renderSimulacro();
+  function refreshAll() {
+    renderBlocks();
+    updateGlobalBar();
+    renderContinueButton();
+    renderSimulacro();
+  }
+  refreshAll();
   document.getElementById("reset-all").addEventListener("click", resetAll);
+  // Coming back from a guide/quiz via the browser's Back button usually
+  // restores this page from the back-forward cache: no reload, no script
+  // re-run, so the progress painted at first load went stale until a manual
+  // refresh. Re-read localStorage whenever the page is shown again
+  // (pageshow with persisted=true) or becomes visible after a tab switch.
+  window.addEventListener("pageshow", function (ev) { if (ev.persisted) refreshAll(); });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshAll(); });
 })();
 </script>
 <script>

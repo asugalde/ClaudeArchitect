@@ -857,15 +857,25 @@ if (response.stop_reason === "tool_use") {
     try { localStorage.setItem(PKEY, JSON.stringify(st)); } catch (e) {}
   }
   var t = null;
+  var contenido = document.getElementById("contenido");
+  // Visible height: visualViewport tracks the area the reader actually sees
+  // (mobile browsers shrink it by the retractable URL bar); innerHeight is
+  // the fallback.
+  function viewportH() {
+    return (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+  }
+  // Bottom detection is geometric, not arithmetic: the end of #contenido is on
+  // screen. The previous rule compared scrollY + viewport height against the
+  // document height, and on tablets those three numbers disagree with each
+  // other (layout vs visual viewport, rubber-band clamping of scrollY), so the
+  // bottom was never detected and the last section stayed unread (90% cap).
+  // The legacy comparison is kept as a second chance, never as the only path.
   function atBottom() {
+    var vh = viewportH();
+    if (contenido && contenido.getBoundingClientRect().bottom <= vh + 24) return true;
     var docHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-    // innerHeight is the *visible* height: mobile browsers shrink it by the
-    // retractable URL bar, but the maximum scroll offset is computed against the
-    // layout viewport (clientHeight), so scrollY + innerHeight stayed short of
-    // the document by the bar's height and the bottom was never detected on a
-    // phone or tablet -- which left the closing sections unread for good.
-    var viewportH = Math.max(window.innerHeight, document.documentElement.clientHeight);
-    return window.scrollY + viewportH >= docHeight - 24;
+    var layoutH = Math.max(window.innerHeight, document.documentElement.clientHeight);
+    return window.scrollY + layoutH >= docHeight - 24;
   }
   // A section counts as read once its heading has scrolled above the middle of
   // the viewport, and every heading above that line is marked on each sample --
@@ -873,24 +883,35 @@ if (response.stop_reason === "tool_use") {
   // between two samples. At the very bottom the trailing headings can never
   // reach the middle (everything below the fold is already on screen), so they
   // are marked there; otherwise 100% would be unreachable.
+  function sample() {
+    var bottom = atBottom();
+    var middle = viewportH() / 2;
+    var was = Object.keys(st.visited).length + "|" + st.lastSection;
+    var cur = null;
+    heads.forEach(function (h) {
+      if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
+      else if (bottom) { st.visited[h.id] = 1; }
+    });
+    if (bottom && heads.length) cur = heads[heads.length - 1];
+    if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
+    if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
+  }
   function track() {
     if (t) return;
-    t = setTimeout(function () {
-      t = null;
-      var bottom = atBottom();
-      var middle = window.innerHeight / 2;
-      var was = Object.keys(st.visited).length + "|" + st.lastSection;
-      var cur = null;
-      heads.forEach(function (h) {
-        if (h.getBoundingClientRect().top < middle) { st.visited[h.id] = 1; cur = h; }
-        else if (bottom) { st.visited[h.id] = 1; }
-      });
-      if (bottom && heads.length) cur = heads[heads.length - 1];
-      if (cur) { st.lastSection = cur.id; st.lastTitle = cur.textContent; }
-      if (Object.keys(st.visited).length + "|" + st.lastSection !== was) save();
-    }, 800);
+    t = setTimeout(function () { t = null; sample(); }, 800);
+  }
+  // Leaving the page (back to the index, tab switch) samples synchronously:
+  // a pending throttle timer would otherwise be dropped and the final scroll
+  // position -- typically the bottom -- would never be recorded.
+  function flush() {
+    if (t) { clearTimeout(t); t = null; }
+    sample();
   }
   window.addEventListener("scroll", track, { passive: true });
+  window.addEventListener("touchend", track, { passive: true });
+  window.addEventListener("resize", track);
+  window.addEventListener("pagehide", flush);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") flush(); });
   track();
   function nombreDe(mc) {
     var inp = mc.querySelector("input");
