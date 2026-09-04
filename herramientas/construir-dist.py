@@ -2,9 +2,11 @@
 """Assemble dist/ (the ONLY distributable) from recursos/.
 
 - Copies the whole recursos/ tree to dist/ (site root).
-- The course index (recursos/index_v1.0.html) becomes dist/index.html so the
-  published site opens directly on it (no redirect page). Relative links keep
-  working because the index already lives at the recursos/ root.
+- The course index (recursos/index_v1.0.html) is COPIED to dist/index.html so the
+  published site opens directly on it (no redirect page). The versioned file is
+  kept too: every resource's "back to index" link targets index_v1.0.html so it
+  resolves identically in recursos/ and in dist/. Relative links keep working
+  because the index already lives at the recursos/ root.
 - Hard guarantees before declaring success:
     * no forbidden content ships (fuentes/, corpus/, plantillas/, herramientas/,
       .claude/, ESTADO/CLAUDE/versiones) — dist contains recursos content only;
@@ -49,7 +51,7 @@ def main():
     index = DIST / INDEX_SRC
     if not index.exists():
         fail(f"{INDEX_SRC} not found in recursos/")
-    index.rename(DIST / "index.html")
+    shutil.copyfile(index, DIST / "index.html")
 
     for name in FORBIDDEN_NAMES:
         hits = list(DIST.rglob(name))

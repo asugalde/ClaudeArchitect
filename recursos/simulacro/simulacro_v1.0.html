@@ -151,7 +151,10 @@
     background:color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter:blur(8px);
     border-bottom:1px solid var(--border); }
   header.topbar .brand { display:flex; align-items:center; gap:10px; font-weight:var(--fw-bold);
-    letter-spacing:-.01em; color:var(--text); min-width:0; overflow:hidden; }
+    letter-spacing:-.01em; color:var(--text); min-width:0; overflow:hidden; text-decoration:none; }
+  header.topbar .brand:hover { text-decoration:none; color:var(--accent-text); }
+  a.home-link { display:inline-flex; align-items:center; text-decoration:none; }
+  a.home-link:hover { text-decoration:none; }
   header.topbar .brand .dot { width:20px; height:20px; border-radius:6px; background:var(--accent); flex:0 0 auto; }
   header.topbar .brand .brand-full { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .brand-sigla { font-family:var(--font-mono); font-size:var(--fs-caption); font-weight:var(--fw-medium); color:var(--text-muted); flex:0 0 auto; }
@@ -173,9 +176,15 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><span class="dot"></span> <span class="brand-full">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></div>
-  <div class="controls" id="topbar-controls"></div>
+  <a class="brand" id="brand-home" href="../../index_v1.0.html" title="Volver al índice del curso"><span class="dot"></span> <span class="brand-full">Claude Certified Architect – Foundations</span> <span class="brand-sigla">[CCAR-F]</span></a>
+  <div class="controls" id="topbar-controls"><a class="toggle home-link" id="home-link" href="../../index_v1.0.html" title="Volver al índice del curso">← Índice</a></div>
 </header>
+<script>
+// Enlace de vuelta al índice del curso: el href se calcula según la profundidad
+// del recurso (guias/quiz/flashcards están a dos niveles del índice, simulacro a
+// uno). Se apunta al fichero versionado, presente tanto en recursos/ como en dist/.
+(function(){var p=location.pathname.split("/");var i=-1;for(var k=p.length-1;k>=0;k--){if(/^(guias|quiz|flashcards|simulacro)$/.test(p[k])){i=k;break;}}if(i<0)return;var href=new Array(p.length-i).join("../")+"index_v1.0.html";["brand-home","home-link"].forEach(function(id){var a=document.getElementById(id);if(a)a.setAttribute("href",href);});})();
+</script>
 <div class="wrap">
   <div class="hero">
     <div class="eyebrow" id="q-eyebrow">CCAR-F · QUIZ</div>
